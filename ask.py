@@ -56,7 +56,7 @@ def run_sql(sql):
     return cols, rows
 
 
-def ask(question, history=None, context=""):
+def ask(question, history=None, context="", no_quotes=False):
     hist = "".join(f"\nEarlier Q: {h['q']}\nEarlier SQL: {h.get('sql','')[:400]}\nEarlier answer: {h['a'][:300]}\n" for h in (history or [])[-3:])
     last_err = None
     for attempt in range(2):
@@ -75,10 +75,12 @@ def ask(question, history=None, context=""):
     else:
         return dict(answer=f"I couldn't run a valid query for that ({last_err}). Try rephrasing, for example by naming the topic, format or time window.", sql=None, rows=[], cols=[], note="")
     table = json.dumps({"columns": cols, "rows": rows}, ensure_ascii=False, default=str)[:9000]
+    quote_rule = ("Do not quote or copy any comment text; describe what commenters say in your own words. " if no_quotes
+                  else "If the rows contain comment text, quote at most 3, each under 25 words. ")
     answer = claude(
-        "You are the analyst behind Launch Pulse. Answer the question using ONLY the query result below. Plain language, <=130 words, lead with the answer, cite numbers with n, "
+        "You are the analyst behind this iPhone Duo YouTube listening tool. Answer the question using ONLY the query result below. Plain language, <=130 words, lead with the answer, cite numbers with n, "
         "say plainly when n is small or the result is empty, and mention one relevant caveat (comment sample, small n, associations not causes) only if it applies. "
-        "If the rows contain comment text, quote at most 3, each under 25 words. No headings, no preamble. Use Slack-friendly plain text (no markdown tables).\n\n"
+        + quote_rule + "No headings, no preamble. Use Slack-friendly plain text (no markdown tables).\n\n"
         f"Question: {question}\nWhat the query measures: {plan.get('note','')}\nResult:\n{table}", 3000).strip()
     return dict(answer=answer, sql=plan["sql"], rows=rows, cols=cols, note=plan.get("note", ""))
 

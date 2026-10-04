@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml/badge.svg)](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml)
 
-**Live demo: https://allisonhanyuchen.github.io/youtube-creator-social-listening/** (the dashboard on iPhone Duo data; comment quotes and chat are left out of the public page, and it refreshes every Monday).
+**Live demo: https://allisonhanyuchen.github.io/youtube-creator-social-listening/** (the dashboard on iPhone Duo data. The public page shows no comment text: themes are summarised in paraphrase and checked against the comments, and the chat shows recorded answers from the live agent. It refreshes every Monday).
 
 An AI workflow that listens to YouTube around a product and answers three questions for a creator or brand marketing team:
 
@@ -35,6 +35,8 @@ db.py           builds data/pulse.db (SQLite base tables and views)
 insights.py     numbers computed in Python, narrative by Claude, week-over-week alerts
 report.py       HTML email           notify.py   Slack digest and alerts
 build_dashboard.py  dashboard.html   ask.py      Q&A core (Slack bot and dashboard)
+summaries.py / examples.py / public_safety.py   paraphrased notes and recorded Q&A for the public demo, checked so nothing reuses a comment's wording
+build_dashboard.py --public   docs/index.html (GitHub Pages)
 ```
 
 ## Definitions
@@ -98,4 +100,4 @@ They cover the pieces that decide what the dashboard says: the compact label par
 
 ## Privacy and keys
 
-Comment text, the SQLite database, and the dashboard (which embeds a few hundred quoted comments) stay on your machine and are excluded by `.gitignore`. Only code and a text-free `state/` folder are committed: video titles, IDs and public stats, our labels per comment ID, channel baselines, and weekly snapshots. No comment text and no video descriptions. API keys are never stored in the repository.
+Comment text, the SQLite database, and the local dashboard (which embeds a few hundred quoted comments) stay on your machine and are excluded by `.gitignore`. The public demo in `docs/` contains no comment text; its paraphrased notes and recorded answers are checked at build time and the build fails if any of them shares a distinctive 5-word run with a comment. Only code and a text-free `state/` folder are committed: video titles, IDs and public stats, our labels per comment ID, channel baselines, and weekly snapshots. No comment text and no video descriptions. API keys are never stored in the repository.

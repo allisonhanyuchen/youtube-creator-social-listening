@@ -104,5 +104,34 @@ class PublicDemoHasNoCommentText(unittest.TestCase):
         self.assertEqual(out["videos"][0]["a"]["ps"], [1, 2, 3])          # aggregates stay
 
 
+class PublicSafety(unittest.TestCase):
+    CORPUS_TEXTS = ["This is a completely ridiculous price for a phone with no telephoto lens at all",
+                    "price for the iphone 18 pro is fine", "price for the iphone 18 pro is wild", "price for the iphone 18 pro makes no sense"]
+
+    def test_distinctive_copy_is_flagged(self):
+        import public_safety as safe
+        corp = safe.corpus(self.CORPUS_TEXTS)
+        self.assertTrue(safe.overlap("Someone called it a completely ridiculous price for a phone, again", corp))
+
+    def test_paraphrase_and_common_phrases_pass(self):
+        import public_safety as safe
+        corp = safe.corpus(self.CORPUS_TEXTS)
+        self.assertFalse(safe.overlap("Many people think the cost is far too high given the missing zoom camera", corp))
+        self.assertFalse(safe.overlap("Opinions on the price for the iphone 18 pro are mixed", corp))      # an ordinary phrase many comments share
+
+    def test_build_refuses_text_that_copies_a_comment(self):
+        import build_dashboard, public_safety as safe
+        tmp = tempfile.TemporaryDirectory()
+        os.makedirs(os.path.join(tmp.name, "state"))
+        json.dump({"themes": {"price_affordability": {"positive": [], "negative": ["a completely ridiculous price for a phone with no telephoto lens"]}}, "price": {}},
+                  open(os.path.join(tmp.name, "state", "summaries.json"), "w"))
+        old = build_dashboard.HERE; build_dashboard.HERE = tmp.name
+        try:
+            with self.assertRaises(SystemExit):
+                build_dashboard.attach_public_text({}, safe.corpus(self.CORPUS_TEXTS))
+        finally:
+            build_dashboard.HERE = old; tmp.cleanup()
+
+
 if __name__ == "__main__":
     unittest.main()

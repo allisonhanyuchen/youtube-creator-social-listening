@@ -17,6 +17,19 @@ PLACES = set("india indian indians america american americans china chinese cana
 STOP = set("this that with have from they their about would there what when which will just like been your more than them were some into very also only really does dont doesnt didnt cant its you the and for but are not was can all get one out has how why who our too any".split())
 
 
+def attach_public_text(data, corp):
+    """Public demo only: paraphrased summaries and recorded Q&A. Both are re-checked against the comment corpus before they go in."""
+    import public_safety as safe
+    sp, ep = os.path.join(HERE, "state", "summaries.json"), os.path.join(HERE, "state", "examples.json")
+    data["summaries"] = json.load(open(sp)) if os.path.exists(sp) else {"themes": {}, "price": {}}
+    data["examples"] = json.load(open(ep)) if os.path.exists(ep) else []
+    strings = [b for t in data["summaries"]["themes"].values() for bl in t.values() for b in bl] + [b for bl in data["summaries"]["price"].values() for b in bl] \
+        + [e["a"] for e in data["examples"]]
+    bad = [s[:60] for s in strings if safe.overlap(s, corp)]
+    if bad: raise SystemExit(f"public text overlaps comment wording, not publishing: {bad[:3]}")
+    return data
+
+
 def scrub_public(data):
     """Public demo: no comment text at all (quotes, per-video top comments). Aggregates, titles and stats stay."""
     data["quotes"], data["pquotes"] = [], []
@@ -91,7 +104,9 @@ def main():
     data = dict(videos=rows, creators=[c for c in sorted(creators.values(), key=lambda c: c["i"])], themes=[[k, THEMES[k]] for k in THEME_KEYS],
                 quotes=quotes, psubs=[[k, v[0], v[1]] for k, v in PSUBS.items()], pquotes=pquotes, words=dict(pos=contrast(words_pos, words_neg, Np, Nn), neg=contrast(words_neg, words_pos, Nn, Np)),
                 brands=list(BRANDS), counts=counts, event="2026-09-09")
-    if public: data = scrub_public(data)
+    if public:
+        import public_safety as safe
+        data = attach_public_text(scrub_public(data), safe.corpus(r[0] for r in con.execute("select text from comments where text is not null")))
     html = open(os.path.join(HERE, "dashboard.tmpl.html"), encoding="utf-8").read().replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
     out = os.path.join(HERE, "docs", "index.html") if public else os.path.join(HERE, "dashboard.html")
     os.makedirs(os.path.dirname(out), exist_ok=True); open(out, "w", encoding="utf-8").write(html)
