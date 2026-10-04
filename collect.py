@@ -45,19 +45,32 @@ def looks_english(v):
 
 
 def main():
+    incremental = "--incremental" in sys.argv     # weekly run: find videos posted since the last run, refresh stats for every known video
     cache = load("search_cache.json", {})
-    ids = set(load("probe_videos.json", {}))
-    for q in QUERIES:
-        if q not in cache:
+    known = {v["id"]: v for v in load("videos_raw.json", [])}
+    ids = set(load("probe_videos.json", {})) | set(known)
+    if incremental and known:
+        newest = max(v["published"] for v in known.values())[:10]
+        since = (datetime.fromisoformat(newest) - timedelta(days=3)).strftime("%Y-%m-%dT00:00:00Z")
+        for q in QUERIES:
             try:
-                res = yt("search", part="id", q=q, type="video", maxResults=50, order="relevance",
-                         publishedAfter=SINCE, relevanceLanguage="en", regionCode="US")
+                res = yt("search", part="id", q=q, type="video", maxResults=50, order="date", publishedAfter=since, relevanceLanguage="en", regionCode="US")
             except QuotaError as e:
                 print("STOP:", e); break
-            cache[q] = [i["id"]["videoId"] for i in res.get("items", [])]
-            save("search_cache.json", cache)
-            print(f"  searched: {q} ({len(cache[q])})")
-        ids |= set(cache[q])
+            ids |= {i["id"]["videoId"] for i in res.get("items", [])}
+        print(f"incremental: searching since {since[:10]}, {len(ids) - len(known)} ids not yet kept")
+    else:
+        for q in QUERIES:
+            if q not in cache:
+                try:
+                    res = yt("search", part="id", q=q, type="video", maxResults=50, order="relevance",
+                             publishedAfter=SINCE, relevanceLanguage="en", regionCode="US")
+                except QuotaError as e:
+                    print("STOP:", e); break
+                cache[q] = [i["id"]["videoId"] for i in res.get("items", [])]
+                save("search_cache.json", cache)
+                print(f"  searched: {q} ({len(cache[q])})")
+            ids |= set(cache[q])
     ids = sorted(ids)
     vids = {}
     for i in range(0, len(ids), 50):

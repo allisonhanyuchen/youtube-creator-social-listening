@@ -1,5 +1,5 @@
 """Shared helpers: keys, YouTube Data API v3 calls, Claude calls. Standard library only."""
-import json, os, urllib.parse, urllib.request
+import json, os, time, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
@@ -28,29 +28,45 @@ class QuotaError(SystemExit):
 def yt(endpoint, soft=False, **params):
     """YouTube call. soft=True returns None on 403/404 (comments disabled, private video) instead of exiting."""
     params["key"] = secret("YOUTUBE_API_KEY")
-    try:
-        with urllib.request.urlopen(YT_API + endpoint + "?" + urllib.parse.urlencode(params), timeout=30) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        body = e.read().decode()[:300]
-        if "quotaExceeded" in body:
-            raise QuotaError(f"YouTube quota exhausted on {endpoint} (resets at midnight Pacific)")
-        if soft and e.code in (403, 404):
-            return None
-        raise SystemExit(f"YouTube API error on {endpoint}: {e.code} {body}")
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(YT_API + endpoint + "?" + urllib.parse.urlencode(params), timeout=30) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()[:300]
+            if "quotaExceeded" in body or ("uota" in body and "xceeded" in body):
+                raise QuotaError(f"YouTube quota exhausted on {endpoint} (resets at midnight Pacific)")
+            if soft and e.code in (403, 404):
+                return None
+            if e.code >= 500 and attempt < 3:
+                time.sleep(2 * (attempt + 1)); continue
+            raise SystemExit(f"YouTube API error on {endpoint}: {e.code} {body}")
+        except (OSError, TimeoutError) as e:            # socket timeouts and connection resets: retry with backoff
+            if attempt == 3: raise SystemExit(f"YouTube request failed on {endpoint}: {e}")
+            time.sleep(2 * (attempt + 1))
 
 
 def claude(prompt, max_tokens=4000, model=None, thinking=None):
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", method="POST",
         data=json.dumps({"model": model or MODEL, "max_tokens": max_tokens, "messages": [{"role": "user", "content": prompt}], **({"thinking": thinking} if thinking else {})}).encode(),
         headers={"x-api-key": secret("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=180) as r:
-            d = json.load(r)
-            USAGE["calls"] += 1; USAGE["in"] += d.get("usage", {}).get("input_tokens", 0); USAGE["out"] += d.get("usage", {}).get("output_tokens", 0)
-            return "".join(b.get("text", "") for b in d["content"] if b.get("type") == "text")
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"Claude API error {e.code}: {e.read().decode()[:300]}")
+    for attempt in range(3):
+        try:
+            return _claude_once(req)
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 529) and attempt < 2:
+                time.sleep(5 * (attempt + 1)); continue
+            raise SystemExit(f"Claude API error {e.code}: {e.read().decode()[:300]}")
+        except (OSError, TimeoutError):
+            if attempt == 2: raise SystemExit("Claude request failed (network)")
+            time.sleep(5 * (attempt + 1))
+
+
+def _claude_once(req):
+    with urllib.request.urlopen(req, timeout=180) as r:
+        d = json.load(r)
+    USAGE["calls"] += 1; USAGE["in"] += d.get("usage", {}).get("input_tokens", 0); USAGE["out"] += d.get("usage", {}).get("output_tokens", 0)
+    return "".join(b.get("text", "") for b in d["content"] if b.get("type") == "text")
 
 
 def parse_json(text):

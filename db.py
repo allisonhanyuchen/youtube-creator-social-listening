@@ -57,19 +57,20 @@ def main():
         out = int(v["rel_lift"] >= cut[v["is_short"]]) if v["rel_lift"] is not None and v["promo_type"] != "official" else None
         con.execute("INSERT INTO performance VALUES (?,?,?,?,?,?,?,?,?,?,?)", (v["id"], v["views"], v["likes"], v["comments"], v["eng_rate"], v["comment_rate"],
                     v["baseline_n"], v.get("baseline_views"), v.get("lift"), round(v["rel_lift"], 3) if v["rel_lift"] is not None else None, out))
-    day = {v["id"]: v["published"][:10] for v in vids}
     from datetime import date
     ev = date(2026, 9, 9)
-    raw, lab = load("comments_raw.json"), load("comment_labels.json")
-    for vid, cs in raw.items():
-        for c in cs:
-            l = lab.get(c["comment_id"])
-            if not l: continue
-            d = (date.fromisoformat(c["published"][:10]) - ev).days
-            con.execute("INSERT INTO comments VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (c["comment_id"], vid, c["text"], c["likes"], c["published"][:10], d, c["source"],
-                        l["lang"], l["target"], l["sentiment"], l["intent"], l["label_mode"], int(bool(l.get("trivial")))))
-            for t in l["themes"]:
-                con.execute("INSERT INTO comment_themes VALUES (?,?)", (c["comment_id"], t))
+    raw, lab = load("comments_raw.json", {}), load("comment_labels.json")
+    text = {c["comment_id"]: c for v in raw.values() for c in v}           # text exists only where the comment was pulled in this environment
+    known = {v["id"] for v in vids}
+    for cid, l in lab.items():
+        t = text.get(cid, {})
+        vid, pub, likes, src = l.get("v") or t.get("video_id"), l.get("p") or (t.get("published", "")[:10]), l.get("k", t.get("likes", 0)), l.get("s") or t.get("source", "")
+        if not vid or not pub or vid not in known: continue
+        dd = (date.fromisoformat(pub) - ev).days
+        con.execute("INSERT INTO comments VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (cid, vid, t.get("text"), likes, pub, dd, src,
+                    l["lang"], l["target"], l["sentiment"], l["intent"], l.get("label_mode", "fast"), int(bool(l.get("trivial")))))
+        for th in l["themes"]:
+            con.execute("INSERT INTO comment_themes VALUES (?,?)", (cid, th))
     con.commit()
     for t in ("creators", "content", "performance", "comments", "comment_themes"):
         print(f"{t:15} {con.execute(f'select count(*) from {t}').fetchone()[0]:>7} rows")

@@ -22,25 +22,27 @@ def pull(channel_id):
         ids += [i["contentDetails"]["videoId"] for i in r.get("items", [])]
         tok = r.get("nextPageToken")
         if not tok: break
-    out = []
+    out, titles = [], []
     for i in range(0, len(ids), 50):
         for v in (yt("videos", part="snippet,statistics,contentDetails", id=",".join(ids[i:i + 50])) or {}).get("items", []):
             st = v.get("statistics", {})
-            out.append(dict(id=v["id"], title=v["snippet"]["title"], pub=v["snippet"]["publishedAt"],
-                            views=int(st.get("viewCount", 0) or 0), likes=int(st.get("likeCount", 0) or 0),
-                            comments=int(st.get("commentCount", 0) or 0),
-                            short=iso_seconds(v["contentDetails"].get("duration")) <= 180))
-    return out
+            if v["snippet"]["publishedAt"] < PRE_CUTOFF and len(titles) < 5: titles.append(v["snippet"]["title"][:60])
+            out.append(dict(p=v["snippet"]["publishedAt"], v=int(st.get("viewCount", 0) or 0),
+                            s=iso_seconds(v["contentDetails"].get("duration")) <= 180, ip="iphone" in v["snippet"]["title"].lower()))   # compact: only what the baseline needs
+    return out, titles
 
 
 def main():
     vids = load("videos.json")
     cache = load("baselines.json", {})
+    for ch, items in cache.items():          # convert the older verbose cache format once
+        cache[ch] = [x if "p" in x else dict(p=x["pub"], v=x["views"], s=x["short"], ip="iphone" in x["title"].lower()) for x in items]
     chans = sorted({v["channel_id"] for v in vids})
+    new_titles = {}
     for n, ch in enumerate(chans, 1):
         if ch in cache: continue
         try:
-            cache[ch] = pull(ch)
+            cache[ch], new_titles[ch] = pull(ch)
         except QuotaError as e:
             print("STOP:", e); break
         if n % 25 == 0:
@@ -52,15 +54,14 @@ def main():
     need = [c for c in chans if c not in meta]
     for i in range(0, len(need), 50):
         for c in yt("channels", part="snippet", id=",".join(need[i:i + 50])).get("items", []):
-            meta[c["id"]] = {"country": c["snippet"].get("country", ""), "about": c["snippet"].get("description", "")[:200]}
-    for c in need: meta.setdefault(c, {"country": "", "about": ""})
+            meta[c["id"]] = {"country": c["snippet"].get("country", ""), "about": c["snippet"].get("description", "")[:200], "titles": new_titles.get(c["id"], [])}
+    for c in need: meta.setdefault(c, {"country": "", "about": "", "titles": new_titles.get(c, [])})
     save("channels_meta.json", meta)
 
     for v in vids:
-        pre = [x for x in cache.get(v["channel_id"], []) if x["pub"] < PRE_CUTOFF and x["short"] == v["is_short"]
-               and "iphone" not in x["title"].lower()][:30]
+        pre = [x for x in cache.get(v["channel_id"], []) if x["p"] < PRE_CUTOFF and x["s"] == v["is_short"] and not x["ip"]][:30]
         v["baseline_n"] = len(pre)
-        v["baseline_views"] = int(statistics.median(x["views"] for x in pre)) if len(pre) >= MIN_BASE else None
+        v["baseline_views"] = int(statistics.median(x["v"] for x in pre)) if len(pre) >= MIN_BASE else None
         v["lift"] = round(v["views"] / v["baseline_views"], 2) if v["baseline_views"] else None
         v["eng_rate"] = round((v["likes"] + v["comments"]) / v["views"], 4) if v["views"] else 0
         v["comment_rate"] = round(v["comments"] / v["views"], 5) if v["views"] else 0

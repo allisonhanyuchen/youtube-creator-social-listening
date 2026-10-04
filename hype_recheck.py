@@ -27,7 +27,7 @@ def judge(batch, raw):
 def main():
     raw = {c["comment_id"]: c for v in load("comments_raw.json").values() for c in v}
     lab = load("comment_labels.json")
-    cand = [i for i, l in lab.items() if l.get("label_mode") == "fast" and "hype_purchase_excitement" in l["themes"] and not l.get("hype_checked")]
+    cand = [i for i, l in lab.items() if l.get("label_mode") == "fast" and "hype_purchase_excitement" in l["themes"] and not l.get("hype_checked") and i in raw]
     print(f"{len(cand)} fast-mode hype labels to recheck")
     batches = [cand[k:k + 50] for k in range(0, len(cand), 50)]
     stats = {"kept": 0, "dropped": 0, "unjudged": 0}

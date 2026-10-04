@@ -46,6 +46,11 @@ I_CODE = {"b": "buy", "u": "upgrade_wait", "s": "skip", "w": "switch_from_androi
 FIRST_RE = re.compile(r"^\W*(first|1st|early|who'?s here|here in 20\d\d)\b", re.I)
 
 
+def meta(c):
+    """Non-text fields kept with each label so the database can be rebuilt without the comment text (CI never stores text)."""
+    return dict(v=c["video_id"], p=c["published"][:10], k=c["likes"], s=c["source"])
+
+
 def trivial(text):
     t = re.sub(r"\d{1,2}:\d{2}", "", text)
     letters = re.findall(r"[A-Za-z]{2,}", t)
@@ -84,14 +89,18 @@ def label_batch(batch, model=None, thinking=None):
 def main():
     vids = [v for v in load("videos.json") if v["comments"] >= 50]
     raw = load("comments_raw.json", {})
-    todo = [v for v in vids if v["id"] not in raw]
+    refresh = "--refresh" in sys.argv        # weekly run: re-pull every eligible video, label only comment ids not seen before
+    todo = vids if refresh else [v for v in vids if v["id"] not in raw]
     print(f"{len(vids)} videos eligible, {len(todo)} to pull")
     def pull(v):
         try:
             res = pull_video(v)
         except QuotaError:
             return None
-        with lock: raw[v["id"]] = res
+        with lock:
+            merged = {c["comment_id"]: c for c in raw.get(v["id"], [])}
+            merged.update({c["comment_id"]: c for c in res})
+            raw[v["id"]] = list(merged.values())
         return v["id"]
     with ThreadPoolExecutor(6) as ex:
         done = list(ex.map(pull, todo))
@@ -104,7 +113,7 @@ def main():
     for l in labels.values(): l.setdefault("label_mode", "full")      # labels written before the fast mode existed
     for c in comments:                                   # emoji-only, timestamps, "first": no signal, label locally
         if c["comment_id"] not in labels and trivial(c["text"]):
-            labels[c["comment_id"]] = dict(lang="en", target="other", sentiment="neutral", themes=[], intent="none", trivial=True)
+            labels[c["comment_id"]] = dict(lang="en", target="other", sentiment="neutral", themes=[], intent="none", trivial=True, label_mode="fast", **meta(c))
     todo = [c for c in comments if c["comment_id"] not in labels]
     batches = [todo[i:i + 50] for i in range(0, len(todo), 50)]
     cap = int(sys.argv[sys.argv.index("--max-batches") + 1]) if "--max-batches" in sys.argv else None
@@ -118,7 +127,7 @@ def main():
                 if r and r.get("t") in TARGETS and r.get("s") in SENT:
                     labels[c["comment_id"]] = dict(lang=r.get("l", "en"), target=r["t"], sentiment=r["s"],
                                                    themes=[t for t in r.get("th", []) if t in THEMES],
-                                                   intent=r.get("in") if r.get("in") in INTENTS else "none", label_mode="fast")
+                                                   intent=r.get("in") if r.get("in") in INTENTS else "none", label_mode="fast", **meta(c))
             count[0] += 1
             if count[0] % 20 == 0:
                 save("comment_labels.json", labels); print(f"  {count[0]}/{len(batches)} batches, {len(labels)} labelled", flush=True)

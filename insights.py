@@ -94,7 +94,12 @@ def narrative(m):
               "ad_like_rate = share of comments calling the creator biased or ad-like. Return JSON only: "
               '{"headline": str (<=22 words), "summary": str (<=90 words), "findings": [{"title": str, "detail": str (<=45 words, with numbers), "action": str (<=25 words, a concrete creator-brief or measurement step)}] (exactly 4), '
               '"watch": str (<=40 words, what to monitor next week)}\n\nMETRICS:\n' + json.dumps(m, ensure_ascii=False))
-    return parse_json(claude(prompt, 3000))
+    for attempt in range(3):
+        try:
+            return parse_json(claude(prompt + ("\n\nReturn strictly valid JSON. Do not use double quotes inside string values; use single quotes." if attempt else ""), 4000))
+        except ValueError:
+            continue
+    raise SystemExit("could not get valid JSON for the narrative after 3 tries")
 
 
 def main():

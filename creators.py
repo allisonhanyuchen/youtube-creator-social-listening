@@ -23,13 +23,13 @@ def main():
     ch = {}
     for v in vids:
         ch.setdefault(v["channel_id"], dict(channel_id=v["channel_id"], name=v["channel"], subs=v["subs"], official=v["format"] == "official"))
-    prev = {}   # reclassify everything when the taxonomy changes
+    prev = {c["channel_id"]: c for c in load("creators.json", []) if c.get("kol_type") in KOL}   # delete data/creators.json to reclassify after a taxonomy change
     todo = [c for k, c in ch.items() if k not in prev]
     for i in range(0, len(todo), 40):
         batch = todo[i:i + 40]
         payload = [{"id": c["channel_id"], "name": c["name"], "subs": c["subs"], "country": meta[c["channel_id"]]["country"],
                     "about": meta[c["channel_id"]]["about"][:140],
-                    "titles": [x["title"][:60] for x in sorted(base.get(c["channel_id"], []), key=lambda x: x["pub"], reverse=True) if x["pub"] < "2026-09-01"][:5]} for c in batch]
+                    "titles": meta[c["channel_id"]].get("titles", [])} for c in batch]
         out = parse_json(claude("Classify each YouTube channel into exactly one kol_type from: " + json.dumps(KOL) +
                                 '\nReturn JSON only: {"results": [{"id": str, "kol_type": str}]}\n\n' + json.dumps(payload, ensure_ascii=False), 5000))
         by = {r["id"]: r["kol_type"] for r in out["results"]}

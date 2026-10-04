@@ -12,7 +12,7 @@ def main():
     raw = {c["comment_id"]: c for v in load("comments_raw.json").values() for c in v}
     lab = load("comment_labels.json")
     cand = [i for i, l in lab.items() if l.get("label_mode") == "fast" and "creator_credibility_critique" not in l["themes"]
-            and not l.get("cred_checked") and HINT.search(raw[i]["text"])]
+            and not l.get("cred_checked") and i in raw and HINT.search(raw[i]["text"])]
     print(f"{len(cand)} fast-mode candidates matched the keyword prefilter")
     added = 0
     for k in range(0, len(cand), 40):

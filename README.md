@@ -43,6 +43,10 @@ build_dashboard.py  dashboard.html   ask.py      Q&A core (Slack bot and dashboa
 - **Organic**: everything else. Affiliate links are tracked as a flag on organic videos, because they are creator monetization and not a promotion strategy.
 - **Sentiment**: labelled per comment toward what the comment is about. Headline numbers count only comments about the product, price, Apple, or rivals. Comments about the video or creator are excluded.
 
+## Scheduled run
+
+`.github/workflows/weekly.yml` runs `run_weekly.py` every Monday (and on demand from the Actions tab). It starts from `state/`, finds videos posted since the last run, refreshes stats for every known video, labels only comments it has not seen before, rebuilds the tables, writes the insights and week-over-week alerts, sends the email and the Slack digest, and commits the updated `state/` back. API keys come from repository secrets.
+
 ## Run it
 
 Keys live outside the repo in `~/.creator-scout.env` (or as environment variables in CI):
@@ -85,4 +89,4 @@ Steps are cached and resumable: searches, baselines, and comment labels are only
 
 ## Privacy and keys
 
-Comment text, the SQLite database, and the dashboard (which embeds a few hundred quoted comments) stay on your machine and are excluded by `.gitignore`. Only code and aggregate state (`state/snapshot.json`) are committed. API keys are never stored in the repository.
+Comment text, the SQLite database, and the dashboard (which embeds a few hundred quoted comments) stay on your machine and are excluded by `.gitignore`. Only code and a text-free `state/` folder are committed: video titles, IDs and public stats, our labels per comment ID, channel baselines, and weekly snapshots. No comment text and no video descriptions. API keys are never stored in the repository.
