@@ -58,6 +58,18 @@ def trivial(text):
     return len(letters) == 0 or (len(letters) <= 1 and len(t) < 20) or bool(FIRST_RE.match(t))
 
 
+def parse_label_lines(text):
+    """Parse the compact reply  i|lang|target|sent|themes|intent  into {index: label}. Malformed lines are skipped."""
+    out = {}
+    for ln in text.splitlines():
+        p = ln.strip().split("|")
+        if len(p) != 6 or not p[0].strip().isdigit(): continue
+        th = [THEME_KEYS[int(x) - 1] for x in p[4].replace(" ", "").split(",") if x.isdigit() and 1 <= int(x) <= len(THEME_KEYS)]
+        out[int(p[0])] = {"l": "en" if p[1].strip() == "e" else "other", "t": T_CODE.get(p[2].strip()), "s": S_CODE.get(p[3].strip()),
+                          "th": th, "in": I_CODE.get(p[5].strip(), "none")}
+    return out
+
+
 def label_batch(batch, model=None, thinking=None):
     """Compact line format to keep output tokens low: i|lang|target|sentiment|theme numbers|intent."""
     theme_list = "; ".join(f"{k + 1}={key} ({d})" for k, (key, d) in enumerate(THEMES.items()))
@@ -72,13 +84,7 @@ def label_batch(batch, model=None, thinking=None):
               "Example line:  7|e|P|-|3,10|n\n\nCOMMENTS:\n" + lines)
     for attempt in range(4):
         try:
-            out, text = {}, claude(prompt, 3000, model=model, thinking=thinking)
-            for ln in text.splitlines():
-                p = ln.strip().split("|")
-                if len(p) != 6 or not p[0].strip().isdigit(): continue
-                th = [THEME_KEYS[int(x) - 1] for x in p[4].replace(" ", "").split(",") if x.isdigit() and 1 <= int(x) <= len(THEME_KEYS)]
-                out[int(p[0])] = {"l": "en" if p[1].strip() == "e" else "other", "t": T_CODE.get(p[2].strip()), "s": S_CODE.get(p[3].strip()),
-                                  "th": th, "in": I_CODE.get(p[5].strip(), "none")}
+            out = parse_label_lines(claude(prompt, 3000, model=model, thinking=thinking))
             if len(out) >= len(batch) * 0.9:
                 return [out.get(k) for k in range(len(batch))]
         except SystemExit:

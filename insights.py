@@ -28,13 +28,13 @@ def judged_videos(con):
                       s.n_product_side n, s.pct_positive pos, s.pct_negative neg
                       from content v join creators cr using(channel_id) join performance p using(video_id) left join v_video_sentiment s using(video_id) where {SCOPE}""")
     cut = {}
-    for sh in (0, 1):
+    for sh in (0, 1):                                  # a class can be empty (for example no Shorts), so only cut where there is data
         r = sorted(x["rel_lift"] for x in rows if x["rel_lift"] is not None and x["is_short"] == sh)
-        cut[sh] = r[int(len(r) * 0.25)]
+        if r: cut[sh] = r[int(len(r) * 0.25)]
     nets = [x["pos"] - x["neg"] for x in rows if (x["n"] or 0) >= 10]
-    med_net = statistics.median(nets)
+    med_net = statistics.median(nets) if nets else 0.0
     for x in rows:
-        x["under"] = int(x["rel_lift"] is not None and x["rel_lift"] <= cut[x["is_short"]])
+        x["under"] = int(x["rel_lift"] is not None and x["is_short"] in cut and x["rel_lift"] <= cut[x["is_short"]])
         known = (x["n"] or 0) >= 10
         x["net"] = (x["pos"] - x["neg"]) if known else None
         x["sent"] = "unknown" if not known else "good" if x["net"] >= med_net - TOL else "weak"

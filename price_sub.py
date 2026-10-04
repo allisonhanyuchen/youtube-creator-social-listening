@@ -21,17 +21,22 @@ KEYS = list(SUBS)
 lock = threading.Lock()
 
 
+def parse_lines(text):
+    """Parse  i|number  lines into {index: sub-theme key}. Numbers outside the taxonomy are dropped."""
+    out = {}
+    for ln in text.splitlines():
+        m = re.match(r"\s*(\d+)\s*\|\s*(\d+)", ln)
+        if m and 1 <= int(m.group(2)) <= len(KEYS): out[int(m.group(1))] = KEYS[int(m.group(2)) - 1]
+    return out
+
+
 def label(batch, raw):
     lines = "\n".join(f"{k}: {raw[i]['text'][:260]}" for k, i in enumerate(batch))
     legend = "\n".join(f"{n + 1}={k} ({d[1]})" for n, (k, d) in enumerate(SUBS.items()))
     prompt = ("Each comment is about the PRICE of Apple's iPhone Duo (first foldable iPhone, about $2,000). Give each comment its single best sub-theme number.\n" + legend +
               "\nOutput exactly one line per comment as  i|number  and nothing else.\n\nCOMMENTS:\n" + lines)
     for attempt in range(3):
-        text = claude(prompt, 1500, thinking={"type": "between_tools"})
-        out = {}
-        for ln in text.splitlines():
-            m = re.match(r"\s*(\d+)\s*\|\s*(\d+)", ln)
-            if m and 1 <= int(m.group(2)) <= len(KEYS): out[int(m.group(1))] = KEYS[int(m.group(2)) - 1]
+        out = parse_lines(claude(prompt, 1500, thinking={"type": "between_tools"}))
         if len(out) >= len(batch) * 0.9: return out
         time.sleep(3)
     return {}

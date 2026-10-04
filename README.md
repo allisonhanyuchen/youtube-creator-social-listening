@@ -1,5 +1,9 @@
 # YouTube Creator Social Listening
 
+[![Tests](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml/badge.svg)](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml)
+
+**Live demo: https://allisonhanyuchen.github.io/youtube-creator-social-listening/** (the dashboard on iPhone Duo data; comment quotes and chat are left out of the public page, and it refreshes every Monday).
+
 An AI workflow that listens to YouTube around a product and answers three questions for a creator or brand marketing team:
 
 1. Which creators and content formats beat their own baseline, and at what channel size?
@@ -14,7 +18,7 @@ Built with Python (standard library only), the YouTube Data API v3 (official API
 
 | Surface | Use | Entry point |
 |---|---|---|
-| Dashboard | Overview (creator type and content type by channel size), Scale and improve (lift vs audience reaction), Audience insights (themes, quotes, keywords, rivals). Click a chart to filter. Every metric explains itself on hover. | `dashboard.html` |
+| Dashboard (live demo above, or run locally for quotes and chat) | Overview (creator type and content type by channel size), Scale and improve (lift vs audience reaction), Audience insights (themes, quotes, keywords, rivals). Click a chart to filter. Every metric explains itself on hover. | `dashboard.html` |
 | Weekly email | Headline, alerts, who is breaking out, what to do, scale and improve, formats, audience themes. | `report.py` |
 | Slack digest and alerts | The same readout in a channel, plus an alert when sentiment or a theme shifts. | `notify.py` |
 | Q&A agent | Ask in Slack or in the dashboard. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py` |
@@ -74,6 +78,14 @@ python3 -m venv .venv && .venv/bin/pip install slack_bolt
 ```
 
 Steps are cached and resumable: searches, baselines, and comment labels are only recomputed for new items.
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -t . -v      # standard library only, no keys, no network
+```
+
+They cover the pieces that decide what the dashboard says: the compact label parser, the no-signal comment filter, outperformer cut-offs, the scale vs improve rule (including the 5-point tolerance and the 10-comment minimum), week-over-week alerts, the read-only SQL guard behind the Q&A agent, that `state/` and the public demo contain no comment text, and that the email report renders and escapes HTML. They run on every push (Python 3.9 and 3.12).
 
 ## Data and limits
 

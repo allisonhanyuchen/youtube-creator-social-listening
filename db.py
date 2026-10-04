@@ -47,14 +47,16 @@ def main():
         con.execute("INSERT INTO creators VALUES (?,?,?,?,?,?)", (c["channel_id"], c["name"], c["kol_type"], c["tier"], c["subs"], c["region"]))
     grp = lambda v: v["topic"] == "duo"                  # a Duo video is compared with other Duo videos
     ok = lambda v: v["format"] != "official" and v.get("lift") is not None
-    med = {(g, sh): statistics.median(v["lift"] for v in vids if ok(v) and grp(v) == g and v["is_short"] == sh) for g in (True, False) for sh in (True, False)}
+    groups = {}                                           # (is Duo, is Short) -> lifts; a group may be empty (no Shorts, no other topics), so build it from the data
+    for v in vids:
+        if ok(v): groups.setdefault((grp(v), v["is_short"]), []).append(v["lift"])
+    med = {k: statistics.median(x) for k, x in groups.items()}
     for v in vids:
         v["rel_lift"] = v["lift"] / med[(grp(v), v["is_short"])] if ok(v) else None
     cut = {}
-    for g in (True, False):
-        for sh in (True, False):
-            r = sorted(v["rel_lift"] for v in vids if v["rel_lift"] is not None and grp(v) == g and v["is_short"] == sh)
-            cut[(g, sh)] = r[int(len(r) * 0.75)]
+    for k in groups:
+        r = sorted(v["rel_lift"] for v in vids if v["rel_lift"] is not None and (grp(v), v["is_short"]) == k)
+        cut[k] = r[int(len(r) * 0.75)]
     for v in vids:
         con.execute("INSERT INTO content VALUES (?,?,?,?,?,?,?,?,?,?,?)", (v["id"], v["url"], v["title"], v["channel_id"], v["format"], v["topic"], v["framing"],
                     v["published"][:10], v["day"], int(v["is_short"]), v["duration_s"]))
