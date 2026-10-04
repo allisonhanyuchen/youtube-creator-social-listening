@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Paraphrased 'what people say' notes for the public demo, one per comment theme and per price sub-theme (iPhone Duo, all channels).
+"""Paraphrased 'what people say' notes for the public demo, one per comment theme (iPhone Duo, all channels).
 Claude sees the most-liked comments but must paraphrase and generalise; every bullet is then checked against the comment corpus and any bullet that
 shares a 5-word run with a comment is dropped. Output: state/summaries.json (no comment text)."""
 import json, os, sqlite3
 from common import DATA, HERE, claude, parse_json
 from comments import THEMES
-from price_sub import SUBS
 import public_safety as safe
 
 SCOPE = "v.topic='duo' and v.format!='official'"
@@ -36,13 +35,10 @@ def summarise(texts, what, corp):
 def main():
     con = sqlite3.connect(os.path.join(DATA, "pulse.db"))
     corp = safe.corpus(r[0] for r in con.execute("select text from comments where text is not null"))
-    res = {"themes": {}, "price": {}}
+    res = {"themes": {}}
     for key, desc in THEMES.items():
         res["themes"][key] = {s: summarise(top(con, key, s), f"{desc} ({s} comments)", corp) for s in ("positive", "negative")}
         print(key, {s: len(b) for s, b in res["themes"][key].items()}, flush=True)
-    for key, (label, desc) in SUBS.items():
-        res["price"][key] = summarise(top(con, None, None, price_sub=key), f"the price of the iPhone Duo: {label.lower()} ({desc})", corp)
-        print("price", key, len(res["price"][key]), flush=True)
     os.makedirs(os.path.join(HERE, "state"), exist_ok=True)
     json.dump(res, open(os.path.join(HERE, "state", "summaries.json"), "w"), ensure_ascii=False, indent=1)
 

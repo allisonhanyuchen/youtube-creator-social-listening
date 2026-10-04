@@ -18,7 +18,7 @@ Built with Python (standard library only), the YouTube Data API v3 (official API
 
 | Surface | Use | Entry point |
 |---|---|---|
-| Dashboard (live demo above, or run locally for quotes and chat) | Overview (creator type and content type by channel size), Scale and improve (lift vs audience reaction), Audience insights (themes, quotes, keywords, rivals). Click a chart to filter. Every metric explains itself on hover. | `dashboard.html` |
+| Dashboard (live demo above, or run locally for quotes and chat) | Overview (creator type by level and region, content type table with sentiment bars), Content insights (lift vs audience reaction, one filterable table of videos to scale or fix), Audience insights (theme map and rivals, how local statistics and AI combine, one table of themes and discovered topics). Click a chart to filter; every metric explains itself on hover. | `dashboard.html` |
 | Weekly email | Headline, alerts, who is breaking out, what to do, scale and improve, formats, audience themes. | `report.py` |
 | Slack digest and alerts | The same readout in a channel, plus an alert when sentiment or a theme shifts. | `notify.py` |
 | Q&A agent | Ask in Slack or in the dashboard. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py` |

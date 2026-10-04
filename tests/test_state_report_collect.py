@@ -121,14 +121,23 @@ class PublicSafety(unittest.TestCase):
 
     def test_build_refuses_text_that_copies_a_comment(self):
         import build_dashboard, public_safety as safe
+        data = {"summaries": {"themes": {"price_affordability": {"positive": [], "negative": ["a completely ridiculous price for a phone with no telephoto lens"]}}}, "emerging": []}
         tmp = tempfile.TemporaryDirectory()
-        os.makedirs(os.path.join(tmp.name, "state"))
-        json.dump({"themes": {"price_affordability": {"positive": [], "negative": ["a completely ridiculous price for a phone with no telephoto lens"]}}, "price": {}},
-                  open(os.path.join(tmp.name, "state", "summaries.json"), "w"))
-        old = build_dashboard.HERE; build_dashboard.HERE = tmp.name
+        old = build_dashboard.HERE; build_dashboard.HERE = tmp.name          # no examples.json here
         try:
             with self.assertRaises(SystemExit):
-                build_dashboard.attach_public_text({}, safe.corpus(self.CORPUS_TEXTS))
+                build_dashboard.attach_public_text(data, safe.corpus(self.CORPUS_TEXTS))
+        finally:
+            build_dashboard.HERE = old; tmp.cleanup()
+
+    def test_build_accepts_a_paraphrase(self):
+        import build_dashboard, public_safety as safe
+        data = {"summaries": {"themes": {"price_affordability": {"positive": [], "negative": ["Many people think the cost is far too high given the missing zoom camera"]}}}, "emerging": [dict(label="Zoom lens", summary="People miss the telephoto camera")]}
+        tmp = tempfile.TemporaryDirectory()
+        old = build_dashboard.HERE; build_dashboard.HERE = tmp.name
+        try:
+            out = build_dashboard.attach_public_text(data, safe.corpus(self.CORPUS_TEXTS))
+            self.assertEqual(out["examples"], [])
         finally:
             build_dashboard.HERE = old; tmp.cleanup()
 
