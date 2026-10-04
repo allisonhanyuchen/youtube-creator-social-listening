@@ -93,6 +93,17 @@ python3 -m venv .venv && .venv/bin/pip install slack_bolt
 
 Steps are cached and resumable: searches, baselines, and comment labels are only recomputed for new items.
 
+## Make it your own
+
+The live page is a static demo of one product. To run the same pipeline on your own keywords or product:
+
+1. Fork the repo and add the keys as repository secrets (or put them in `~/.creator-scout.env` locally): `YOUTUBE_API_KEY` and `ANTHROPIC_API_KEY`, plus `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` if you want the digest and email.
+2. Edit `product.json`: `name`, `brand`, `launch` date, `since` (earliest video date), `queries` (the YouTube searches), `topic_regex` (a video must match it to count), and `competitors` (name to regex).
+3. Clear `state/` and `data/`, then run `python3 run_weekly.py --no-send` (or the Actions workflow). Topics are rediscovered from your comments, so there is no taxonomy to rewrite.
+4. Open `dashboard.html`, or turn on GitHub Pages from `/docs`. `docs/data.json` holds the same text-free data as the public page, if you want to rebuild the UI in another tool.
+
+Still specific to the Duo case and worth a look when you switch product: the product labels in `classify.py` (`TOPICS`) and the `topic = 'duo'` scope in `common.scope_sql()`. Content-type labels (first impressions, review, comparison and so on) are generic. The search costs 100 quota units per query per day.
+
 ## Tests
 
 ```bash

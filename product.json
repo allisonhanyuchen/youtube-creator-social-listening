@@ -1,13 +1,26 @@
 {
-  "name": "iPhone Duo",
-  "brand": "Apple",
-  "launch": "2026-09-09",
-  "blurb": "the first foldable iPhone, launched 2026-09-09",
-  "competitors": {
-    "Samsung": "samsung|galaxy|z ?fold|z ?flip",
-    "Google Pixel": "pixel",
-    "Xiaomi": "xiaomi|mi mix",
-    "Oppo / Honor / Huawei": "oppo|honor|huawei|vivo"
-  },
-  "topic": "duo"
+ "name": "iPhone Duo",
+ "brand": "Apple",
+ "launch": "2026-09-09",
+ "blurb": "the first foldable iPhone, launched 2026-09-09",
+ "competitors": {
+  "Samsung": "samsung|galaxy|z ?fold|z ?flip",
+  "Google Pixel": "pixel",
+  "Xiaomi": "xiaomi|mi mix",
+  "Oppo / Honor / Huawei": "oppo|honor|huawei|vivo"
+ },
+ "topic": "duo",
+ "since": "2026-08-01T00:00:00Z",
+ "queries": [
+  "iPhone Duo review",
+  "iPhone Duo hands on",
+  "iPhone Duo worth it",
+  "iPhone Duo problems",
+  "iPhone 18 Pro review",
+  "iPhone 18 Pro worth upgrading",
+  "iPhone Duo vs Galaxy Z Fold",
+  "iPhone Duo vs Pixel Fold",
+  "Apple event reaction iPhone Duo"
+ ],
+ "topic_regex": "iphone|\\bduo\\b|apple"
 }

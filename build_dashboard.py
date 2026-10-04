@@ -109,6 +109,8 @@ def main():
     html = open(os.path.join(HERE, "dashboard.tmpl.html"), encoding="utf-8").read().replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
     out = os.path.join(HERE, "docs", "index.html") if public else os.path.join(HERE, "dashboard.html")
     os.makedirs(os.path.dirname(out), exist_ok=True); open(out, "w", encoding="utf-8").write(html)
+    if public:                                           # the same text-free data as plain JSON, handy for rebuilding the UI in another tool
+        json.dump(data, open(os.path.join(HERE, "docs", "data.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"{os.path.relpath(out, HERE)} {os.path.getsize(out)/1e6:.2f} MB | {len(rows)} videos, {len(topics)} topics, {len(quotes)} quotes")
 
 

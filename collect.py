@@ -5,15 +5,13 @@ Quota: ~100 units per new search query, ~1 per 50 videos/channels.
 """
 import re, sys
 from datetime import datetime, timedelta, timezone
-from common import yt, load, save, QuotaError, parse_json
+from common import yt, load, save, QuotaError, parse_json, product
 
-EVENT = "2026-09-09"
-SINCE = "2026-08-01T00:00:00Z"        # include pre-launch rumor videos
 MIN_VIEWS = 2000
-QUERIES = ["iPhone Duo review", "iPhone Duo hands on", "iPhone Duo worth it", "iPhone Duo problems",
-           "iPhone 18 Pro review", "iPhone 18 Pro worth upgrading", "iPhone Duo vs Galaxy Z Fold",
-           "iPhone Duo vs Pixel Fold", "Apple event reaction iPhone Duo"]
-TOPIC_RE = re.compile(r"iphone|\bduo\b|apple", re.I)
+P = product()
+EVENT, SINCE = P["launch"], P.get("since", "2026-08-01T00:00:00Z")      # videos from SINCE on (include pre-launch rumour videos)
+QUERIES = P["queries"]                                                    # search phrases, edit them in product.json
+TOPIC_RE = re.compile(P.get("topic_regex", re.escape(P["name"])), re.I)   # a video must match this to count as on-topic
 
 def iso_seconds(d):
     m = re.fullmatch(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", d or "")
