@@ -71,6 +71,11 @@ def metrics(con):
     th = q(con, f"""select theme, count(*) n, avg(sentiment='positive') pos, avg(sentiment='negative') neg from comment_themes t join comments c using(comment_id) join content v using(video_id)
                     where c.lang='en' and c.trivial=0 and {SCOPE} group by 1 order by n desc""")
     m["themes"] = [dict(t, pos=round(t["pos"], 3), neg=round(t["neg"], 3)) for t in th]
+    from price_sub import SUBS
+    pb = q(con, f"""select c.price_sub sub, count(*) n, avg(c.sentiment='positive') pos, avg(c.sentiment='negative') neg from comments c join content v using(video_id)
+                    where c.price_sub is not null and c.lang='en' and c.trivial=0 and {SCOPE} group by 1 order by n desc""")
+    tot_pb = sum(r["n"] for r in pb) or 1
+    m["price_breakdown"] = [dict(sub=SUBS[r["sub"]][0], n=r["n"], share=round(r["n"] / tot_pb, 3), pos=round(r["pos"], 3), neg=round(r["neg"], 3)) for r in pb]
     m["intent"] = {r["intent"]: r["n"] for r in q(con, f"select intent, count(*) n from comments c join content v using(video_id) where c.lang='en' and c.trivial=0 and c.intent!='none' and {SCOPE} group by 1")}
     sc = sorted([x for x in ev if x["bucket"] == "scale"], key=lambda x: -min(x["rel_lift"], 10) * x["pos"])
     seen, cand = set(), []

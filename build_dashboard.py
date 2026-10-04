@@ -6,11 +6,14 @@ import json, math, os, re, sqlite3
 from collections import Counter, defaultdict
 from common import DATA, HERE, load
 from comments import THEMES
+from price_sub import SUBS as PSUBS
 
 THEME_KEYS = list(THEMES)
 PRODUCT_SIDE = {"product", "price_value", "apple_brand", "competitor"}
 SENT = {"positive": 0, "neutral": 1, "negative": 2}
 BRANDS = {"Samsung": r"samsung|galaxy|z ?fold|z ?flip", "Google Pixel": r"pixel", "Xiaomi": r"xiaomi|mi mix", "Oppo / Honor / Huawei": r"oppo|honor|huawei|vivo"}
+PSUB_KEYS = list(PSUBS)
+PLACES = set("india indian indians america american americans china chinese canada canadian australia australian europe european brazil japan korea korean britain british england german germany france french pakistan bangladesh philippines nigeria mexico russia turkey dubai singapore malaysia african asia asian".split())
 STOP = set("this that with have from they their about would there what when which will just like been your more than them were some into very also only really does dont doesnt didnt cant its you the and for but are not was can all get one out has how why who our too any".split())
 
 
@@ -18,7 +21,8 @@ def main():
     con = sqlite3.connect(os.path.join(DATA, "pulse.db")); con.row_factory = sqlite3.Row
     vids = [dict(r) for r in con.execute("select * from v_content where topic='duo' and format!='official' order by views desc")]   # the dashboard is about the iPhone Duo; other topics stay in the database for the Q&A agent
     vidx = {v["video_id"]: i for i, v in enumerate(vids)}
-    agg = [dict(n=0, ps=[0, 0, 0], cred=0, th={}, br={}, tl={}, it={}, tc=[]) for _ in vids]
+    agg = [dict(n=0, ps=[0, 0, 0], cred=0, th={}, br={}, tl={}, it={}, tc=[], pb={}) for _ in vids]
+    pq_pool = defaultdict(list)
     quotes_pool = defaultdict(list)
     words_pos, words_neg = Counter(), Counter()
     th_by_cid = defaultdict(list)
@@ -32,7 +36,10 @@ def main():
             a["ps"][s] += 1
             d = str(max(-3, min(c["day_since_launch"], 30))); a["tl"].setdefault(d, [0, 0, 0])[s] += 1
             for w in set(re.findall(r"[a-z]{4,}", c["text"].lower())):
-                if w not in STOP: (words_pos if s == 0 else words_neg if s == 2 else Counter())[w] += 1
+                if w not in STOP and w not in PLACES: (words_pos if s == 0 else words_neg if s == 2 else Counter())[w] += 1
+        if c["price_sub"] in PSUB_KEYS:
+            pi = PSUB_KEYS.index(c["price_sub"]); a["pb"].setdefault(str(pi), [0, 0, 0])[s] += 1
+            if 25 <= len(c["text"] or "") <= 240: pq_pool[pi].append((c["likes"], vidx[c["video_id"]], s, c["text"]))
         if c["intent"] != "none": a["it"][c["intent"]] = a["it"].get(c["intent"], 0) + 1
         for t in ths:
             a["th"].setdefault(str(t), [0, 0, 0])[s] += 1
@@ -46,6 +53,7 @@ def main():
     quotes = []
     for (t, s), lst in quotes_pool.items():
         for likes, vi, text in sorted(lst, reverse=True)[:30]: quotes.append([vi, t, s, text, likes])
+    pquotes = [[vi, pi, s, text, likes] for pi, lst in pq_pool.items() for likes, vi, s, text in sorted(lst, reverse=True)[:12]]
     for a in agg:
         a["tc"] = [[t, s, ths, l] for l, t, s, ths in sorted(a["tc"], reverse=True)[:2]]
     Np, Nn = sum(words_pos.values()), sum(words_neg.values())
@@ -71,7 +79,7 @@ def main():
                   modes=dict(con.execute("select label_mode, count(*) from comments c join content v using(video_id) where v.topic='duo' and v.format!='official' group by 1").fetchall()),
                   built=load("videos.json")[0].get("published", "")[:0])
     data = dict(videos=rows, creators=[c for c in sorted(creators.values(), key=lambda c: c["i"])], themes=[[k, THEMES[k]] for k in THEME_KEYS],
-                quotes=quotes, words=dict(pos=contrast(words_pos, words_neg, Np, Nn), neg=contrast(words_neg, words_pos, Nn, Np)),
+                quotes=quotes, psubs=[[k, v[0], v[1]] for k, v in PSUBS.items()], pquotes=pquotes, words=dict(pos=contrast(words_pos, words_neg, Np, Nn), neg=contrast(words_neg, words_pos, Nn, Np)),
                 brands=list(BRANDS), counts=counts, event="2026-09-09")
     html = open(os.path.join(HERE, "dashboard.tmpl.html"), encoding="utf-8").read().replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
     out = os.path.join(HERE, "dashboard.html"); open(out, "w", encoding="utf-8").write(html)

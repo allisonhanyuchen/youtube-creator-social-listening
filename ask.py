@@ -25,6 +25,7 @@ comments(comment_id, video_id, text, likes, published, day_since_launch, source,
   Always filter lang='en' AND trivial=0. target: product, price_value, apple_brand, competitor (= product-side), video_or_creator, other.
   Headline sentiment uses only product-side targets. sentiment: positive|neutral|negative (toward the target). intent: buy, upgrade_wait, skip, switch_from_android, none.
   published = comment date; day_since_launch counts from 2026-09-09.
+price_sub (only on comments that carry the price_affordability theme): regional_price_gap, samsung_fold_comparison, fair_for_foldables, affordability_barrier, overpriced_for_tradeoffs, vs_pro_and_ipad, storage_tradein_financing, cost_jokes, general.
 comment_themes(comment_id, theme)  themes (a comment can have several): hype_purchase_excitement, fold_animation_ui, price_affordability, android_prior_art, android_rival_comparison,
   design_colors_form, crease_screen_quality, camera_hardware, durability_tests, software_usability, apple_brand_leadership, creator_credibility_critique (= calls the video biased or ad-like)
 views: v_content (content + creator + performance + video-level sentiment: n_product_side, pct_positive, pct_neutral, pct_negative), v_video_sentiment, v_theme_sentiment(theme, sentiment, video_id, comment_id)

@@ -15,7 +15,7 @@ CREATE TABLE content(video_id TEXT PRIMARY KEY, url TEXT, title TEXT, channel_id
 CREATE TABLE performance(video_id TEXT PRIMARY KEY, views INT, likes INT, comment_count INT, eng_rate REAL, comment_rate REAL,
   baseline_n INT, baseline_views INT, lift REAL, rel_lift REAL, outperformer INT);
 CREATE TABLE comments(comment_id TEXT PRIMARY KEY, video_id TEXT, text TEXT, likes INT, published TEXT, day_since_launch INT, source TEXT,
-  lang TEXT, target TEXT, sentiment TEXT, intent TEXT, label_mode TEXT, trivial INT);
+  lang TEXT, target TEXT, sentiment TEXT, intent TEXT, label_mode TEXT, trivial INT, price_sub TEXT);
 CREATE TABLE comment_themes(comment_id TEXT, theme TEXT);
 CREATE INDEX ix_c_video ON comments(video_id); CREATE INDEX ix_t_theme ON comment_themes(theme); CREATE INDEX ix_ct_c ON comment_themes(comment_id);
 
@@ -71,8 +71,8 @@ def main():
         vid, pub, likes, src = l.get("v") or t.get("video_id"), l.get("p") or (t.get("published", "")[:10]), l.get("k", t.get("likes", 0)), l.get("s") or t.get("source", "")
         if not vid or not pub or vid not in known: continue
         dd = (date.fromisoformat(pub) - ev).days
-        con.execute("INSERT INTO comments VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (cid, vid, t.get("text"), likes, pub, dd, src,
-                    l["lang"], l["target"], l["sentiment"], l["intent"], l.get("label_mode", "fast"), int(bool(l.get("trivial")))))
+        con.execute("INSERT INTO comments VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (cid, vid, t.get("text"), likes, pub, dd, src,
+                    l["lang"], l["target"], l["sentiment"], l["intent"], l.get("label_mode", "fast"), int(bool(l.get("trivial"))), l.get("psub")))
         for th in l["themes"]:
             con.execute("INSERT INTO comment_themes VALUES (?,?)", (cid, th))
     con.commit()
