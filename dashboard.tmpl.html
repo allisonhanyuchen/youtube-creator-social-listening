@@ -83,8 +83,10 @@ const GL={small:"Small channels: under 250k subscribers.",mid:"Mid-size channels
 const info=k=>`<i class="info" data-g="${k}">i</i>`;
 const defaults=()=>({tab:"overview",kol:Object.keys(LBL.kol),tier:TIERS.slice(),region:REGIONS.slice(),format:Object.keys(LBL.f),atype:"all",q:"",fexp:null,kexp:null,ts:{},etopic:null,more:{},open:null});
 let S=defaults(),CHAT=[];
-try{const h=location.hash.slice(1);if(h)S=Object.assign(defaults(),JSON.parse(decodeURIComponent(h)))}catch(e){}
-const save=()=>{try{history.replaceState(null,"","#"+encodeURIComponent(JSON.stringify(S)))}catch(e){}};
+try{const h=decodeURIComponent(location.hash.slice(1));if(/^[a-z]+$/.test(h))S.tab=h;else if(h)S=Object.assign(defaults(),JSON.parse(h))}catch(e){}
+/* the address only carries what differs from the defaults: nothing for the first view, "#audience" for a plain tab, a short JSON when filters are set */
+const save=()=>{try{const d=defaults(),diff={};Object.keys(S).forEach(k=>{if(JSON.stringify(S[k])!==JSON.stringify(d[k]))diff[k]=S[k]});const ks=Object.keys(diff);
+ const h=!ks.length?"":ks.length===1&&ks[0]==="tab"?diff.tab:encodeURIComponent(JSON.stringify(diff));history.replaceState(null,"",location.pathname+location.search+(h?"#"+h:""))}catch(e){}};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0),med=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
