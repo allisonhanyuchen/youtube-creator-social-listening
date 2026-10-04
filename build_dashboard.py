@@ -16,7 +16,7 @@ STOP = set("this that with have from they their about would there what when whic
 
 def main():
     con = sqlite3.connect(os.path.join(DATA, "pulse.db")); con.row_factory = sqlite3.Row
-    vids = [dict(r) for r in con.execute("select * from v_content order by views desc")]
+    vids = [dict(r) for r in con.execute("select * from v_content where topic='duo' and format!='official' order by views desc")]   # the dashboard is about the iPhone Duo; other topics stay in the database for the Q&A agent
     vidx = {v["video_id"]: i for i, v in enumerate(vids)}
     agg = [dict(n=0, ps=[0, 0, 0], cred=0, th={}, br={}, tl={}, it={}, tc=[]) for _ in vids]
     quotes_pool = defaultdict(list)
@@ -25,6 +25,7 @@ def main():
     for r in con.execute("select comment_id, theme from comment_themes"): th_by_cid[r["comment_id"]].append(THEME_KEYS.index(r["theme"]))
     brand_re = {b: re.compile(p, re.I) for b, p in BRANDS.items()}
     for c in con.execute("select * from comments where lang='en' and trivial=0"):
+        if c["video_id"] not in vidx: continue
         a = agg[vidx[c["video_id"]]]; s = SENT[c["sentiment"]]; ths = th_by_cid.get(c["comment_id"], [])
         a["n"] += 1
         if c["target"] in PRODUCT_SIDE:
@@ -52,19 +53,22 @@ def main():
     def contrast(me, other, Nm, No):
         sc = {w: math.log((me[w] + 1) / (Nm + V)) - math.log((other.get(w, 0) + 1) / (No + V)) for w in me if me[w] >= 25}
         return [[w, me[w]] for w, _ in sorted(sc.items(), key=lambda kv: -kv[1])[:24]]
-    promo = lambda v: {"organic": "organic", "official": "official"}.get(v["promo_type"], v["promo_sub"])
+    cut = {}
+    for sh in (0, 1):
+        r = sorted(v["rel_lift"] for v in vids if v["rel_lift"] is not None and v["is_short"] == sh)
+        cut[sh] = r[int(len(r) * 0.25)]
     creators = {}
     rows = []
     for i, v in enumerate(vids):
         cid = v["channel_id"]
         if cid not in creators: creators[cid] = dict(i=len(creators), name=v["creator"], kol=v["kol_type"], tier=v["tier"], subs=v["subscribers"], region=v["region"])
         rows.append(dict(id=v["video_id"], url=v["url"], t=v["title"][:110], c=creators[cid]["i"], f=v["format"], tp=v["topic"], d=v["day_since_launch"],
-                         sh=v["is_short"], pr=promo(v), ev=v["promo_evidence"], af=v["has_affiliate"], vw=v["views"], rl=v["rel_lift"], op=v["outperformer"],
-                         er=v["eng_rate"], cr=v["comment_rate"], pub=v["published"], fr=v["title_framing"], **{"a": agg[i]}))
-    counts = dict(videos=len(vids), creators=len(creators), comments_labelled=con.execute("select count(*) from comments").fetchone()[0],
-                  comments_en=con.execute("select count(*) from comments where lang='en' and trivial=0").fetchone()[0],
-                  modes=dict(con.execute("select label_mode, count(*) from comments group by 1").fetchall()),
-                  seeded=dict(con.execute("select promo_evidence, count(*) from content where promo_sub='seeded' group by 1").fetchall()),
+                         sh=v["is_short"], vw=v["views"], rl=v["rel_lift"], op=v["outperformer"],
+                         er=v["eng_rate"], cr=v["comment_rate"], pub=v["published"], fr=v["title_framing"], lk=v["likes"], cc=v["comment_count"], bv=v["baseline_views"],
+                         un=(int(v["rel_lift"] <= cut[v["is_short"]]) if v["rel_lift"] is not None else None), **{"a": agg[i]}))
+    counts = dict(videos=len(vids), creators=len(creators), comments_labelled=con.execute("select count(*) from comments c join content v using(video_id) where v.topic='duo' and v.format!='official'").fetchone()[0],
+                  comments_en=sum(a["n"] for a in agg),
+                  modes=dict(con.execute("select label_mode, count(*) from comments c join content v using(video_id) where v.topic='duo' and v.format!='official' group by 1").fetchall()),
                   built=load("videos.json")[0].get("published", "")[:0])
     data = dict(videos=rows, creators=[c for c in sorted(creators.values(), key=lambda c: c["i"])], themes=[[k, THEMES[k]] for k in THEME_KEYS],
                 quotes=quotes, words=dict(pos=contrast(words_pos, words_neg, Np, Nn), neg=contrast(words_neg, words_pos, Nn, Np)),

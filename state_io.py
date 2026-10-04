@@ -4,7 +4,7 @@ import json, os, shutil
 from common import DATA, HERE, load
 
 STATE = os.path.join(HERE, "state")
-FILES = ["videos.json", "creators.json", "channels_meta.json", "baselines.json", "comment_labels.json", "device_check.json"]
+FILES = ["videos.json", "creators.json", "channels_meta.json", "baselines.json", "comment_labels.json"]
 
 
 def restore():
@@ -28,6 +28,7 @@ def save():
                 c = raw.get(cid)
                 if c and "v" not in l: l.update(v=c["video_id"], p=c["published"][:10], k=c["likes"], s=c["source"])
         if f == "videos.json":                              # descriptions are re-fetched from the API on every run, no need to publish them
-            obj = [dict(v, desc="") for v in obj]
+            drop = {"collab", "promo_type", "promo_sub", "promo_evidence", "has_affiliate", "device_check"}      # fields from the removed paid/seeded analysis
+            obj = [{k: x for k, x in dict(v, desc="").items() if k not in drop} for v in obj]
         json.dump(obj, open(os.path.join(STATE, f), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print("state saved:", {f: os.path.getsize(os.path.join(STATE, f)) // 1024 for f in FILES if os.path.exists(os.path.join(STATE, f))}, "KB")

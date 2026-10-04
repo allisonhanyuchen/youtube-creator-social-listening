@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Step 4: build the SQLite base tables (data/pulse.db) that every surface reads: dashboard, email, Slack, Q&A agent.
 Tables: creators, content, performance, comments, comment_themes. Views: v_content, v_video_sentiment, v_theme_sentiment.
-rel_lift = lift / median lift of the same format class (Short vs long) among non-official videos; outperformer = top quartile of rel_lift in its class."""
+rel_lift = lift / median lift of the same class (iPhone Duo videos vs the rest, Short vs long); outperformer = top quartile of rel_lift in its class.
+Apple's own channel (format = official) is excluded from lift and outperformer. Paid/seeded labels were dropped: no sponsor in this data was Apple or a rival, and seeding could only be inferred."""
 import os, sqlite3, statistics
 from common import load, DATA
 
@@ -10,7 +11,7 @@ PRODUCT_SIDE = "('product','price_value','apple_brand','competitor')"
 SCHEMA = f"""
 CREATE TABLE creators(channel_id TEXT PRIMARY KEY, name TEXT, kol_type TEXT, tier TEXT, subscribers INT, region TEXT);
 CREATE TABLE content(video_id TEXT PRIMARY KEY, url TEXT, title TEXT, channel_id TEXT, format TEXT, topic TEXT, title_framing TEXT,
-  published TEXT, day_since_launch INT, is_short INT, duration_s INT, promo_type TEXT, promo_sub TEXT, promo_evidence TEXT, has_affiliate INT);
+  published TEXT, day_since_launch INT, is_short INT, duration_s INT);
 CREATE TABLE performance(video_id TEXT PRIMARY KEY, views INT, likes INT, comment_count INT, eng_rate REAL, comment_rate REAL,
   baseline_n INT, baseline_views INT, lift REAL, rel_lift REAL, outperformer INT);
 CREATE TABLE comments(comment_id TEXT PRIMARY KEY, video_id TEXT, text TEXT, likes INT, published TEXT, day_since_launch INT, source TEXT,
@@ -44,17 +45,20 @@ def main():
     vids = load("videos.json")
     for c in load("creators.json"):
         con.execute("INSERT INTO creators VALUES (?,?,?,?,?,?)", (c["channel_id"], c["name"], c["kol_type"], c["tier"], c["subs"], c["region"]))
-    med = {sh: statistics.median(v["lift"] for v in vids if v.get("lift") and v["promo_type"] != "official" and v["is_short"] == sh) for sh in (True, False)}
+    grp = lambda v: v["topic"] == "duo"                  # a Duo video is compared with other Duo videos
+    ok = lambda v: v["format"] != "official" and v.get("lift") is not None
+    med = {(g, sh): statistics.median(v["lift"] for v in vids if ok(v) and grp(v) == g and v["is_short"] == sh) for g in (True, False) for sh in (True, False)}
     for v in vids:
-        v["rel_lift"] = v["lift"] / med[v["is_short"]] if v.get("lift") else None
+        v["rel_lift"] = v["lift"] / med[(grp(v), v["is_short"])] if ok(v) else None
     cut = {}
-    for sh in (True, False):
-        r = sorted(v["rel_lift"] for v in vids if v["rel_lift"] is not None and v["promo_type"] != "official" and v["is_short"] == sh)
-        cut[sh] = r[int(len(r) * 0.75)]
+    for g in (True, False):
+        for sh in (True, False):
+            r = sorted(v["rel_lift"] for v in vids if v["rel_lift"] is not None and grp(v) == g and v["is_short"] == sh)
+            cut[(g, sh)] = r[int(len(r) * 0.75)]
     for v in vids:
-        con.execute("INSERT INTO content VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (v["id"], v["url"], v["title"], v["channel_id"], v["format"], v["topic"], v["framing"],
-                    v["published"][:10], v["day"], int(v["is_short"]), v["duration_s"], v["promo_type"], v["promo_sub"], v["promo_evidence"], int(v["has_affiliate"])))
-        out = int(v["rel_lift"] >= cut[v["is_short"]]) if v["rel_lift"] is not None and v["promo_type"] != "official" else None
+        con.execute("INSERT INTO content VALUES (?,?,?,?,?,?,?,?,?,?,?)", (v["id"], v["url"], v["title"], v["channel_id"], v["format"], v["topic"], v["framing"],
+                    v["published"][:10], v["day"], int(v["is_short"]), v["duration_s"]))
+        out = int(v["rel_lift"] >= cut[(grp(v), v["is_short"])]) if v["rel_lift"] is not None else None
         con.execute("INSERT INTO performance VALUES (?,?,?,?,?,?,?,?,?,?,?)", (v["id"], v["views"], v["likes"], v["comments"], v["eng_rate"], v["comment_rate"],
                     v["baseline_n"], v.get("baseline_views"), v.get("lift"), round(v["rel_lift"], 3) if v["rel_lift"] is not None else None, out))
     from datetime import date
@@ -74,7 +78,7 @@ def main():
     con.commit()
     for t in ("creators", "content", "performance", "comments", "comment_themes"):
         print(f"{t:15} {con.execute(f'select count(*) from {t}').fetchone()[0]:>7} rows")
-    print("outperformer cutoffs (rel_lift, top quartile):", {("short" if k else "long"): round(x, 2) for k, x in cut.items()})
+    print("outperformer cutoffs (rel_lift, top quartile):", {("duo " if k[0] else "other ") + ("short" if k[1] else "long"): round(x, 2) for k, x in cut.items()})
     con.close()
 
 

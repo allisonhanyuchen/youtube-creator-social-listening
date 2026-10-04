@@ -6,8 +6,7 @@ import os, subprocess, sys, time
 from common import HERE
 import state_io
 
-STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]), ("classify new videos", ["classify.py"]), ("paid vs organic", ["promo.py"]),
-         ("channel baselines and lift", ["performance.py"]), ("creator types", ["creators.py"]), ("pull and label new comments", ["comments.py", "--refresh"]),
+STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]), ("classify new videos", ["classify.py"]), ("channel baselines and lift", ["performance.py"]), ("creator types", ["creators.py"]), ("pull and label new comments", ["comments.py", "--refresh"]),
          ("recheck hype label", ["hype_recheck.py"]), ("recover ad-like label", ["credibility_pass.py"]), ("build tables", ["db.py"]), ("insights and alerts", ["insights.py"])]
 SEND = [("email report", ["report.py", "--send"]), ("Slack digest", ["notify.py"])]
 

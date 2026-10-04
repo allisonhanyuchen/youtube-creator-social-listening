@@ -11,19 +11,17 @@ def build(ins, alerts_only=False):
     n, m, al = ins["narrative"], ins["metrics"], ins["alerts"]
     if alerts_only:
         if not al: return None
-        return {"text": "Launch Pulse alert", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "Launch Pulse alert"}},
+        return {"text": "iPhone Duo alert", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "iPhone Duo alert"}},
                 {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(f":rotating_light: {a['text']}" for a in al)}},
                 {"type": "context", "elements": [{"type": "mrkdwn", "text": f"Data through {ins['as_of']}. Mention me to dig in, for example: _why did negative sentiment rise this week?_"}]}]}
-    t, s = m["totals"], m["sentiment_all"]
-    seen, cand = set(), []
-    for c in m["scale_candidates"]:
-        if c["creator"] not in seen: seen.add(c["creator"]); cand.append(c)
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": "Launch Pulse weekly readout"}},
+    t, s = m["totals"], m["sentiment"]
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": "iPhone Duo on YouTube: weekly readout"}},
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*{n['headline']}*\n{n['summary']}"}},
               {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.0f}M views · {t['comments_en']:,} English comments · product sentiment {s['pos']*100:.0f}% positive, {s['neg']*100:.0f}% negative · data through {ins['as_of']}"}]}]
     if al: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Alerts*\n" + "\n".join(f":rotating_light: {a['text']}" for a in al)}})
-    blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": "*What to do with it*\n" + "\n".join(f"{i+1}. *{f['title']}*\n    _{f['action']}_" for i, f in enumerate(n["findings"]))}}]
-    if cand: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Organic videos worth scaling*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x own baseline, {c['pos']*100:.0f}% positive)" for c in cand[:3])}})
+    blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": "*What to do with it*\n" + "\n".join(f"{i+1}. *{f['title']}*\n    _{f['action']}_" for i, f in enumerate(n["findings"]))}},
+               {"type": "section", "text": {"type": "mrkdwn", "text": f"*Scale and improve*\n:white_check_mark: {m['scale_ready']} ready to scale · :wrench: {m['improve_high_lift_unhappy_audience']} high lift but unhappy audience, fix first · {m['improve_low_lift']} below their channel's usual views"}}]
+    if m["scale_candidates"]: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Top to scale*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift, {c['pos']*100:.0f}% positive)" for c in m["scale_candidates"][:3])}})
     blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "Ask a follow-up: mention *@Launch Pulse* or message me. The full report is in your inbox."}]})
     return {"text": n["headline"], "blocks": blocks}
 

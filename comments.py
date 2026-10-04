@@ -20,6 +20,7 @@ THEMES = {
     "apple_brand_leadership": "Apple as a company: CEO, executives, trust, marketing spin",
     "creator_credibility_critique": "video or creator seen as biased, ad-like, sponsored, shilling",
 }
+MIN_COMMENTS = 10      # videos with fewer comments than this are skipped; sentiment still needs 10 product-side comments to be judged
 TARGETS = ["product", "price_value", "video_or_creator", "apple_brand", "competitor", "other"]
 INTENTS = ["buy", "upgrade_wait", "skip", "switch_from_android", "none"]
 SENT = ["positive", "neutral", "negative"]
@@ -87,7 +88,7 @@ def label_batch(batch, model=None, thinking=None):
 
 
 def main():
-    vids = [v for v in load("videos.json") if v["comments"] >= 50]
+    vids = [v for v in load("videos.json") if v["comments"] >= MIN_COMMENTS]
     raw = load("comments_raw.json", {})
     refresh = "--refresh" in sys.argv        # weekly run: re-pull every eligible video, label only comment ids not seen before
     todo = vids if refresh else [v for v in vids if v["id"] not in raw]

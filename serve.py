@@ -27,7 +27,7 @@ class H(BaseHTTPRequestHandler):
             q = str(d.get("question", ""))[:600].strip()
             if not q: return self._send(400, json.dumps({"error": "empty question"}))
             with LOCK:
-                r = ask(q, d.get("history", [])[-3:])
+                r = ask(q, d.get("history", [])[-3:], str(d.get("context", ""))[:400])
             self._send(200, json.dumps(dict(answer=r["answer"], sql=r["sql"], cols=r["cols"], rows=r["rows"][:15]), default=str))
         except Exception as e:
             self._send(500, json.dumps({"error": str(e)[:200]}))

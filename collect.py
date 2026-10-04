@@ -14,19 +14,6 @@ QUERIES = ["iPhone Duo review", "iPhone Duo hands on", "iPhone Duo worth it", "i
            "iPhone 18 Pro review", "iPhone 18 Pro worth upgrading", "iPhone Duo vs Galaxy Z Fold",
            "iPhone Duo vs Pixel Fold", "Apple event reaction iPhone Duo"]
 TOPIC_RE = re.compile(r"iphone|\bduo\b|apple", re.I)
-SPONSOR_RE = re.compile(r"\b(sponsored|sponsor(ed)? by|paid partnership|paid promotion|in partnership with|#ad\b|#sponsored|brought to you by)", re.I)
-GIFTED_RE = re.compile(r"(apple (sent|provided|loaned)|(sent|provided|loaned) (me|us|by apple)|review unit|thanks to apple|courtesy of apple)", re.I)
-AFFIL_RE = re.compile(r"(amzn\.to|geni\.us|bhpho\.to|affiliate|commission|use code|discount code)", re.I)
-
-
-def collab_type(v):
-    d = v["snippet"].get("description", "")
-    if v.get("paidProductPlacementDetails", {}).get("hasPaidProductPlacement"): return "paid_flag"
-    if SPONSOR_RE.search(d): return "sponsored_text"
-    if GIFTED_RE.search(d): return "apple_provided_unit"
-    if AFFIL_RE.search(d): return "affiliate"
-    return "organic"
-
 
 def iso_seconds(d):
     m = re.fullmatch(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", d or "")
@@ -74,7 +61,7 @@ def main():
     ids = sorted(ids)
     vids = {}
     for i in range(0, len(ids), 50):
-        for v in yt("videos", part="snippet,statistics,contentDetails,paidProductPlacementDetails", id=",".join(ids[i:i + 50])).get("items", []):
+        for v in yt("videos", part="snippet,statistics,contentDetails", id=",".join(ids[i:i + 50])).get("items", []):
             vids[v["id"]] = v
     ch_ids = sorted({v["snippet"]["channelId"] for v in vids.values()})
     chans = {}
@@ -91,15 +78,13 @@ def main():
         dur = iso_seconds(v["contentDetails"].get("duration"))
         rows.append(dict(id=vid, url=f"https://www.youtube.com/watch?v={vid}", title=sn["title"], channel_id=sn["channelId"],
                          channel=sn["channelTitle"], published=sn["publishedAt"], day=(datetime.fromisoformat(sn["publishedAt"][:10]) - datetime.fromisoformat(EVENT)).days,
-                         duration_s=dur, is_short=dur <= 180, collab=collab_type(v), views=views, likes=int(st.get("likeCount", 0) or 0),
+                         duration_s=dur, is_short=dur <= 180, views=views, likes=int(st.get("likeCount", 0) or 0),
                          comments=int(st.get("commentCount", 0) or 0),
                          subs=int(chans.get(sn["channelId"], {}).get("statistics", {}).get("subscriberCount", 0) or 0),
                          desc=sn.get("description", "")[:300].replace("\n", " ")))
     rows.sort(key=lambda r: -r["views"])
     save("videos_raw.json", rows)
     print(f"{len(vids)} fetched | dropped {dropped} | kept {len(rows)} | channels {len({r['channel_id'] for r in rows})}")
-    from collections import Counter
-    print("collab types:", dict(Counter(r["collab"] for r in rows)))
     print(f"shorts {sum(r['is_short'] for r in rows)} | views {sum(r['views'] for r in rows):,} | comments {sum(r['comments'] for r in rows):,}")
 
 
