@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Launch Pulse</title><link rel="icon" href="data:,">
+<style>
+:root{--bg:#f6f6f3;--card:#fff;--ink:#1d1d1b;--mute:#66665f;--faint:#9a9a92;--line:#e3e3dd;--accent:#2f5bea;--accent-bg:#e8edfd;--pos:#2f8f5b;--neu:#c4c4bb;--neg:#d0553f;--org:#5b7c99;--seed:#7a5fc7;--spon:#d9822b;--off:#8d8d85;--warn-bg:#fdf3e1;--warn:#8a5a12}
+@media(prefers-color-scheme:dark){:root{--bg:#141415;--card:#1c1c1e;--ink:#ececea;--mute:#a3a39c;--faint:#6e6e68;--line:#2c2c2f;--accent:#86a2ff;--accent-bg:#232a47;--pos:#4cc38a;--neu:#55554f;--neg:#f0765f;--org:#7fa0c0;--seed:#a38cf0;--spon:#eaa04d;--warn-bg:#2f2615;--warn:#e8c27a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{max-width:1240px;margin:0 auto;padding:18px 24px 6px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+h1{font-size:20px;margin:0;font-weight:600}.sub{color:var(--mute);margin:2px 0 0;font-size:13px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 11px}.btn:hover{border-color:var(--faint)}
+#filters{max-width:1240px;margin:8px auto 0;padding:0 24px}
+.fpanel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 18px}
+.fg b{display:block;font-size:11px;color:var(--faint);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.chip{display:inline-block;font-size:12px;padding:2px 9px;margin:0 4px 4px 0;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--mute);cursor:pointer;user-select:none}
+.chip.on{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+.fsum{font-size:12px;color:var(--mute);margin:6px 0 0}
+nav{max-width:1240px;margin:10px auto 0;padding:0 24px;display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{background:none;border:0;padding:9px 13px;color:var(--mute);border-bottom:2px solid transparent;white-space:nowrap}
+nav button.on{color:var(--ink);border-color:var(--accent);font-weight:600}
+main{max-width:1240px;margin:0 auto;padding:16px 24px 70px}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h3{margin:0 0 8px;font-size:14px;font-weight:600}.card h4{margin:12px 0 4px;font-size:12px;color:var(--faint);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:24px;font-weight:600;line-height:1.2}.kpi .l{font-size:12px;color:var(--mute)}
+.mute{color:var(--mute)}.faint{color:var(--faint)}.small{font-size:12px}
+.n{font-size:11px;color:var(--faint);margin-left:4px}.n.low{color:var(--warn);background:var(--warn-bg);border-radius:4px;padding:0 4px}
+.sbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin:3px 0}.sbar i{display:block}.sbar .p{background:var(--pos)}.sbar .u{background:var(--neu)}.sbar .g{background:var(--neg)}
+.rbar{position:relative;height:10px;background:var(--line);border-radius:5px;margin:4px 0}.rbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}.rbar .ci{position:absolute;top:-2px;bottom:-2px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);opacity:.55}.rbar .ci:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid var(--ink)}
+table{width:100%;border-collapse:collapse}th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:11px;color:var(--faint);font-weight:500;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}th[data-sort]{cursor:pointer}th[data-sort]:hover{color:var(--ink)}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--bg)}tr.sel td{background:var(--accent-bg)}
+.tag{display:inline-block;font-size:11px;padding:0 7px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--mute);margin-right:3px}
+.tag.organic{color:var(--org);border-color:var(--org)}.tag.seeded{color:var(--seed);border-color:var(--seed)}.tag.sponsored{color:var(--spon);border-color:var(--spon)}.tag.official{color:var(--off);border-color:var(--off)}
+.note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:12.5px;margin:0 0 12px}
+.q{border-left:3px solid var(--line);padding:2px 0 2px 10px;margin:6px 0;font-size:13px}.q.p{border-color:var(--pos)}.q.g{border-color:var(--neg)}.q small{color:var(--faint);display:block}
+.heat td{text-align:center;font-size:12px;padding:6px 4px;border:1px solid var(--card)}
+.words span{display:inline-block;margin:2px 5px 2px 0;padding:1px 8px;border-radius:999px;font-size:12px}.words .p span{background:color-mix(in srgb,var(--pos) 18%,transparent)}.words .g span{background:color-mix(in srgb,var(--neg) 18%,transparent)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sp{flex:1}
+.dim{opacity:.45}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+svg text{fill:var(--mute);font-size:11px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 4px 0 10px;vertical-align:-1px}
+@media(max-width:700px){main,header,#filters,nav{padding-left:12px;padding-right:12px}}
+</style></head><body>
+<header><div><h1>Launch Pulse</h1><p class="sub" id="sub"></p></div><div class="row"><button class="btn" data-act="togglefilters" id="tf">Hide filters</button><button class="btn" data-act="reset">Reset filters</button></div></header>
+<div id="filters"></div>
+<nav id="tabs"></nav>
+<main id="view"></main>
+<script>
+const D=__DATA__;
+const V=D.videos, C=D.creators; V.forEach((v,i)=>{v.i=i;v.cr_=C[v.c]});
+const LBL={
+ tp:{duo:"iPhone Duo",iphone_18_pro:"iPhone 18 Pro",iphone_18:"iPhone 18",event_general:"Whole event",competitor_foldable:"Rival foldable",other:"Other"},
+ pr:{organic:"Organic",seeded:"Seeded (Apple early access)",sponsored:"Sponsored (third party)",official:"Apple official"},
+ f:{first_impressions:"First impressions",full_review:"Full review",comparison:"Comparison",upgrade_advice:"Upgrade advice",keynote_recap:"Keynote recap",durability_test:"Durability test",explainer_tips:"Explainer / tips",rumor_leak:"Rumor / leak",meme_short:"Meme / reaction",official:"Official",other:"Other"},
+ kol:{pro_reviewer:"Pro reviewer",apple_focused:"Apple-focused",lifestyle_vlogger:"Lifestyle / vlogger",tech_news_media:"News / media",commentary_analyst:"Commentary",entertainment_shorts:"Entertainment / Shorts",official_brand:"Official brand",other:"Other"},
+ th:{hype_purchase_excitement:"Hype and purchase intent",fold_animation_ui:"Fold animation and UI",price_affordability:"Price",android_prior_art:"Android did it first",android_rival_comparison:"Rival comparison",design_colors_form:"Design and colours",crease_screen_quality:"Crease and screen",camera_hardware:"Camera",durability_tests:"Durability",software_usability:"Software and usability",apple_brand_leadership:"Apple brand and leadership",creator_credibility_critique:"Ad-like / biased creator"}};
+const TIERS=["nano <50k","micro 50-250k","mid 250k-1M","macro 1-5M","mega 5M+"];
+const regionOf=v=>{const r=v.cr_.region;return ["US","GB","CA","IN","AU"].includes(r)?r:"Other / undeclared"};
+const REGIONS=["US","GB","CA","IN","AU","Other / undeclared"];
+const GROUPS=[
+ {k:"topic",l:"Topic",opts:Object.entries(LBL.tp),get:v=>v.tp},
+ {k:"promo",l:"Promotion type",opts:Object.entries(LBL.pr),get:v=>v.pr},
+ {k:"format",l:"Content format",opts:Object.entries(LBL.f).filter(x=>x[0]!=="official"),get:v=>v.f},
+ {k:"kol",l:"Creator type",opts:Object.entries(LBL.kol).filter(x=>x[0]!=="official_brand"),get:v=>v.cr_.kol},
+ {k:"tier",l:"Channel size",opts:TIERS.map(t=>[t,t]),get:v=>v.cr_.tier},
+ {k:"region",l:"Region (channel-declared)",opts:REGIONS.map(t=>[t,t]),get:regionOf}];
+const DAYMIN=Math.min(...V.map(v=>v.d)), DAYMAX=Math.max(...V.map(v=>v.d));
+const defaults=()=>{const s={tab:"overview",cls:"all",seedEv:"all",dmin:DAYMIN,dmax:DAYMAX,theme:null,matchCls:true,matchTier:true,sameWin:true,voice:"all",sort:{},open:null,fshow:true};
+ GROUPS.forEach(g=>{s[g.k]=g.opts.map(o=>o[0]).filter(x=>!(g.k==="promo"&&x==="official"))});return s};
+let S=defaults();
+try{const h=location.hash.slice(1);if(h)S=Object.assign(defaults(),JSON.parse(decodeURIComponent(h)))}catch(e){}
+const save=()=>{try{history.replaceState(null,"","#"+encodeURIComponent(JSON.stringify(S)))}catch(e){}};
+const inSet=(g,v)=>S[g.k].includes(g.get(v));
+function filt(over={}){const st=Object.assign({},S,over);
+ return V.filter(v=>GROUPS.every(g=>st[g.k].includes(g.get(v)))&&v.d>=st.dmin&&v.d<=st.dmax&&(st.cls==="all"||(st.cls==="short")===!!v.sh)&&!(st.seedEv==="disclosed"&&v.pr==="seeded"&&v.ev==="inferred"))}
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+const med=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+const pct=(x,d=0)=>x==null?"–":(x*100).toFixed(d)+"%";
+const num=x=>x==null?"–":x>=1e6?(x/1e6).toFixed(1)+"M":x>=1e3?(x/1e3).toFixed(0)+"k":String(Math.round(x));
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function wilson(k,n){if(!n)return[0,0];const z=1.96,p=k/n,d=1+z*z/n,c=p+z*z/(2*n),a=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n));return[Math.max(0,(c-a)/d),Math.min(1,(c+a)/d)]}
+const nTag=n=>`<span class="n ${n<10?"low":""}">n=${n.toLocaleString()}${n<10?" low":""}</span>`;
+function stats(vs){const ev=vs.filter(v=>v.op!=null),k=sum(ev,v=>v.op),ps=[0,1,2].map(i=>sum(vs,v=>v.a.ps[i])),nps=ps[0]+ps[1]+ps[2],nall=sum(vs,v=>v.a.n);
+ return{n:vs.length,nev:ev.length,k,rate:ev.length?k/ev.length:null,ci:wilson(k,ev.length),rel:med(vs.map(v=>v.rl)),eng:med(vs.map(v=>v.er)),cr:med(vs.map(v=>v.cr)),views:sum(vs,v=>v.vw),
+  ps,nps,pos:nps?ps[0]/nps:null,neu:nps?ps[1]/nps:null,neg:nps?ps[2]/nps:null,nall,cred:sum(vs,v=>v.a.cred),credRate:nall?sum(vs,v=>v.a.cred)/nall:null,credci:wilson(sum(vs,v=>v.a.cred),nall)}}
+function sbar(p,u,g){const t=p+u+g||1;return`<div class="sbar" title="positive ${pct(p/t)} / neutral ${pct(u/t)} / negative ${pct(g/t)}"><i class="p" style="width:${p/t*100}%"></i><i class="u" style="width:${u/t*100}%"></i><i class="g" style="width:${g/t*100}%"></i></div>`}
+function rbar(k,n,color){const r=n?k/n:0,[lo,hi]=wilson(k,n);return`<div class="rbar"><div class="fill" style="width:${r*100}%;background:${color}"></div><div class="ci" style="left:${lo*100}%;width:${Math.max(0.5,(hi-lo)*100)}%"></div></div>`}
+const sentLine=s=>s.nps?`<span class="small"><b style="color:var(--pos)">${pct(s.pos)}</b> pos · ${pct(s.neu)} neu · <b style="color:var(--neg)">${pct(s.neg)}</b> neg</span>${nTag(s.nps)}`:`<span class="faint small">no labelled comments</span>`;
+function themeStats(vs){const m={};vs.forEach(v=>{for(const [t,c] of Object.entries(v.a.th)){const o=m[t]||(m[t]=[0,0,0]);o[0]+=c[0];o[1]+=c[1];o[2]+=c[2]}});
+ return D.themes.map((t,i)=>{const c=m[i]||[0,0,0];return{i,k:t[0],n:c[0]+c[1]+c[2],p:c[0],u:c[1],g:c[2]}})}
+function sortRows(id,rows,cols){const s=S.sort[id];if(!s)return rows;const c=cols.find(x=>x.k===s.k);if(!c)return rows;return rows.slice().sort((a,b)=>{let x=c.v(a),y=c.v(b);if(x==null)return 1;if(y==null)return -1;return(typeof x==="string"?x.localeCompare(y):x-y)*s.d})}
+function table(id,cols,rows,opts={}){const s=S.sort[id];rows=sortRows(id,rows,cols);
+ return`<table><thead><tr>${cols.map(c=>`<th data-sort="${id}:${c.k}">${c.h}${s&&s.k===c.k?(s.d>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr class="${opts.click?"click":""} ${opts.sel&&opts.sel(r)?"sel":""}" ${opts.attr?opts.attr(r):""}>${cols.map(c=>`<td>${c.f?c.f(r):esc(c.v(r))}</td>`).join("")}</tr>`).join("")}</tbody></table>`}
+const vidLink=v=>`<a href="${v.url}" target="_blank" rel="noopener">${esc(v.t)}</a>`;
+const promoTag=v=>`<span class="tag ${v.pr}">${v.pr}${v.pr==="seeded"?" · "+v.ev:""}</span>`;
+function csvDownload(name,rows){const q=x=>`"${String(x??"").replace(/"/g,'""')}"`;const b=new Blob([rows.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;a.click()}
+
+/* ---------- views ---------- */
+const TABS=[["overview","Overview"],["pvo","Paid vs organic"],["formats","Formats"],["voice","Audience voice"],["creators","Creators"],["videos","Videos"],["ask","Ask"],["method","Method"]];
+function timeline(vs){const d={};vs.forEach(v=>{for(const [k,c] of Object.entries(v.a.tl)){const o=d[k]||(d[k]=[0,0,0]);o[0]+=c[0];o[1]+=c[1];o[2]+=c[2]}});
+ const days=Object.keys(d).map(Number).sort((a,b)=>a-b);if(!days.length)return`<p class="faint">No labelled comments under these filters.</p>`;
+ const W=700,H=190,L=34,R=22,T=10,B=24,x=k=>L+(k-(-3))/(33)*(W-L-R),y=p=>T+(1-p/0.7)*(H-T-B);
+ const pts=(i)=>days.filter(k=>{const o=d[k];return o[0]+o[1]+o[2]>=25}).map(k=>{const o=d[k],t=o[0]+o[1]+o[2];return[x(k),y(o[i]/t),k,t]});
+ const line=(p,c)=>p.length?`<polyline fill="none" stroke="${c}" stroke-width="2" points="${p.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ")}"/>`+p.map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="2.5" fill="${c}"><title>day ${q[2]}: n=${q[3]}</title></circle>`).join(""):"";
+ let g="";for(let i=0;i<=3;i++){const p=i*0.2;g+=`<line x1="${L}" x2="${W-R}" y1="${y(p)}" y2="${y(p)}" stroke="var(--line)"/><text x="${L-4}" y="${y(p)+4}" text-anchor="end">${Math.round(p*100)}%</text>`}
+ for(let k=0;k<=30;k+=5)g+=`<text x="${x(k)}" y="${H-6}" text-anchor="middle">D+${k}</text>`;
+ return`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Sentiment by comment day">${g}<line x1="${x(0)}" x2="${x(0)}" y1="${T}" y2="${H-B}" stroke="var(--faint)" stroke-dasharray="3 3"/>${line(pts(0),"var(--pos)")}${line(pts(2),"var(--neg)")}</svg><div class="small mute legend"><i style="background:var(--pos)"></i>positive share<i style="background:var(--neg)"></i>negative share <span class="faint">(product-side comments, days with 25+ comments)</span></div>`}
+function topThemes(vs,which){const ts=themeStats(vs).filter(t=>t.n>=15&&t.k!=="creator_credibility_critique");const sc=t=>which==="neg"?t.g/t.n:t.p/t.n;return ts.sort((a,b)=>sc(b)-sc(a)).slice(0,3).map(t=>`${LBL.th[t.k]} <span class="faint">${pct(sc(t))}</span>`).join(" · ")}
+function vOverview(){const vs=filt(),s=stats(vs);
+ const col=(tp)=>{const x=filt({topic:[tp]}),t=stats(x);return`<div class="card"><h3>${LBL.tp[tp]} ${nTag(t.n)}</h3><div class="row"><div><div class="v" style="font-size:20px;font-weight:600">${pct(t.rate)}</div><div class="small mute">outperformers</div></div><div><div class="v" style="font-size:20px;font-weight:600">${t.rel==null?"–":t.rel.toFixed(2)+"x"}</div><div class="small mute">median relative lift</div></div></div>${sbar(...t.ps)}${sentLine(t)}<h4>Most positive</h4><div class="small">${topThemes(x,"pos")||"–"}</div><h4>Most negative</h4><div class="small">${topThemes(x,"neg")||"–"}</div></div>`};
+ const intents=["buy","upgrade_wait","skip","switch_from_android"].map(k=>[k,sum(vs,v=>v.a.it[k]||0)]);
+ return`<div class="grid g4"><div class="card kpi"><div class="v">${s.n}</div><div class="l">videos · ${new Set(vs.map(v=>v.c)).size} creators</div></div><div class="card kpi"><div class="v">${num(s.views)}</div><div class="l">views</div></div><div class="card kpi"><div class="v">${s.nall.toLocaleString()}</div><div class="l">English comments labelled</div></div><div class="card kpi"><div class="v">${pct(s.rate)}</div><div class="l">outperformers ${nTag(s.nev)}</div></div></div>
+ <div class="grid g2" style="margin-top:12px"><div class="card"><h3>Product-side sentiment</h3>${sbar(...s.ps)}${sentLine(s)}<h4>Stated intent</h4><div class="small">${intents.map(([k,n])=>`${{buy:"Will buy",upgrade_wait:"Upgrade or wait",skip:"Skip",switch_from_android:"Switching from Android"}[k]}: <b>${n}</b>`).join(" · ")}</div><p class="small faint" style="margin-bottom:0">Sentiment counts comments about the product, price, Apple or rivals. Comments about the video or creator are excluded.</p></div>
+ <div class="card"><h3>Sentiment over time</h3>${timeline(vs)}</div></div>
+ <h3 style="margin:18px 0 8px;font-size:14px">Duo vs 18 Pro <span class="faint small">(uses your other filters, ignores the topic filter)</span></h3><div class="grid g2">${col("duo")}${col("iphone_18_pro")}</div>`}
+
+function adjusted(groups,vsAll){ // direct standardisation across strata
+ const key=v=>(S.matchCls?(v.sh?"s":"l"):"")+"|"+(S.matchTier?v.cr_.tier:"");
+ const ev=vsAll.filter(v=>v.op!=null),tot={};ev.forEach(v=>{tot[key(v)]=(tot[key(v)]||0)+1});
+ return groups.map(vs=>{const st={};vs.filter(v=>v.op!=null).forEach(v=>{const k=key(v),o=st[k]||(st[k]=[0,0]);o[0]+=v.op;o[1]++});
+  let w=0,r=0;for(const k in st){w+=tot[k];r+=tot[k]*st[k][0]/st[k][1]}return w?r/w:null})}
+function vPvO(){let base=filt({promo:["organic","seeded","sponsored"]});
+ if(S.sameWin){const days=new Set(base.filter(v=>v.pr==="seeded").map(v=>v.d));base=base.filter(v=>days.has(v.d))}
+ const keys=["organic","seeded","sponsored"],cols={organic:"var(--org)",seeded:"var(--seed)",sponsored:"var(--spon)"};
+ const gs=keys.map(k=>base.filter(v=>v.pr===k)),st=gs.map(stats),adj=adjusted(gs,base);
+ const cards=keys.map((k,i)=>{const t=st[i];return`<div class="card"><h3><span class="tag ${k}">${k}</span> ${LBL.pr[k]} ${nTag(t.n)}</h3>
+  <div class="small mute">Outperformers (top quartile of own format class)</div><div class="v" style="font-size:22px;font-weight:600">${pct(t.rate)}</div>${rbar(t.k,t.nev,cols[k])}<div class="small faint">95% interval ${pct(t.ci[0])} to ${pct(t.ci[1])}${adj[i]!=null?` · matched ${pct(adj[i])}`:""}</div>
+  <h4>Performance</h4><div class="small">Median relative lift <b>${t.rel==null?"–":t.rel.toFixed(2)+"x"}</b> · engagement <b>${pct(t.eng,2)}</b> · comments per view <b>${pct(t.cr,3)}</b></div>
+  <h4>Audience</h4>${sbar(...t.ps)}${sentLine(t)}<div class="small" style="margin-top:4px">Ad-like or biased comments <b>${pct(t.credRate,1)}</b> <span class="faint">(${pct(t.credci[0],1)} to ${pct(t.credci[1],1)})</span>${nTag(t.nall)}</div></div>`}).join("");
+ const orgs=gs[0].filter(v=>v.op===1&&v.a.ps[0]+v.a.ps[1]+v.a.ps[2]>=10);const psh=v=>v.a.ps[0]/(v.a.ps[0]+v.a.ps[1]+v.a.ps[2]);const mpos=med(gs[0].filter(v=>v.a.ps[0]+v.a.ps[1]+v.a.ps[2]>=10).map(psh));
+ const spCount={};V.forEach(v=>{if(v.pr==="sponsored")spCount[v.c]=(spCount[v.c]||0)+1});
+ const cand=orgs.filter(v=>psh(v)>=(mpos||0)&&(spCount[v.c]||0)<2).map(v=>{const th=Object.entries(v.a.th).map(([t,c])=>[t,c[0]]).sort((a,b)=>b[1]-a[1])[0];return Object.assign({},v,{pos_:psh(v),sc_:Math.min(v.rl,10)*psh(v),why:th&&th[1]>=3?"audience praise centres on "+LBL.th[D.themes[th[0]][0]].toLowerCase():"broad positive reaction",nps:sum([0,1,2],i=>v.a.ps[i])})});
+ const ccols=[{k:"t",h:"Video",v:r=>r.t,f:r=>vidLink(r)+`<div class="small mute">${esc(r.cr_.name)} · ${esc(r.cr_.tier)}</div>`},{k:"f",h:"Format",v:r=>LBL.f[r.f]},{k:"rl",h:"Rel. lift",v:r=>r.rl,f:r=>(r.rl>=10?"10x+":r.rl.toFixed(1)+"x")},{k:"pos_",h:"Positive",v:r=>r.pos_,f:r=>pct(r.pos_)+nTag(r.nps)},{k:"vw",h:"Views",v:r=>r.vw,f:r=>num(r.vw)},{k:"why",h:"Why",v:r=>r.why}];
+ const under=[...gs[1],...gs[2]].filter(v=>v.op===0&&v.rl!=null&&v.rl<1).sort((a,b)=>b.vw-a.vw).slice(0,10);
+ const ucols=[{k:"t",h:"Video",v:r=>r.t,f:r=>vidLink(r)+`<div class="small mute">${esc(r.cr_.name)}</div>`},{k:"pr",h:"Type",v:r=>r.pr,f:r=>promoTag(r)},{k:"rl",h:"Rel. lift",v:r=>r.rl,f:r=>r.rl.toFixed(2)+"x"},{k:"vw",h:"Views",v:r=>r.vw,f:r=>num(r.vw)}];
+ return`<div class="note"><b>Read this first.</b> Seeded is partly defined by posting on launch day or review-embargo day, and early videos earn more views, so its lead is partly timing. "Same posting window" keeps only days on which seeded videos were posted. Seeded n is small, and "inferred" seeded is a lower bound that public data cannot prove. Official Apple videos are excluded here.</div>
+ <div class="card" style="margin-bottom:12px"><div class="row"><b>Fair comparison</b>
+ <span class="chip ${S.matchCls?"on":""}" data-act="toggle:matchCls">Match Shorts / long</span><span class="chip ${S.matchTier?"on":""}" data-act="toggle:matchTier">Match channel size</span><span class="chip ${S.sameWin?"on":""}" data-act="toggle:sameWin">Same posting window</span>
+ <span class="chip ${S.seedEv==="disclosed"?"on":""}" data-act="toggle:seedEv">Seeded: disclosed only</span><span class="sp"></span><span class="small mute">${base.length} videos in comparison</span></div></div>
+ <div class="grid g3">${cards}</div>
+ <div class="card" style="margin-top:12px"><div class="row"><h3 style="margin:0">Scale candidates <span class="faint small">organic outperformers with a positive audience, creator not already heavily sponsored; ranked by lift (capped at 10x) times positive share</span></h3><span class="sp"></span><button class="btn" data-act="csv:cand">Export CSV</button></div>${cand.length?table("cand",ccols,cand.sort((a,b)=>b.sc_-a.sc_).slice(0,15)):`<p class="faint">No organic video meets the bar under these filters.</p>`}</div>
+ <div class="card" style="margin-top:12px"><h3>Paid videos that did not beat the creator's baseline <span class="faint small">(largest first)</span></h3>${under.length?table("under",ucols,under):`<p class="faint">None under these filters.</p>`}</div>`}
+function vFormats(){const vs=filt(),fs=Object.keys(LBL.f).filter(f=>f!=="official");
+ const rows=fs.map(f=>{const x=vs.filter(v=>v.f===f),t=stats(x);return Object.assign({f},t)}).filter(r=>r.n);
+ const cols=[{k:"f",h:"Format",v:r=>LBL.f[r.f]},{k:"n",h:"Videos",v:r=>r.n},{k:"rate",h:"Outperformers",v:r=>r.rate,f:r=>`<div style="min-width:130px">${pct(r.rate)}${nTag(r.nev)}${rbar(r.k,r.nev,"var(--accent)")}</div>`},{k:"rel",h:"Median rel. lift",v:r=>r.rel,f:r=>r.rel==null?"–":r.rel.toFixed(2)+"x"},{k:"pos",h:"Positive",v:r=>r.pos,f:r=>r.nps?pct(r.pos)+nTag(r.nps):"–"},{k:"neg",h:"Negative",v:r=>r.neg,f:r=>r.nps?pct(r.neg):"–"},{k:"cr",h:"Comments / view",v:r=>r.cr,f:r=>pct(r.cr,3)}];
+ const tps=["duo","iphone_18_pro","event_general"];
+ const heat=`<table class="heat"><thead><tr><th></th>${tps.map(t=>`<th style="text-align:center">${LBL.tp[t]}</th>`).join("")}</tr></thead><tbody>${fs.map(f=>`<tr><td style="text-align:left;font-size:12px">${LBL.f[f]}</td>${tps.map(t=>{const x=vs.filter(v=>v.f===f&&v.tp===t),q=stats(x);if(!q.nev)return`<td class="faint">–</td>`;const a=Math.min(0.85,q.rate*1.6);return`<td style="background:${q.nev<10?"transparent":`color-mix(in srgb,var(--accent) ${a*100}%,transparent)`};${q.nev<10?"color:var(--faint)":""}" title="${q.k} of ${q.nev}">${pct(q.rate)}<div class="faint" style="font-size:10px">n=${q.nev}</div></td>`}).join("")}</tr>`).join("")}</tbody></table>`;
+ return`<div class="grid g2" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)"><div class="card"><h3>Format performance</h3>${table("fmt",cols,rows)}<p class="small faint">Outperformer = top quartile of relative lift within Shorts or long videos. Bars show 95% intervals. Sort any column.</p></div>
+ <div class="card"><h3>Outperformer rate by format and topic</h3>${heat}<p class="small faint">Cells with fewer than 10 videos are not shaded.</p></div></div>`}
+function vVoice(){const vs=filt(),all=themeStats(vs).filter(t=>t.n>0).sort((a,b)=>b.n-a.n),tot=sum(vs,v=>v.a.n);
+ const cmp=S.voice==="compare";const A=cmp?themeStats(filt({topic:["duo"]})):null,B=cmp?themeStats(filt({topic:["iphone_18_pro"]})):null;
+ const bar=(t)=>`<div class="sbar" style="height:8px">${t.n?`<i class="p" style="width:${t.p/t.n*100}%"></i><i class="u" style="width:${t.u/t.n*100}%"></i><i class="g" style="width:${t.g/t.n*100}%"></i>`:""}</div>`;
+ const list=all.map(t=>`<tr class="click ${S.theme===t.k?"sel":""}" data-theme="${t.k}"><td style="width:34%"><b>${LBL.th[t.k]}</b>${nTag(t.n)}<div class="small faint">${pct(t.n/Math.max(tot,1),1)} of comments</div></td><td>${cmp?`<div class="small faint">Duo</div>${bar(A[t.i])}<div class="small faint">18 Pro</div>${bar(B[t.i])}`:bar(t)}<div class="small mute">${pct(t.p/t.n)} pos · ${pct(t.g/t.n)} neg</div></td></tr>`).join("");
+ const sel=S.theme?D.themes.findIndex(t=>t[0]===S.theme):-1;const ids=new Set(vs.map(v=>v.i));
+ const qs=(s)=>D.quotes.filter(q=>q[1]===sel&&q[2]===s&&ids.has(q[0])).sort((a,b)=>b[4]-a[4]).slice(0,4).map(q=>`<div class="q ${s===0?"p":"g"}">${esc(q[3])}<small>${q[4]} likes · ${esc(V[q[0]].t.slice(0,60))}</small></div>`).join("")||`<p class="faint small">No saved quotes under these filters.</p>`;
+ const detail=sel<0?`<p class="mute">Click a theme to see what people say.</p>`:`<h3>${LBL.th[S.theme]}</h3><p class="small mute">${esc(D.themes[sel][1])}</p>${S.theme==="creator_credibility_critique"?`<h4>Calls it biased or ad-like</h4>${qs(2)}<h4>Defends the creator</h4>${qs(0)}`:`<h4>Positive</h4>${qs(0)}<h4>Negative</h4>${qs(2)}`}`;
+ const ts=all.filter(t=>t.n>=20);const mx=Math.max(...ts.map(t=>t.n),1);
+ const bub=`<svg viewBox="0 0 520 250" width="100%" role="img" aria-label="Theme map"><line x1="30" x2="510" y1="125" y2="125" stroke="var(--line)"/><text x="6" y="12">↑ more positive</text><text x="6" y="248">↓ more negative</text><text x="514" y="248" text-anchor="end">more mentions →</text>${ts.map(t=>{const x=60+(t.n/mx)*420,net=(t.p-t.g)/t.n,y=125-net*105,r=6+Math.sqrt(t.n/mx)*16;return`<g data-theme="${t.k}" style="cursor:pointer"><circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(0)}" fill="${net>=0?"var(--pos)":"var(--neg)"}" fill-opacity=".35" stroke="${net>=0?"var(--pos)":"var(--neg)"}"/><text x="${x.toFixed(0)}" y="${(y+r+11).toFixed(0)}" text-anchor="middle">${esc(LBL.th[t.k].split(" ")[0])}</text></g>`}).join("")}</svg>`;
+ const br=D.brands.map(b=>{const c=[0,0,0];vs.forEach(v=>{const x=v.a.br[b];if(x){c[0]+=x[0];c[1]+=x[1];c[2]+=x[2]}});return[b,c]}).filter(x=>x[1][0]+x[1][1]+x[1][2]);
+ return`<div class="row" style="margin-bottom:10px"><span class="chip ${!cmp?"on":""}" data-act="voice:all">All filtered</span><span class="chip ${cmp?"on":""}" data-act="voice:compare">Compare Duo vs 18 Pro</span><span class="small mute">${tot.toLocaleString()} English comments, themes can overlap</span></div>
+ <div class="grid g2" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)"><div class="card"><h3>What people talk about</h3><div class="small mute legend"><i style="background:var(--pos)"></i>positive<i style="background:var(--neu)"></i>neutral<i style="background:var(--neg)"></i>negative</div><table><tbody>${list}</tbody></table></div>
+ <div style="display:grid;gap:12px;align-content:start"><div class="card">${detail}</div><div class="card"><h3>Theme map</h3>${bub}</div></div></div>
+ <div class="grid g2" style="margin-top:12px"><div class="card"><h3>Words that set positive and negative comments apart <span class="faint small">(all videos)</span></h3><div class="words"><h4>Positive</h4><div class="p">${D.words.pos.map(w=>`<span>${esc(w[0])}</span>`).join("")}</div><h4>Negative</h4><div class="g">${D.words.neg.map(w=>`<span>${esc(w[0])}</span>`).join("")}</div></div></div>
+ <div class="card"><h3>Rival brands mentioned</h3>${br.length?`<table><tbody>${br.map(([b,c])=>{const n=c[0]+c[1]+c[2];return`<tr><td style="width:40%">${b}${nTag(n)}</td><td>${sbar(...c)}<span class="small mute">${pct(c[0]/n)} pos · ${pct(c[2]/n)} neg</span></td></tr>`}).join("")}</tbody></table><p class="small faint">Sentiment of comments that name the brand, toward whatever the comment is about.</p>`:`<p class="faint">No rival mentions under these filters.</p>`}</div></div>`}
+function vCreators(){const vs=filt(),by={};vs.forEach(v=>(by[v.c]||(by[v.c]=[])).push(v));
+ const rows=Object.entries(by).map(([c,x])=>{const t=stats(x),cr=C[c];return Object.assign({c:+c,cr,mix:["organic","seeded","sponsored"].map(k=>x.filter(v=>v.pr===k).length)},t)});
+ const cols=[{k:"name",h:"Creator",v:r=>r.cr.name},{k:"kol",h:"Type",v:r=>LBL.kol[r.cr.kol]},{k:"tier",h:"Size",v:r=>TIERS.indexOf(r.cr.tier),f:r=>esc(r.cr.tier)},{k:"region",h:"Region",v:r=>r.cr.region},{k:"n",h:"Videos",v:r=>r.n},{k:"rel",h:"Median rel. lift",v:r=>r.rel,f:r=>r.rel==null?"–":r.rel.toFixed(2)+"x"},{k:"pos",h:"Positive",v:r=>r.pos,f:r=>r.nps?pct(r.pos)+nTag(r.nps):"–"},{k:"mix",h:"Organic / seeded / sponsored",v:r=>r.mix[1]+r.mix[2],f:r=>r.mix.join(" / ")}];
+ const sel=S.open&&S.open.startsWith("c")?+S.open.slice(1):null;
+ const det=sel!=null&&by[sel]?`<div class="card" style="margin-top:12px"><h3>${esc(C[sel].name)}</h3>${table("cv",[{k:"t",h:"Video",v:r=>r.t,f:r=>vidLink(r)},{k:"f",h:"Format",v:r=>LBL.f[r.f]},{k:"pr",h:"Type",v:r=>r.pr,f:r=>promoTag(r)},{k:"vw",h:"Views",v:r=>r.vw,f:r=>num(r.vw)},{k:"rl",h:"Rel. lift",v:r=>r.rl,f:r=>r.rl==null?"–":r.rl.toFixed(2)+"x"}],by[sel])}</div>`:"";
+ const pivot=(()=>{const ks=Object.keys(LBL.kol).filter(k=>k!=="official_brand"&&k!=="other"),rs=REGIONS;return`<table class="heat"><thead><tr><th></th>${rs.map(r=>`<th style="text-align:center">${r.replace("Other / undeclared","Other")}</th>`).join("")}</tr></thead><tbody>${ks.map(k=>`<tr><td style="text-align:left;font-size:12px">${LBL.kol[k]}</td>${rs.map(r=>{const x=Object.values(by).filter(a=>a[0].cr_.kol===k&&regionOf(a[0])===r).length;return`<td style="background:${x?`color-mix(in srgb,var(--accent) ${Math.min(80,x*5)}%,transparent)`:"transparent"}">${x||""}</td>`}).join("")}</tr>`).join("")}</tbody></table>`})();
+ return`<div class="grid g2" style="grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)"><div class="card"><h3>Creators <span class="faint small">(${rows.length}; click a row)</span></h3>${table("cre",cols,rows,{click:1,attr:r=>`data-open="c${r.c}"`,sel:r=>sel===r.c})}</div><div class="card"><h3>Creator type by region</h3><p class="small faint">Number of creators</p>${pivot}</div></div>${det}`}
+function vVideos(){const vs=filt();
+ const cols=[{k:"t",h:"Video",v:r=>r.t,f:r=>vidLink(r)+`<div class="small mute">${esc(r.cr_.name)} · ${esc(r.cr_.tier)}</div>`},{k:"tp",h:"Topic",v:r=>LBL.tp[r.tp]},{k:"f",h:"Format",v:r=>LBL.f[r.f]},{k:"pr",h:"Type",v:r=>r.pr,f:r=>promoTag(r)},{k:"d",h:"Day",v:r=>r.d,f:r=>"D"+(r.d>=0?"+":"")+r.d+(r.sh?" · Short":"")},{k:"vw",h:"Views",v:r=>r.vw,f:r=>num(r.vw)},{k:"rl",h:"Rel. lift",v:r=>r.rl,f:r=>r.rl==null?"–":r.rl.toFixed(2)+"x"+(r.op?" ★":"")},{k:"pos",h:"Positive",v:r=>{const n=r.a.ps[0]+r.a.ps[1]+r.a.ps[2];return n>=10?r.a.ps[0]/n:null},f:r=>{const n=r.a.ps[0]+r.a.ps[1]+r.a.ps[2];return n?pct(r.a.ps[0]/n)+nTag(n):"–"}}];
+ const rows=vs.slice(0,400);
+ const html=table("vid",cols,rows,{click:1,attr:r=>`data-open="v${r.i}"`,sel:r=>S.open==="v"+r.i});
+ const o=S.open&&S.open[0]==="v"?V[+S.open.slice(1)]:null;
+ const det=o?`<div class="card" style="margin-top:12px"><h3>${vidLink(o)}</h3><div class="small mute">${esc(o.cr_.name)} · ${LBL.f[o.f]} · ${LBL.tp[o.tp]} · ${promoTag(o)} · framing: ${esc(o.fr)}</div>${sbar(...o.a.ps)}<div class="small">${o.a.ps[0]+o.a.ps[1]+o.a.ps[2]?`${pct(o.a.ps[0]/(o.a.ps[0]+o.a.ps[1]+o.a.ps[2]))} positive of ${o.a.ps[0]+o.a.ps[1]+o.a.ps[2]} product-side comments`:"no labelled comments"}</div><h4>Top comments</h4>${o.a.tc.map(c=>`<div class="q ${c[1]===0?"p":c[1]===2?"g":""}">${esc(c[0])}<small>${c[3]} likes</small></div>`).join("")||`<p class="faint small">None saved.</p>`}</div>`:"";
+ return`<div class="card"><h3>Videos <span class="faint small">(${vs.length}; ★ = outperformer; click a row)</span></h3>${html}</div>${det}`}
+let CHAT=[];
+const SUGG=["What are people saying about Duo's price?","Did seeded videos beat organic ones posted on the same days?","Which formats work best for Duo under 250k subs?","Why did negative sentiment rise this week?"];
+function chatHTML(){return CHAT.map(m=>m.role==="u"?`<div class="q" style="border-color:var(--accent)"><b>${esc(m.t)}</b></div>`:`<div class="card" style="margin:8px 0"><div style="white-space:pre-wrap">${esc(m.t)}</div>${m.sql?`<details style="margin-top:8px"><summary class="small mute" style="cursor:pointer">Show the query</summary><pre class="small" style="white-space:pre-wrap;word-break:break-word;background:var(--bg);padding:8px;border-radius:8px">${esc(m.sql)}</pre></details>`:""}</div>`).join("")}
+function vAsk(){const local=location.protocol!=="file:";
+ return`<div class="card"><h3>Ask the data</h3><p class="mute small" style="margin-top:0">Questions are answered by querying the same SQLite tables this dashboard reads, and the query is shown so you can check it. Filters on this page do not apply to questions; name the topic, format or time window you mean.</p>
+ ${local?"":`<div class="note">The Ask tab needs the local server. Run <code>python3 serve.py</code> and open http://127.0.0.1:8770 instead of this file.</div>`}
+ <div class="row" style="margin-bottom:8px">${SUGG.map(q=>`<span class="chip" data-act="askq:${esc(q)}">${esc(q)}</span>`).join("")}</div>
+ <div class="row"><input id="askin" placeholder="Ask about the launch, for example: which creators drove the most positive Duo reactions?" style="flex:1;min-width:240px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit"><button class="btn" data-act="ask">Ask</button></div>
+ <div id="chat" style="margin-top:10px">${chatHTML()}</div></div>`}
+async function doAsk(q){q=(q||document.querySelector("#askin")?.value||"").trim();if(!q)return;CHAT.push({role:"u",t:q});const box=()=>document.querySelector("#chat");if(box())box().innerHTML=chatHTML()+`<p class="faint small">Working on it…</p>`;
+ const hist=[];for(let i=0;i<CHAT.length-1;i++)if(CHAT[i].role==="u"&&CHAT[i+1]&&CHAT[i+1].role==="a")hist.push({q:CHAT[i].t,a:CHAT[i+1].t,sql:CHAT[i+1].sql||""});
+ try{const r=await fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,history:hist})});const d=await r.json();CHAT.push({role:"a",t:d.answer||("Error: "+(d.error||r.status)),sql:d.sql})}
+ catch(e){CHAT.push({role:"a",t:"Could not reach the local server. Run python3 serve.py and open http://127.0.0.1:8770.",sql:null})}
+ if(S.tab==="ask"){if(box())box().innerHTML=chatHTML();const i=document.querySelector("#askin");if(i)i.value=""}}
+function vMethod(){const c=D.counts;return`<div class="grid g2"><div class="card"><h3>Definitions</h3><ul style="padding-left:18px;margin:0">
+ <li><b>Sponsored</b>: the creator disclosed a commercial sponsor (YouTube paid-promotion flag, or sponsor wording in the description). The sponsor is often not Apple.</li>
+ <li><b>Seeded</b>: Apple early access in kind (pre-launch unit or event invite). <i>Disclosed</i> means the video says so (${c.seeded.disclosed||0} videos). <i>Inferred</i> means a hands-on posted on launch day or next day, or a review posted on the embargo-lift day, and Claude judged from the title and description that the creator had the device (${c.seeded.inferred||0} videos). Public data cannot prove it, so this is a lower bound.</li>
+ <li><b>Organic</b>: everything else. Affiliate links do not make a video paid.</li>
+ <li><b>Relative lift</b>: video views divided by the channel's own median views on comparable pre-launch videos (Shorts compared with Shorts), then divided by the median of that format class. 1.0 means typical for launch week.</li>
+ <li><b>Outperformer</b>: top quartile of relative lift within Shorts or long videos.</li>
+ <li><b>Sentiment</b>: per comment, toward what it is about. Headline numbers count only comments about the product, price, Apple or rivals.</li></ul></div>
+ <div class="card"><h3>Data and limits</h3><ul style="padding-left:18px;margin:0">
+ <li>${c.videos} English-language videos and ${c.creators} channels, collected with the YouTube Data API from searches on the launch. Not a census of YouTube.</li>
+ <li>${c.comments_labelled.toLocaleString()} comments labelled (up to 40 top and 20 newest per video); ${c.comments_en.toLocaleString()} are English and carry signal. Top comments lean toward liked opinions.</li>
+ <li>Labels come from Claude. ${(c.modes.full||0).toLocaleString()} comments were labelled with deeper reasoning and ${(c.modes.fast||0).toLocaleString()} in a faster mode, on different videos, so small differences between videos can partly be labelling mode. The hype theme in fast mode was rechecked.</li>
+ <li>Tier and region: region is the channel-declared country. Audience geography is not public.</li>
+ <li>Small groups are flagged. Differences between groups are associations: launch-day timing, channel size, and format all move performance.</li>
+ <li>Apple's actual ad spend is not visible in public data. "Paid" here means creator content with a commercial relationship.</li></ul></div></div>
+ <div class="card" style="margin-top:12px"><h3>Comment themes</h3><table><tbody>${D.themes.map(t=>`<tr><td style="width:30%"><b>${LBL.th[t[0]]}</b></td><td class="mute">${esc(t[1])}</td></tr>`).join("")}</tbody></table></div>`}
+const VIEWS={overview:vOverview,pvo:vPvO,formats:vFormats,voice:vVoice,creators:vCreators,videos:vVideos,ask:vAsk,method:vMethod};
+
+/* ---------- shell ---------- */
+function renderFilters(){
+ const g=GROUPS.map(g=>`<div class="fg"><b>${g.l}</b>${g.opts.map(([v,l])=>`<span class="chip ${S[g.k].includes(v)?"on":""}" data-chip="${g.k}:${esc(v)}">${esc(l)}</span>`).join("")}</div>`).join("");
+ const extra=`<div class="fg"><b>Video type</b>${[["all","All"],["short","Shorts"],["long","Long"]].map(([v,l])=>`<span class="chip ${S.cls===v?"on":""}" data-act="cls:${v}">${l}</span>`).join("")}</div>
+ <div class="fg"><b>Posted (days from launch)</b><div class="row"><input type="range" id="dmin" min="${DAYMIN}" max="${DAYMAX}" value="${S.dmin}"><span class="small">D${S.dmin>=0?"+":""}${S.dmin}</span></div><div class="row"><input type="range" id="dmax" min="${DAYMIN}" max="${DAYMAX}" value="${S.dmax}"><span class="small">D${S.dmax>=0?"+":""}${S.dmax}</span></div></div>`;
+ $("#filters").innerHTML=S.fshow?`<div class="fpanel">${g}${extra}</div><p class="fsum" id="fsum"></p>`:`<p class="fsum" id="fsum"></p>`;
+ $("#tf").textContent=S.fshow?"Hide filters":"Show filters"}
+const $=s=>document.querySelector(s);
+function render(){const n=filt().length;
+ $("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="${S.tab===k?"on":""}" data-tab="${k}">${l}</button>`).join("");
+ $("#view").innerHTML=VIEWS[S.tab]();const f=$("#fsum");if(f)f.textContent=`${n} of ${V.length} videos match the filters`;save()}
+function full(){renderFilters();render()}
+$("#sub").textContent=`iPhone Duo and iPhone 18 Pro launch, ${new Date(D.event).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"})}, as seen on YouTube · data through ${V.map(v=>v.pub).sort().pop()}`;
+document.addEventListener("click",e=>{const t=e.target.closest("[data-chip],[data-tab],[data-sort],[data-theme],[data-open],[data-act]");if(!t)return;
+ if(t.dataset.chip){const[k,v]=t.dataset.chip.split(/:(.*)/s);const a=S[k],i=a.indexOf(v);i>=0?a.splice(i,1):a.push(v);full()}
+ else if(t.dataset.tab){S.tab=t.dataset.tab;render()}
+ else if(t.dataset.sort){const[id,k]=t.dataset.sort.split(":");const s=S.sort[id];S.sort[id]={k,d:s&&s.k===k?-s.d:(["name","t","f","kol","region","tp","pr"].includes(k)?1:-1)};render()}
+ else if(t.dataset.theme){S.theme=t.dataset.theme;render()}
+ else if(t.dataset.open){S.open=S.open===t.dataset.open?null:t.dataset.open;render()}
+ else if(t.dataset.act){const[a,v]=t.dataset.act.split(":");
+  if(a==="reset"){S=defaults();full()}else if(a==="togglefilters"){S.fshow=!S.fshow;renderFilters()}else if(a==="cls"){S.cls=v;full()}
+  else if(a==="voice"){S.voice=v;render()}else if(a==="toggle"){if(v==="seedEv")S.seedEv=S.seedEv==="all"?"disclosed":"all";else S[v]=!S[v];render()}
+  else if(a==="ask"){doAsk()}else if(a==="askq"){doAsk(t.dataset.act.slice(5))}else if(a==="csv"){csvDownload("scale_candidates.csv",[["video","url","creator","format","rel_lift","views"]].concat(candRows()))}}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="askin")doAsk()});
+document.addEventListener("input",e=>{if(e.target.id==="dmin"||e.target.id==="dmax"){S[e.target.id]=+e.target.value;if(S.dmin>S.dmax){if(e.target.id==="dmin")S.dmax=S.dmin;else S.dmin=S.dmax}renderFilters();render()}});
+function candRows(){let base=filt({promo:["organic","seeded","sponsored"]});if(S.sameWin){const days=new Set(base.filter(v=>v.pr==="seeded").map(v=>v.d));base=base.filter(v=>days.has(v.d))}
+ const org=base.filter(v=>v.pr==="organic"&&v.op===1&&v.a.ps[0]+v.a.ps[1]+v.a.ps[2]>=10),psh=v=>v.a.ps[0]/(v.a.ps[0]+v.a.ps[1]+v.a.ps[2]);const m=med(base.filter(v=>v.pr==="organic"&&v.a.ps[0]+v.a.ps[1]+v.a.ps[2]>=10).map(psh));
+ const sp={};V.forEach(v=>{if(v.pr==="sponsored")sp[v.c]=(sp[v.c]||0)+1});
+ return org.filter(v=>psh(v)>=(m||0)&&(sp[v.c]||0)<2).sort((a,b)=>Math.min(b.rl,10)*psh(b)-Math.min(a.rl,10)*psh(a)).map(v=>[v.t,v.url,v.cr_.name,LBL.f[v.f],v.rl.toFixed(2),v.vw])}
+full();
+</script></body></html>

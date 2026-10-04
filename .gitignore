@@ -1,0 +1,12 @@
+.env
+.env.*
+*.env
+*.csv
+sample_summary.txt
+data/
+__pycache__/
+*.pyc
+.DS_Store
+workbench.html
+dashboard.html
+.venv/
