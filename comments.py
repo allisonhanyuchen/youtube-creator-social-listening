@@ -77,7 +77,7 @@ def label_batch(batch, model=None, thinking=None):
     prompt = ("Label YouTube comments on videos about Apple's Sept 2026 launch (iPhone Duo foldable, iPhone 18 Pro).\n"
               "Output exactly one line per comment, format  i|lang|target|sent|themes|intent  and nothing else.\n"
               "lang: e (English) or o (other)\n"
-              "target (what the comment is about): P=product, V=price/value, C=the video or creator, A=Apple the company, R=rival brand, O=other\n"
+              "target (what the comment is about): P=product, V=price/value, C=the video or creator, A=Apple the company, R=competitor brand, O=other\n"
               "sent (toward that target): + positive, 0 neutral, - negative. Curious or anticipatory comments are 0 unless they show a clear lean.\n"
               f"themes: comma-separated numbers, or - for none. Only for targets P, V, A, R. For target C use 12 only if it calls the video biased/ad-like/shilling, else -.\n{theme_list}\n"
               "intent: b=buy, u=upgrade/wait, s=skip, w=switch from Android, n=none\n"

@@ -2,7 +2,7 @@
 """Step 4: build the SQLite base tables (data/pulse.db) that every surface reads: dashboard, email, Slack, Q&A agent.
 Tables: creators, content, performance, comments, comment_themes. Views: v_content, v_video_sentiment, v_theme_sentiment.
 rel_lift = lift / median lift of the same class (iPhone Duo videos vs the rest, Short vs long); outperformer = top quartile of rel_lift in its class.
-Apple's own channel (format = official) is excluded from lift and outperformer. Paid/seeded labels were dropped: no sponsor in this data was Apple or a rival, and seeding could only be inferred."""
+Apple's own channel (format = official) is excluded from lift and outperformer. Paid/seeded labels were dropped: no sponsor in this data was Apple or a competitor, and seeding could only be inferred."""
 import os, sqlite3, statistics
 from common import load, DATA
 

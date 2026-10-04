@@ -31,8 +31,8 @@ comment_themes(comment_id, theme)  themes (a comment can have several): hype_pur
 views: v_content (content + creator + performance + video-level sentiment: n_product_side, pct_positive, pct_neutral, pct_negative), v_video_sentiment, v_theme_sentiment(theme, sentiment, video_id, comment_id)
 Joins: comments.video_id = content.video_id; content.channel_id = creators.channel_id; comment_themes.comment_id = comments.comment_id.
 Rules: report n with every rate. Prefer rel_lift / outperformer over raw views when comparing groups. Channel size groups: small = tier nano+micro, mid = 'mid 250k-1M', large = macro+mega.
-Scale vs improve: scale = outperformer whose net sentiment (pos minus neg, product-side) is at least the typical video's minus 5 points; improve = outperformer with clearly worse net sentiment, or an underperformer. Needs >=10 product-side comments to judge sentiment.
-Sponsorship and Apple seeding are not analysed (no sponsor in this data was Apple or a rival; seeding could not be verified). Say so if asked.
+Lift and sentiment are separate measures and are never combined into a scale-or-fix verdict; report both. Net sentiment = positive share minus negative share (product-side), judged only with >=10 product-side comments.
+Sponsorship and Apple seeding are not analysed (no sponsor in this data was Apple or a competitor; seeding could not be verified). Say so if asked.
 """
 SQL_PROMPT = SCHEMA + """
 Write ONE SQLite SELECT (CTEs allowed) that answers the question. Use LIMIT <= 40. Round rates to 3 decimals. Include counts (n) as columns.

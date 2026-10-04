@@ -7,8 +7,8 @@
 An AI workflow that listens to YouTube around a product and answers three questions for a creator or brand marketing team:
 
 1. Which creators and content formats beat their own baseline, and at what channel size?
-2. Which videos are ready to put budget behind, and which need fixing first? Lift alone is not enough: a high-lift video with an unhappy audience would amplify the complaints.
-3. What is the audience actually saying (sentiment, themes, pain points, rivals), and how does that change week over week?
+2. How do lift and audience reaction line up for each video? They are shown side by side, not merged into a score, because they measure different things.
+3. What is the audience actually saying (sentiment, themes, pain points, competitors), and how does that change week over week?
 
 The demo case is the Apple iPhone Duo (the first foldable iPhone, launched 2026-09-09). iPhone 18 Pro videos are kept in the database as a comparison for the Q&A agent. The pipeline is built to be pointed at another product by changing the search queries in `collect.py`.
 
@@ -18,8 +18,8 @@ Built with Python (standard library only), the YouTube Data API v3 (official API
 
 | Surface | Use | Entry point |
 |---|---|---|
-| Dashboard (live demo above, or run locally for quotes and chat) | Overview (creator type by level and region, content type table with sentiment bars), Content insights (lift vs audience reaction, one filterable table of videos to scale or fix), Audience insights (theme map and rivals, how local statistics and AI combine, one table of themes and discovered topics). Click a chart to filter; every metric explains itself on hover. | `dashboard.html` |
-| Weekly email | Headline, alerts, who is breaking out, what to do, scale and improve, formats, audience themes. | `report.py` |
+| Dashboard (live demo above, or run locally for quotes and chat) | Overview (creator type by level and region, content type table with sentiment bars), Content insights (one sortable list of videos with creator, region, level, content type, lift, views, engagement and a sentiment bar), Audience insights (theme map and competitors, how local statistics and AI combine, one table of themes and discovered topics). Click a chart to filter; every metric explains itself on hover. | `dashboard.html` |
+| Weekly email | Headline, alerts, who is breaking out, what to do, highest-lift videos, topics, formats, audience themes. | `report.py` |
 | Slack digest and alerts | The same readout in a channel, plus an alert when sentiment or a theme shifts. | `notify.py` |
 | Q&A agent | Ask in Slack or in the dashboard. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py` |
 
@@ -46,7 +46,7 @@ The split is deliberate: statistics where they are enough, Claude where reading 
 
 | Step | Where | Why |
 |---|---|---|
-| Lift, baselines, outperformer cut-offs, scale vs improve, alerts, every number in the report | Local Python | Deterministic and testable, nothing is generated |
+| Lift, baselines, outperformer cut-offs, alerts, every number in the report | Local Python | Deterministic and testable, nothing is generated |
 | Language, no-signal filtering, SQL guard, public-demo safety check | Local Python | Cheap rules |
 | Topics beyond the fixed themes (`emerging.py`) | **Local discovery**: TF-IDF over unigrams and bigrams, spherical k-means, all pure Python. **AI naming**: Claude names each cluster and writes one paraphrased sentence | Clustering finds what the fixed taxonomy misses, for example iPad mini comparisons or Apple Pencil support; the model only explains it |
 | Per-comment target, sentiment, themes, intent | Claude | Needs reading: is it about the phone, the price, or the creator? Sarcasm? A lexicon cannot tell, and about a quarter of comments are about the creator |
@@ -56,8 +56,7 @@ The split is deliberate: statistics where they are enough, Claude where reading 
 
 - **Lift**: a video's views divided by the median views of the same channel's comparable pre-launch videos (Shorts compared with Shorts, long with long), then divided by the typical value among videos of the same product and format. 1.0 is a typical video.
 - **Outperformer**: top quarter of lift within its format class. A fixed "2x baseline" bar was too loose in launch week, when most videos beat their baseline. **Underperformer**: bottom quarter.
-- **Audience reaction**: sentiment is labelled per comment toward what the comment is about. Headline numbers count only comments about the product, price, Apple, or rivals; comments about the video or creator are excluded. A video needs at least 10 such comments before its reaction is judged.
-- **Scale**: an outperformer whose net sentiment (positive minus negative share) is at least the typical video's, within a 5-point tolerance. **Improve**: an outperformer with a clearly weaker reaction (fix the message first), or an underperformer.
+- **Audience reaction**: sentiment is labelled per comment toward what the comment is about. Headline numbers count only comments about the product, price, Apple, or competitors; comments about the video or creator are excluded. A video needs at least 10 such comments before its reaction is judged.
 - **Channel size**: small (under 250k subscribers), mid (250k to 1M), large (1M and above).
 
 ## Scheduled run
@@ -100,7 +99,7 @@ Steps are cached and resumable: searches, baselines, and comment labels are only
 python3 -m unittest discover -s tests -t . -v      # standard library only, no keys, no network
 ```
 
-They cover the pieces that decide what the dashboard says: the compact label parser, the no-signal comment filter, outperformer cut-offs, the scale vs improve rule (including the 5-point tolerance and the 10-comment minimum), week-over-week alerts, the read-only SQL guard behind the Q&A agent, that `state/` and the public demo contain no comment text, and that the email report renders and escapes HTML. They run on every push (Python 3.9 and 3.12).
+They cover the pieces that decide what the dashboard says: the compact label parser, the no-signal comment filter, outperformer cut-offs, week-over-week alerts, the read-only SQL guard behind the Q&A agent, that `state/` and the public demo contain no comment text, and that the email report renders and escapes HTML. They run on every push (Python 3.9 and 3.12).
 
 ## Data and limits
 
@@ -109,7 +108,7 @@ They cover the pieces that decide what the dashboard says: the compact label par
 - Comments were labelled in two modes on different videos: deeper reasoning first, then a faster mode with a recheck of the hype theme. Small differences between videos can partly reflect the labelling mode.
 - Region is the channel-declared country. Audience geography is not public.
 - Lift compares a video with its own channel's usual videos, so small channels reach high multiples more easily. Differences between groups are associations, and small groups can swing.
-- Sponsorship and Apple seeding are deliberately not analysed. In an earlier version, none of the 58 sponsored videos was sponsored by Apple or a rival (they were case makers, VPNs and similar), and seeding could only be inferred from posting time, which also drives views. Neither produced a reliable comparison.
+- Sponsorship and Apple seeding are deliberately not analysed. In an earlier version, none of the 58 sponsored videos was sponsored by Apple or a competitor (they were case makers, VPNs and similar), and seeding could only be inferred from posting time, which also drives views. Neither produced a reliable comparison.
 
 ## Privacy and keys
 

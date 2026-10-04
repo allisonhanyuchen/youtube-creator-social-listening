@@ -18,7 +18,7 @@ FORMATS = {
     "other": "none of the above",
 }
 TOPICS = {"duo": "iPhone Duo (the new foldable)", "iphone_18_pro": "iPhone 18 Pro / Pro Max", "iphone_18": "base iPhone 18",
-          "event_general": "whole event or multiple products", "competitor_foldable": "mainly about a rival foldable",
+          "event_general": "whole event or multiple products", "competitor_foldable": "mainly about a competitor foldable",
           "other": "other"}
 BATCH = 30
 

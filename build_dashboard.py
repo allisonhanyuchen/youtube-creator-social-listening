@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build dashboard.html (local, with a few hundred quoted comments) or docs/index.html (--public, no comment text) from data/pulse.db.
 One self-contained page, no CDN; all filtering and drill-down happen in the browser.
-Embedded: per-video rows + per-video comment aggregates (sentiment, themes, rival brands, intent), the discovered topics, paraphrased theme notes."""
+Embedded: per-video rows + per-video comment aggregates (sentiment, themes, competitor brands, intent), the discovered topics, paraphrased theme notes."""
 import json, os, re, sqlite3, sys
 from collections import defaultdict
 from common import DATA, HERE, load

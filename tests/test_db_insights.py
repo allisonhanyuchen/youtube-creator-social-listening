@@ -35,37 +35,22 @@ class DatabaseAndBuckets(unittest.TestCase):
     def test_comments_survive_without_text(self):
         self.assertEqual(self.con.execute("select count(*) from comments where text is null").fetchone()[0], self.con.execute("select count(*) from comments").fetchone()[0])
 
-    def test_scale_improve_buckets(self):
-        rows, med_net = insights.judged_videos(self.con)
+    def test_underperformers_are_the_bottom_quarter_and_no_verdicts_exist(self):
+        rows = insights.video_rows(self.con)
         by = {r["video_id"]: r for r in rows}
-        self.assertEqual(by["v11"]["bucket"], "scale")        # high lift + happy
-        self.assertEqual(by["v10"]["bucket"], "improve")      # high lift + unhappy: fix before scaling
-        self.assertEqual(by["v09"]["bucket"], "unverified")   # high lift, only 4 product-side comments
-        for low in ("v00", "v01", "v02", "v03"):
-            self.assertEqual(by[low]["bucket"], "improve", low)   # bottom quarter
-        for mid in ("v05", "v06", "v07"):
-            self.assertIsNone(by[mid]["bucket"], mid)
-        self.assertAlmostEqual(med_net, 0.1, places=2)
+        self.assertEqual({k for k, r in by.items() if r["under"]}, {"v00", "v01", "v02", "v03"})
+        for r in rows:
+            self.assertNotIn("bucket", r)                      # lift and sentiment are reported side by side, never merged
 
-    def test_metrics_counts(self):
+    def test_metrics(self):
         m = insights.metrics(self.con)
-        self.assertEqual(m["scale_ready"], 1)
-        self.assertEqual(m["improve_high_lift_unhappy_audience"], 1)
-        self.assertEqual(m["outperformers_without_enough_comments"], 1)
         self.assertEqual(m["totals"]["videos"], 12)
-
-
-class Tolerance(unittest.TestCase):
-    def test_slightly_below_typical_still_counts_as_good(self):
-        tmp = tempfile.TemporaryDirectory()
-        comments = {i: MID for i in range(12)}
-        comments[11] = (20, 6, 5)       # net +0.05: below typical +0.10 by 5 points exactly
-        comments[10] = (20, 5, 7)       # net -0.10: clearly worse
-        con = helpers.build(tmp.name, LIFTS, comments)
-        by = {r["video_id"]: r for r in insights.judged_videos(con)[0]}
-        self.assertEqual(by["v11"]["bucket"], "scale")
-        self.assertEqual(by["v10"]["bucket"], "improve")
-        con.close(); tmp.cleanup()
+        self.assertAlmostEqual(m["outperformer_rate"], 3 / 12, places=2)
+        self.assertEqual([x["rel_lift"] for x in m["highest_lift"]][:3], [round(8 / 1.3, 1), round(5 / 1.3, 1), round(3 / 1.3, 1)])
+        top = m["highest_lift"][0]
+        self.assertEqual(top["product_comments"], 20)
+        self.assertAlmostEqual(top["pos"], 0.75, places=2)     # 15 of 20 positive
+        self.assertEqual(m["highest_lift"][2]["product_comments"], 4)    # too few to judge: reported as a count, not hidden
 
 
 class Alerts(unittest.TestCase):

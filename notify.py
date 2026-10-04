@@ -19,10 +19,9 @@ def build(ins, alerts_only=False):
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*{n['headline']}*\n{n['summary']}"}},
               {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.0f}M views · {t['comments_en']:,} English comments · product sentiment {s['pos']*100:.0f}% positive, {s['neg']*100:.0f}% negative · data through {ins['as_of']}"}]}]
     if al: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Alerts*\n" + "\n".join(f":rotating_light: {a['text']}" for a in al)}})
-    blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": "*What to do with it*\n" + "\n".join(f"{i+1}. *{f['title']}*\n    _{f['action']}_" for i, f in enumerate(n["findings"]))}},
-               {"type": "section", "text": {"type": "mrkdwn", "text": f"*Scale and improve*\n:white_check_mark: {m['scale_ready']} ready to scale · :wrench: {m['improve_high_lift_unhappy_audience']} high lift but unhappy audience, fix first · {m['improve_low_lift']} below their channel's usual views"}}]
+    blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": "*What to do with it*\n" + "\n".join(f"{i+1}. *{f['title']}*\n    _{f['action']}_" for i, f in enumerate(n["findings"]))}}]
     if m.get("topics_beyond_themes"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Topics beyond the 12 themes*\n" + "\n".join(f"• *{c['label']}* ({c['n']:,} comments, {c['pos']*100:.0f}% positive, {c['neg']*100:.0f}% negative)" for c in m["topics_beyond_themes"][:3])}})
-    if m["scale_candidates"]: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Top to scale*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift, {c['pos']*100:.0f}% positive)" for c in m["scale_candidates"][:3])}})
+    if m["highest_lift"]: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift" + (f", {c['pos']*100:.0f}% positive / {c['neg']*100:.0f}% negative)" if c.get('pos') is not None and c['product_comments'] >= 10 else ", too few comments for sentiment)") for c in m["highest_lift"][:3])}})
     blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "Ask a follow-up: mention *@Launch Pulse* or message me. The full report is in your inbox."}]})
     return {"text": n["headline"], "blocks": blocks}
 

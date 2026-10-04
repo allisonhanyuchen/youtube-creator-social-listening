@@ -58,15 +58,14 @@ def fake_ins(headline="A headline"):
                 narrative=dict(headline=headline, summary="Summary.", watch="Watch.", findings=[dict(title=f"F{i}", detail="d", action="a") for i in range(4)]),
                 metrics=dict(totals=dict(videos=10, views=5_000_000, comments_en=1234), sentiment=dict(pos=0.4, neg=0.3), by_channel_size={k: size() for k in ("small (<250k)", "mid (250k-1M)", "large (1M+)")},
                              by_format=[dict(format="first_impressions", videos=12, outperformer_rate=0.4)], themes=[dict(theme="price_affordability", n=200, pos=0.2, neg=0.6)],
-                             scale_candidates=[dict(title="Good", url="https://y/1", creator="C", format="comparison", rel_lift=3.1, views=1000, pos=0.6, neg=0.1)],
-                             fix_before_scaling=[dict(title="Fix", url="https://y/2", creator="D", rel_lift=9.0, pos=0.2, neg=0.5, main_complaint="price")],
-                             scale_ready=4, improve_high_lift_unhappy_audience=2, improve_low_lift=6))
+                             highest_lift=[dict(title="Good", url="https://y/1", creator="C", channel_size="small (<250k)", format="comparison", rel_lift=3.1, views=1000, product_comments=40, pos=0.6, neg=0.1),
+                                           dict(title="Thin", url="https://y/2", creator="D", channel_size="mid (250k-1M)", format="first_impressions", rel_lift=9.0, views=5000, product_comments=3, pos=None, neg=None)]))
 
 
 class EmailReport(unittest.TestCase):
     def test_renders_the_readout(self):
         html = report.build(fake_ins())
-        for s in ("A headline", "Price mentions are up", "Ready to scale", "Fix before scaling", "complaints centre on price"):
+        for s in ("A headline", "Price mentions are up", "Highest-lift videos", "too few comments for sentiment", "60% positive"):
             self.assertIn(s, html)
 
     def test_no_traces_of_the_removed_paid_seeded_analysis(self):

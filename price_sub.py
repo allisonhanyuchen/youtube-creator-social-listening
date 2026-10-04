@@ -8,7 +8,7 @@ from common import claude, load, save, USAGE
 
 SUBS = {
     "regional_price_gap": ("Regional price gaps", "outside the US, local prices are much higher than the US headline (taxes, tariffs, exchange rates)"),
-    "samsung_fold_comparison": ("Versus Samsung Fold", "the Duo's price weighed against the Galaxy Z Fold 8 or other rival foldables, including their discounts"),
+    "samsung_fold_comparison": ("Versus Samsung Fold", "the Duo's price weighed against the Galaxy Z Fold 8 or other competitor foldables, including their discounts"),
     "fair_for_foldables": ("Fair, better than feared", "the price is reasonable, in line with other foldables, or lower than expected"),
     "affordability_barrier": ("Can't afford it", "out of reach or beyond what the commenter will spend, often citing the economy or other priorities"),
     "overpriced_for_tradeoffs": ("Overpriced for compromises", "not worth the price because features are missing or downgraded (Face ID, telephoto, camera, battery)"),
