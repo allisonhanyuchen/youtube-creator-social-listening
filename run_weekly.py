@@ -8,9 +8,9 @@ from common import HERE
 import state_io
 
 STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]), ("classify new videos", ["classify.py"]), ("channel baselines and lift", ["performance.py"]), ("creator types", ["creators.py"]), ("pull and label new comments", ["comments.py", "--refresh"]),
-         ("build tables", ["db.py"]), ("assign comments to topics, discover new ones", ["topics.py"]), ("insights, changes and alerts", ["insights.py"]), ("paraphrased topic notes", ["summaries.py"]), ("recorded Q&A examples", ["examples.py"]), ("public demo page", ["build_dashboard.py", "--public"])]
+         ("build tables", ["db.py"]), ("assign comments to topics, discover new ones", ["topics.py"]), ("insights, changes and alerts", ["insights.py"]), ("text-free database for the hosted Q&A", ["export_public_db.py"]), ("paraphrased topic notes", ["summaries.py"]), ("recorded Q&A examples", ["examples.py"]), ("public demo page", ["build_dashboard.py", "--public"])]
 SEND = [("email report", ["report.py", "--send"]), ("Slack digest", ["notify.py"])]
-DAILY_SKIP = {"paraphrased topic notes", "recorded Q&A examples"}              # the slow, Claude-heavy steps only run in the weekly full pass
+DAILY_SKIP = {"paraphrased topic notes", "recorded Q&A examples", "text-free database for the hosted Q&A"}              # the slow, Claude-heavy steps only run in the weekly full pass
 DAILY_SEND = [("Slack alerts (only if something fired)", ["notify.py", "--alerts"])]
 RUNS = os.path.join(HERE, "state", "runs.json")
 

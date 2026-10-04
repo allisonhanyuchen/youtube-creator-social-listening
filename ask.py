@@ -5,7 +5,8 @@ Returns the answer plus the SQL it ran, so the asker can check the work.  CLI: p
 import json, os, re, sqlite3, sys, time
 from common import DATA, claude, parse_json
 
-DB = os.path.join(DATA, "pulse.db")
+DB = os.environ.get("PULSE_DB") or os.path.join(DATA, "pulse.db")
+PUBLIC = bool(os.environ.get("PULSE_PUBLIC"))          # the hosted copy: a text-free database
 MAX_ROWS = 40
 
 SCHEMA = """
@@ -33,7 +34,7 @@ Rules: report n with every rate. Prefer rel_lift / outperformer over raw views w
 Lift and sentiment are separate measures and are never combined into a scale-or-fix verdict; report both. Net sentiment = positive share minus negative share (product-side), judged only with >=10 product-side comments.
 Sponsorship and Apple seeding are not analysed (no sponsor in this data was Apple or a competitor; seeding could not be verified). Say so if asked.
 """
-SQL_PROMPT = SCHEMA + """
+SQL_PROMPT = SCHEMA + ("\nIn this deployment comments.text is empty (no comment text is stored): never select it; use the labels, topics and counts.\n" if PUBLIC else "") + """
 Write ONE SQLite SELECT (CTEs allowed) that answers the question. Use LIMIT <= 40. Round rates to 3 decimals. Include counts (n) as columns.
 If the question cannot be answered from this data (e.g. ad spend, sales, private data, other platforms), return {"clarify": "<one sentence on what the data can and cannot say>"}.
 Return JSON only: {"sql": "...", "note": "<=15 words on what the query measures"} or {"clarify": "..."}.

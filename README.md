@@ -104,6 +104,15 @@ The live page is a static demo of one product. To run the same pipeline on your 
 
 Still specific to the Duo case and worth a look when you switch product: the product labels in `classify.py` (`TOPICS`) and the `topic = 'duo'` scope in `common.scope_sql()`. Content-type labels (first impressions, review, comparison and so on) are generic. The search costs 100 quota units per query per day.
 
+## Live demo on Vercel
+
+GitHub Pages can only serve static files, so the recorded Q&A is what it shows. On Vercel the same page answers live:
+
+- `vercel.json` serves `docs/` and adds one serverless function, `api/chat.py`. It reuses the Q&A core (`ask.py`) over `api/public.db`, a copy of the database with **no comment text** (`export_public_db.py` writes it in the Monday full run).
+- Import the repo in Vercel (Framework: Other, no build command) and set `ANTHROPIC_API_KEY` in the project's environment variables. Use a dedicated key with a spend limit set in the Anthropic console; that limit is the hard cap.
+- Guards in the function: same-site requests only, questions of at most 300 characters, 8 questions per visitor per hour and 300 per day (`CHAT_PER_HOUR`, `CHAT_PER_DAY`, best effort per instance), and a kill switch (`CHAT_DISABLED=1`). If the function is not there (GitHub Pages), the page falls back to the recorded answers by itself.
+- Each push to `main` redeploys, so the scheduled run's commits update the hosted page too.
+
 ## Tests
 
 ```bash

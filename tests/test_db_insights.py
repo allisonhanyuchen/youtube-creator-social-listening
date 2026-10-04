@@ -53,6 +53,19 @@ class DatabaseAndBuckets(unittest.TestCase):
         self.assertEqual(m["highest_lift"][2]["product_comments"], 4)    # too few to judge: reported as a count, not hidden
 
 
+class HostedChat(unittest.TestCase):
+    def test_limits_per_visitor_and_per_day(self):
+        import importlib, sys, os
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "api"))
+        chat = importlib.import_module("chat")
+        chat.HITS.clear(); chat.DAY.update(d="", n=0)
+        results = [chat.allowed("1.1.1.1")[0] for _ in range(chat.PER_VISITOR_HOUR + 1)]
+        self.assertEqual(results, [True] * chat.PER_VISITOR_HOUR + [False])
+        self.assertTrue(chat.allowed("2.2.2.2")[0])                    # another visitor is unaffected
+        chat.HITS.clear(); chat.DAY.update(n=chat.GLOBAL_DAY)
+        self.assertFalse(chat.allowed("3.3.3.3")[0])                   # global daily budget
+
+
 class ChangesAndWatchlist(unittest.TestCase):
     def test_first_run_has_no_changes(self):
         self.assertIsNone(insights.changes(dict(topics={}), None))
