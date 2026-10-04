@@ -35,9 +35,22 @@ db.py           builds data/pulse.db (SQLite base tables and views)
 insights.py     numbers computed in Python, narrative by Claude, week-over-week alerts
 report.py       HTML email           notify.py   Slack digest and alerts
 build_dashboard.py  dashboard.html   ask.py      Q&A core (Slack bot and dashboard)
+emerging.py     local TF-IDF + clustering finds topics the 12 themes miss; Claude names them
 summaries.py / examples.py / public_safety.py   paraphrased notes and recorded Q&A for the public demo, checked so nothing reuses a comment's wording
 build_dashboard.py --public   docs/index.html (GitHub Pages)
 ```
+
+## What runs locally and what uses AI
+
+The split is deliberate: statistics where they are enough, Claude where reading and judgement add something.
+
+| Step | Where | Why |
+|---|---|---|
+| Lift, baselines, outperformer cut-offs, scale vs improve, alerts, every number in the report | Local Python | Deterministic and testable, nothing is generated |
+| Language, no-signal filtering, SQL guard, public-demo safety check | Local Python | Cheap rules |
+| Topics beyond the fixed themes (`emerging.py`) | **Local discovery**: TF-IDF over unigrams and bigrams, spherical k-means, all pure Python. **AI naming**: Claude names each cluster and writes one paraphrased sentence | Clustering finds what the fixed taxonomy misses, for example iPad mini comparisons or Apple Pencil support; the model only explains it |
+| Per-comment target, sentiment, themes, intent | Claude | Needs reading: is it about the phone, the price, or the creator? Sarcasm? A lexicon cannot tell, and about a quarter of comments are about the creator |
+| Narrative, Q&A, theme notes | Claude, on numbers computed locally | Grounded in the data, with the SQL shown |
 
 ## Definitions
 

@@ -7,7 +7,7 @@ from common import HERE
 import state_io
 
 STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]), ("classify new videos", ["classify.py"]), ("channel baselines and lift", ["performance.py"]), ("creator types", ["creators.py"]), ("pull and label new comments", ["comments.py", "--refresh"]),
-         ("recheck hype label", ["hype_recheck.py"]), ("recover ad-like label", ["credibility_pass.py"]), ("price sub-themes", ["price_sub.py"]), ("build tables", ["db.py"]), ("insights and alerts", ["insights.py"]), ("paraphrased theme notes", ["summaries.py"]), ("recorded Q&A examples", ["examples.py"]), ("public demo page", ["build_dashboard.py", "--public"])]
+         ("recheck hype label", ["hype_recheck.py"]), ("recover ad-like label", ["credibility_pass.py"]), ("price sub-themes", ["price_sub.py"]), ("build tables", ["db.py"]), ("topics beyond the 12 themes", ["emerging.py"]), ("insights and alerts", ["insights.py"]), ("paraphrased theme notes", ["summaries.py"]), ("recorded Q&A examples", ["examples.py"]), ("public demo page", ["build_dashboard.py", "--public"])]
 SEND = [("email report", ["report.py", "--send"]), ("Slack digest", ["notify.py"])]
 
 

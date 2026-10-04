@@ -24,7 +24,7 @@ def attach_public_text(data, corp):
     data["summaries"] = json.load(open(sp)) if os.path.exists(sp) else {"themes": {}, "price": {}}
     data["examples"] = json.load(open(ep)) if os.path.exists(ep) else []
     strings = [b for t in data["summaries"]["themes"].values() for bl in t.values() for b in bl] + [b for bl in data["summaries"]["price"].values() for b in bl] \
-        + [e["a"] for e in data["examples"]]
+        + [e["a"] for e in data["examples"]] + [c["summary"] for c in data.get("emerging", [])] + [c["label"] for c in data.get("emerging", [])]
     bad = [s[:60] for s in strings if safe.overlap(s, corp)]
     if bad: raise SystemExit(f"public text overlaps comment wording, not publishing: {bad[:3]}")
     return data
@@ -101,7 +101,9 @@ def main():
                   comments_en=sum(a["n"] for a in agg),
                   modes=dict(con.execute("select label_mode, count(*) from comments c join content v using(video_id) where v.topic='duo' and v.format!='official' group by 1").fetchall()),
                   built=load("videos.json")[0].get("published", "")[:0])
-    data = dict(videos=rows, creators=[c for c in sorted(creators.values(), key=lambda c: c["i"])], themes=[[k, THEMES[k]] for k in THEME_KEYS],
+    emp = os.path.join(HERE, "state", "emerging.json")
+    emerging = [c for c in json.load(open(emp))["clusters"]] if os.path.exists(emp) else []
+    data = dict(emerging=emerging, videos=rows, creators=[c for c in sorted(creators.values(), key=lambda c: c["i"])], themes=[[k, THEMES[k]] for k in THEME_KEYS],
                 quotes=quotes, psubs=[[k, v[0], v[1]] for k, v in PSUBS.items()], pquotes=pquotes, words=dict(pos=contrast(words_pos, words_neg, Np, Nn), neg=contrast(words_neg, words_pos, Nn, Np)),
                 brands=list(BRANDS), counts=counts, event="2026-09-09")
     if public:

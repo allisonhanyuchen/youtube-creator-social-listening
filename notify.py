@@ -21,6 +21,7 @@ def build(ins, alerts_only=False):
     if al: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Alerts*\n" + "\n".join(f":rotating_light: {a['text']}" for a in al)}})
     blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": "*What to do with it*\n" + "\n".join(f"{i+1}. *{f['title']}*\n    _{f['action']}_" for i, f in enumerate(n["findings"]))}},
                {"type": "section", "text": {"type": "mrkdwn", "text": f"*Scale and improve*\n:white_check_mark: {m['scale_ready']} ready to scale · :wrench: {m['improve_high_lift_unhappy_audience']} high lift but unhappy audience, fix first · {m['improve_low_lift']} below their channel's usual views"}}]
+    if m.get("topics_beyond_themes"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Topics beyond the 12 themes*\n" + "\n".join(f"• *{c['label']}* ({c['n']:,} comments, {c['pos']*100:.0f}% positive, {c['neg']*100:.0f}% negative)" for c in m["topics_beyond_themes"][:3])}})
     if m["scale_candidates"]: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Top to scale*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift, {c['pos']*100:.0f}% positive)" for c in m["scale_candidates"][:3])}})
     blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "Ask a follow-up: mention *@Launch Pulse* or message me. The full report is in your inbox."}]})
     return {"text": n["headline"], "blocks": blocks}

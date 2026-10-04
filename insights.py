@@ -76,6 +76,11 @@ def metrics(con):
                     where c.price_sub is not null and c.lang='en' and c.trivial=0 and {SCOPE} group by 1 order by n desc""")
     tot_pb = sum(r["n"] for r in pb) or 1
     m["price_breakdown"] = [dict(sub=SUBS[r["sub"]][0], n=r["n"], share=round(r["n"] / tot_pb, 3), pos=round(r["pos"], 3), neg=round(r["neg"], 3)) for r in pb]
+    em = os.path.join(HERE, "state", "emerging.json")
+    if os.path.exists(em):
+        cl = json.load(open(em))["clusters"]
+        m["topics_beyond_themes"] = [dict(label=c["label"], n=c["n"], share=c["share"], pos=c["pos"], neg=c["neg"], summary=c["summary"], trend_index=c["trend_index"])
+                                     for c in sorted(cl, key=lambda c: -c["n"]) if not c["covered_by"]][:5]
     m["intent"] = {r["intent"]: r["n"] for r in q(con, f"select intent, count(*) n from comments c join content v using(video_id) where c.lang='en' and c.trivial=0 and c.intent!='none' and {SCOPE} group by 1")}
     sc = sorted([x for x in ev if x["bucket"] == "scale"], key=lambda x: -min(x["rel_lift"], 10) * x["pos"])
     seen, cand = set(), []
@@ -117,13 +122,20 @@ def alerts(snap, prev):
     return out
 
 
+def topic_alerts():
+    em = os.path.join(HERE, "state", "emerging.json")
+    if not os.path.exists(em): return []
+    return [dict(kind="topic", text=f"A topic outside the 12 themes is gaining ground: '{c['label']}' ({c['n']} comments, {c['trend_index']}x its usual share of recent comments).")
+            for c in json.load(open(em))["clusters"] if not c["covered_by"] and (c["trend_index"] or 0) >= 1.5 and c["recent"] >= 15 and c["n"] >= 40][:2]
+
+
 def narrative(m):
     prompt = ("You are a creator-marketing analyst writing the weekly readout on how the Apple iPhone Duo (first foldable iPhone, launched 2026-09-09) is landing on YouTube. "
               "Use ONLY numbers in the JSON below; never invent figures. Be direct, plain, no hype. Flag small samples. "
               "Definitions: outperformer = a video in the top quarter of views relative to the channel's own usual views (compared within Shorts or long videos); "
               "underperformer = bottom quarter. 'scale_ready' = outperformers whose audience reaction (positive minus negative share) is at least as good as a typical video; "
               "'improve_high_lift_unhappy_audience' = outperformers whose audience is clearly less happy, so fix the message before spending more; 'improve_low_lift' = underperformers. "
-              "Sponsorship and Apple seeding are NOT analysed; do not mention them. "
+              "Sponsorship and Apple seeding are NOT analysed; do not mention them. 'topics_beyond_themes' are subjects commenters raise that none of the 12 fixed themes names, found by keyword clustering. "
               "Return JSON only: "
               '{"headline": str (<=22 words), "summary": str (<=90 words), "findings": [{"title": str, "detail": str (<=45 words, with numbers), "action": str (<=25 words, a concrete creator-brief or measurement step)}] (exactly 4), '
               '"watch": str (<=40 words, what to monitor next week)}\n\nMETRICS:\n' + json.dumps(m, ensure_ascii=False))
@@ -141,7 +153,7 @@ def main():
     snap = snapshot(con)
     prev_path = os.path.join(HERE, "state", "snapshot.json")
     prev = json.load(open(prev_path)) if os.path.exists(prev_path) else None
-    al = alerts(snap, prev)
+    al = alerts(snap, prev) + topic_alerts()
     nar = narrative(m)
     save("insights.json", dict(metrics=m, narrative=nar, alerts=al, as_of=snap["as_of"]))
     json.dump(snap, open(prev_path, "w"))
