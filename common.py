@@ -80,3 +80,13 @@ def load(name, default=None):
 
 def save(name, obj):
     json.dump(obj, open(os.path.join(DATA, name), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+
+def product():
+    """What the pipeline is about (product.json at the repo root). Prompts and labels read it, so another launch needs a new file, not new code."""
+    return json.load(open(os.path.join(HERE, "product.json"), encoding="utf-8"))
+
+
+def scope_sql(alias="v"):
+    """SQL for 'videos about this product': the topic label from product.json, excluding the brand's own channel."""
+    return f"{alias}.topic='{product()['topic']}' and {alias}.format!='official'"

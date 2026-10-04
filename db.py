@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Step 4: build the SQLite base tables (data/pulse.db) that every surface reads: dashboard, email, Slack, Q&A agent.
-Tables: creators, content, performance, comments, comment_themes. Views: v_content, v_video_sentiment, v_theme_sentiment.
+Tables: creators, content, performance, comments, topics. Views: v_content, v_video_sentiment.
+Topics come from topics.py (state/topics.json + state/comment_topics.json) and are re-applied whenever the database is rebuilt.
 rel_lift = lift / median lift of the same class (iPhone Duo videos vs the rest, Short vs long); outperformer = top quartile of rel_lift in its class.
 Apple's own channel (format = official) is excluded from lift and outperformer. Paid/seeded labels were dropped: no sponsor in this data was Apple or a competitor, and seeding could only be inferred."""
-import os, sqlite3, statistics
-from common import load, DATA
+import json, os, sqlite3, statistics
+from common import load, DATA, HERE
 
 DB = os.path.join(DATA, "pulse.db")
+STATE = os.path.join(HERE, "state")
 PRODUCT_SIDE = "('product','price_value','apple_brand','competitor')"
 SCHEMA = f"""
 CREATE TABLE creators(channel_id TEXT PRIMARY KEY, name TEXT, kol_type TEXT, tier TEXT, subscribers INT, region TEXT);
@@ -15,9 +17,9 @@ CREATE TABLE content(video_id TEXT PRIMARY KEY, url TEXT, title TEXT, channel_id
 CREATE TABLE performance(video_id TEXT PRIMARY KEY, views INT, likes INT, comment_count INT, eng_rate REAL, comment_rate REAL,
   baseline_n INT, baseline_views INT, lift REAL, rel_lift REAL, outperformer INT);
 CREATE TABLE comments(comment_id TEXT PRIMARY KEY, video_id TEXT, text TEXT, likes INT, published TEXT, day_since_launch INT, source TEXT,
-  lang TEXT, target TEXT, sentiment TEXT, intent TEXT, label_mode TEXT, trivial INT, price_sub TEXT);
-CREATE TABLE comment_themes(comment_id TEXT, theme TEXT);
-CREATE INDEX ix_c_video ON comments(video_id); CREATE INDEX ix_t_theme ON comment_themes(theme); CREATE INDEX ix_ct_c ON comment_themes(comment_id);
+  lang TEXT, target TEXT, sentiment TEXT, intent TEXT, label_mode TEXT, trivial INT, topic_id TEXT);
+CREATE TABLE topics(topic_id TEXT PRIMARY KEY, pool TEXT, name TEXT, summary TEXT, terms TEXT, origin TEXT, first_seen TEXT);
+CREATE INDEX ix_c_video ON comments(video_id); CREATE INDEX ix_c_topic ON comments(topic_id);
 
 CREATE VIEW v_video_sentiment AS
   SELECT video_id, COUNT(*) AS n_labelled,
@@ -33,9 +35,22 @@ CREATE VIEW v_content AS
          s.n_product_side, s.pct_positive, s.pct_neutral, s.pct_negative
   FROM content c JOIN creators cr USING(channel_id) JOIN performance p USING(video_id) LEFT JOIN v_video_sentiment s USING(video_id);
 
-CREATE VIEW v_theme_sentiment AS
-  SELECT t.theme, c.sentiment, c.video_id, c.comment_id FROM comment_themes t JOIN comments c USING(comment_id) WHERE c.lang='en' AND c.trivial=0;
 """
+
+
+def _json(path, default):
+    return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else default
+
+
+def apply_topics(con):
+    """Copy the topic table and each comment's topic from state/ into the database (safe to call again after topics.py runs)."""
+    st, ct = _json(os.path.join(STATE, "topics.json"), {}), _json(os.path.join(STATE, "comment_topics.json"), {})
+    con.execute("DELETE FROM topics"); con.execute("UPDATE comments SET topic_id=NULL")
+    for pool, p in (st.get("pools") or {}).items():
+        for t in p["topics"]:
+            con.execute("INSERT INTO topics VALUES (?,?,?,?,?,?,?)", (t["id"], pool, t["name"], t.get("summary", ""), ", ".join(t.get("terms", [])), t.get("origin", ""), t.get("first_seen", "")))
+    con.executemany("UPDATE comments SET topic_id=? WHERE comment_id=?", [(tid, cid) for cid, tid in ct.items() if tid])
+    con.commit()
 
 
 def main():
@@ -74,11 +89,10 @@ def main():
         if not vid or not pub or vid not in known: continue
         dd = (date.fromisoformat(pub) - ev).days
         con.execute("INSERT INTO comments VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (cid, vid, t.get("text"), likes, pub, dd, src,
-                    l["lang"], l["target"], l["sentiment"], l["intent"], l.get("label_mode", "fast"), int(bool(l.get("trivial"))), l.get("psub")))
-        for th in l["themes"]:
-            con.execute("INSERT INTO comment_themes VALUES (?,?)", (cid, th))
+                    l["lang"], l["target"], l["sentiment"], l["intent"], l.get("label_mode", "fast"), int(bool(l.get("trivial"))), None))
+    apply_topics(con)
     con.commit()
-    for t in ("creators", "content", "performance", "comments", "comment_themes"):
+    for t in ("creators", "content", "performance", "comments", "topics"):
         print(f"{t:15} {con.execute(f'select count(*) from {t}').fetchone()[0]:>7} rows")
     print("outperformer cutoffs (rel_lift, top quartile):", {("duo " if k[0] else "other ") + ("short" if k[1] else "long"): round(x, 2) for k, x in cut.items()})
     con.close()

@@ -11,7 +11,7 @@ from ask import ask
 
 app = App(token=secret("SLACK_BOT_TOKEN"))
 HIST, SQLS, LOCK = defaultdict(list), {}, threading.Lock()
-HELP = ("Ask me about the iPhone Duo on YouTube, for example:\n• what are people saying about Duo's price?\n• which channel sizes break out, and which are not ready to scale?\n"
+HELP = ("Ask me about the iPhone Duo on YouTube, for example:\n• what topics are people talking about, and which are growing?\n• which channel sizes break out, and how do their audiences react?\n"
         "• which formats work best for Duo under 250k subs?\n• why did negative sentiment rise this week?")
 
 

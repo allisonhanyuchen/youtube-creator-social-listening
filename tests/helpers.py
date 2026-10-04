@@ -1,7 +1,7 @@
 import contextlib, io, json, os, sqlite3, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common, db
-ORIG_DATA, ORIG_DB = common.DATA, db.DB
+ORIG_DATA, ORIG_DB, ORIG_STATE = common.DATA, db.DB, db.STATE
 
 
 def make_data(tmp, lifts, comments, topic="duo", fmt="first_impressions", official=()):
@@ -26,6 +26,7 @@ def build(tmp, *a, **kw):
     make_data(tmp, *a, **kw)
     common.DATA = tmp
     db.DB = os.path.join(tmp, "pulse.db")
+    db.STATE = os.path.join(tmp, "state")
     with contextlib.redirect_stdout(io.StringIO()):
         db.main()
     con = sqlite3.connect(db.DB)

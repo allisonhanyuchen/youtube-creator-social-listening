@@ -1,0 +1,13 @@
+{
+  "name": "iPhone Duo",
+  "brand": "Apple",
+  "launch": "2026-09-09",
+  "blurb": "the first foldable iPhone, launched 2026-09-09",
+  "competitors": {
+    "Samsung": "samsung|galaxy|z ?fold|z ?flip",
+    "Google Pixel": "pixel",
+    "Xiaomi": "xiaomi|mi mix",
+    "Oppo / Honor / Huawei": "oppo|honor|huawei|vivo"
+  },
+  "topic": "duo"
+}

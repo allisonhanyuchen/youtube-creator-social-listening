@@ -53,20 +53,39 @@ class DatabaseAndBuckets(unittest.TestCase):
         self.assertEqual(m["highest_lift"][2]["product_comments"], 4)    # too few to judge: reported as a count, not hidden
 
 
+class ChangesAndWatchlist(unittest.TestCase):
+    def test_first_run_has_no_changes(self):
+        self.assertIsNone(insights.changes(dict(topics={}), None))
+
+    def test_new_topic_and_growth_are_reported(self):
+        prev = dict(as_of="2026-09-27", videos=["a"], comments=100, sentiment=dict(pos=0.4, neg=0.3), topics={"p01": dict(name="X", n=50, pos=0.4, neg=0.3)})
+        snap = dict(videos=["a", "b"], comments=180, sentiment=dict(pos=0.41, neg=0.28),
+                    topics={"p01": dict(name="X", n=90, pos=0.4, neg=0.3), "p02": dict(name="Y", n=40, pos=0.5, neg=0.2)})
+        ch = insights.changes(snap, prev)
+        self.assertEqual((ch["new_videos"], ch["new_comments"]), (1, 80))
+        self.assertEqual([t["id"] for t in ch["new_topics"]], ["p02"])
+        self.assertEqual(ch["moved"][0]["d_n"], 40)
+
+    def test_watchlist_flags_gaining_and_net_negative_only(self):
+        m = dict(topics=[dict(id="a", name="A", n=200, pos=0.2, neg=0.5, recent=10, trend=1.0), dict(id="b", name="B", n=100, pos=0.4, neg=0.3, recent=30, trend=2.0),
+                         dict(id="c", name="C", n=300, pos=0.4, neg=0.3, recent=10, trend=1.0)])
+        self.assertEqual([w["id"] for w in insights.watchlist(m)], ["a", "b"])
+
+
 class Alerts(unittest.TestCase):
     def snap(self, neg, n=400, themes=None, total=1000, out=None):
-        return dict(as_of="2026-10-04", recent=dict(n=n, pos=0.4, neg=neg, themes=themes or {}, total=total),
-                    prior=dict(n=n, pos=0.4, neg=0.30, themes={}, total=total), outperformers=out or [])
+        return dict(as_of="2026-10-04", topics={"p04": dict(name="Price Complaints")}, recent=dict(n=n, pos=0.4, neg=neg, by_topic=themes or {}, total=total),
+                    prior=dict(n=n, pos=0.4, neg=0.30, by_topic={}, total=total), outperformers=out or [])
 
     def test_sentiment_shift_needs_five_points_and_enough_comments(self):
         self.assertEqual([a["kind"] for a in insights.alerts(self.snap(0.36), None)], ["sentiment"])
         self.assertEqual(insights.alerts(self.snap(0.33), None), [])
         self.assertEqual(insights.alerts(self.snap(0.40, n=100), None), [])
 
-    def test_theme_spike(self):
-        s = self.snap(0.30, themes={"price_affordability": 80})
-        s["prior"]["themes"] = {"price_affordability": 40}
-        self.assertEqual([a["kind"] for a in insights.alerts(s, None)], ["theme"])
+    def test_topic_spike(self):
+        s = self.snap(0.30, themes={"p04": 80})
+        s["prior"]["by_topic"] = {"p04": 40}
+        self.assertEqual([a["kind"] for a in insights.alerts(s, None)], ["topic"])
 
     def test_new_outperformers_vs_previous_snapshot(self):
         out = insights.alerts(self.snap(0.30, out=["a", "b", "c"]), {"outperformers": ["a"]})

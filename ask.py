@@ -25,11 +25,10 @@ comments(comment_id, video_id, text, likes, published, day_since_launch, source,
   Always filter lang='en' AND trivial=0. target: product, price_value, apple_brand, competitor (= product-side), video_or_creator, other.
   Headline sentiment uses only product-side targets. sentiment: positive|neutral|negative (toward the target). intent: buy, upgrade_wait, skip, switch_from_android, none.
   published = comment date; day_since_launch counts from 2026-09-09.
-price_sub (only on comments that carry the price_affordability theme): regional_price_gap, samsung_fold_comparison, fair_for_foldables, affordability_barrier, overpriced_for_tradeoffs, vs_pro_and_ipad, storage_tradein_financing, cost_jokes, general.
-comment_themes(comment_id, theme)  themes (a comment can have several): hype_purchase_excitement, fold_animation_ui, price_affordability, android_prior_art, android_rival_comparison,
-  design_colors_form, crease_screen_quality, camera_hardware, durability_tests, software_usability, apple_brand_leadership, creator_credibility_critique (= calls the video biased or ad-like)
-views: v_content (content + creator + performance + video-level sentiment: n_product_side, pct_positive, pct_neutral, pct_negative), v_video_sentiment, v_theme_sentiment(theme, sentiment, video_id, comment_id)
-Joins: comments.video_id = content.video_id; content.channel_id = creators.channel_id; comment_themes.comment_id = comments.comment_id.
+topics(topic_id, pool, name, summary, terms, origin, first_seen)  audience topics found by local clustering and named by AI. pool 'product' = comments about the product, price, Apple or competitors; pool 'creator' = comments about the video or creator.
+  origin 'seed' (first run) or 'discovered' (appeared on a later refresh, first_seen = date). comments.topic_id joins topics.topic_id; NULL = fits no topic. Topic ids are stable across refreshes.
+views: v_content (content + creator + performance + video-level sentiment: n_product_side, pct_positive, pct_neutral, pct_negative), v_video_sentiment, 
+Joins: comments.video_id = content.video_id; content.channel_id = creators.channel_id; comments.topic_id = topics.topic_id.
 Rules: report n with every rate. Prefer rel_lift / outperformer over raw views when comparing groups. Channel size groups: small = tier nano+micro, mid = 'mid 250k-1M', large = macro+mega.
 Lift and sentiment are separate measures and are never combined into a scale-or-fix verdict; report both. Net sentiment = positive share minus negative share (product-side), judged only with >=10 product-side comments.
 Sponsorship and Apple seeding are not analysed (no sponsor in this data was Apple or a competitor; seeding could not be verified). Say so if asked.

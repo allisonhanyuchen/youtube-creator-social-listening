@@ -10,8 +10,8 @@ import public_safety as safe
 QUESTIONS = [
     "Which channel sizes break out most, and are their audiences happy? Give n.",
     "Which content formats work best for mid-sized channels?",
-    "Why are some high-lift videos not ready to scale? Name two examples.",
-    "Inside the price discussion, which sub-topics are most negative and which are positive?",
+    "Which high-lift videos have the most negative audience reaction? Name two examples, with lift and sentiment shown separately.",
+    "Which audience topics are largest, and which are growing fastest this week?",
     "How does audience sentiment on the iPhone Duo compare with the iPhone 18 Pro?",
     "What do people like most about the Duo, and what do they criticise most?",
 ]

@@ -54,10 +54,13 @@ class StateHasNoText(unittest.TestCase):
 
 def fake_ins(headline="A headline"):
     size = lambda: dict(videos=10, outperformer_rate=0.3, pos=0.4, neg=0.3)
-    return dict(as_of="2026-10-04", alerts=[dict(kind="theme", text="Price mentions are up")],
+    return dict(as_of="2026-10-04", alerts=[dict(kind="topic", text="Price mentions are up")],
                 narrative=dict(headline=headline, summary="Summary.", watch="Watch.", findings=[dict(title=f"F{i}", detail="d", action="a") for i in range(4)]),
                 metrics=dict(totals=dict(videos=10, views=5_000_000, comments_en=1234), sentiment=dict(pos=0.4, neg=0.3), by_channel_size={k: size() for k in ("small (<250k)", "mid (250k-1M)", "large (1M+)")},
-                             by_format=[dict(format="first_impressions", videos=12, outperformer_rate=0.4)], themes=[dict(theme="price_affordability", n=200, pos=0.2, neg=0.6)],
+                             by_format=[dict(format="first_impressions", videos=12, outperformer_rate=0.4)], topics=[dict(id="p04", name="Price Complaints", summary="s", discovered=True, first_seen="2026-10-04", n=200, share=0.2, pos=0.2, neg=0.6, recent=40, trend=1.8)],
+                             coverage=dict(videos=10, creators=8, with_sentiment=6, comments_en=1234, by_level={"small (<250k)": 4, "mid (250k-1M)": 3, "large (1M+)": 3}),
+                             changes=dict(since="2026-09-27", new_videos=3, new_comments=120, new_topics=[dict(id="p21", name="Battery Life", n=40)], moved=[], sentiment_delta=dict(pos=0.01, neg=-0.02)),
+                             watchlist=[dict(id="p04", name="Price Complaints", why="gaining")],
                              highest_lift=[dict(title="Good", url="https://y/1", creator="C", channel_size="small (<250k)", format="comparison", rel_lift=3.1, views=1000, product_comments=40, pos=0.6, neg=0.1),
                                            dict(title="Thin", url="https://y/2", creator="D", channel_size="mid (250k-1M)", format="first_impressions", rel_lift=9.0, views=5000, product_comments=3, pos=None, neg=None)]))
 
@@ -65,7 +68,7 @@ def fake_ins(headline="A headline"):
 class EmailReport(unittest.TestCase):
     def test_renders_the_readout(self):
         html = report.build(fake_ins())
-        for s in ("A headline", "Price mentions are up", "Highest-lift videos", "too few comments for sentiment", "60% positive"):
+        for s in ("A headline", "Price mentions are up", "Highest-lift videos", "Price Complaints", "Battery Life", "Watchlist", "too few comments for sentiment", "60% positive"):
             self.assertIn(s, html)
 
     def test_no_traces_of_the_removed_paid_seeded_analysis(self):
@@ -95,7 +98,7 @@ class CollectHelpers(unittest.TestCase):
 class PublicDemoHasNoCommentText(unittest.TestCase):
     def test_scrub_removes_every_piece_of_comment_text(self):
         import build_dashboard
-        data = dict(quotes=[[0, 1, 0, SECRET_TEXT, 5]], pquotes=[[0, 1, 0, SECRET_TEXT, 5]],
+        data = dict(quotes=[[0, 1, 0, SECRET_TEXT, 5]],
                     videos=[dict(a=dict(tc=[[SECRET_TEXT, 0, [], 3]], ps=[1, 2, 3]))], words=dict(pos=[["good", 30]], neg=[]))
         out = build_dashboard.scrub_public(data)
         self.assertNotIn(SECRET_TEXT, json.dumps(out))
@@ -120,7 +123,7 @@ class PublicSafety(unittest.TestCase):
 
     def test_build_refuses_text_that_copies_a_comment(self):
         import build_dashboard, public_safety as safe
-        data = {"summaries": {"themes": {"price_affordability": {"positive": [], "negative": ["a completely ridiculous price for a phone with no telephoto lens"]}}}, "emerging": []}
+        data = {"summaries": {"topics": {"p04": {"positive": [], "negative": ["a completely ridiculous price for a phone with no telephoto lens"]}}}, "topics": []}
         tmp = tempfile.TemporaryDirectory()
         old = build_dashboard.HERE; build_dashboard.HERE = tmp.name          # no examples.json here
         try:
@@ -131,7 +134,7 @@ class PublicSafety(unittest.TestCase):
 
     def test_build_accepts_a_paraphrase(self):
         import build_dashboard, public_safety as safe
-        data = {"summaries": {"themes": {"price_affordability": {"positive": [], "negative": ["Many people think the cost is far too high given the missing zoom camera"]}}}, "emerging": [dict(label="Zoom lens", summary="People miss the telephoto camera")]}
+        data = {"summaries": {"topics": {"p04": {"positive": [], "negative": ["Many people think the cost is far too high given the missing zoom camera"]}}}, "topics": [dict(name="Zoom lens", summary="People miss the telephoto camera")]}
         tmp = tempfile.TemporaryDirectory()
         old = build_dashboard.HERE; build_dashboard.HERE = tmp.name
         try:
