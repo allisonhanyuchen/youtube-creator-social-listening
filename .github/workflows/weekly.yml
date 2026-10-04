@@ -2,7 +2,7 @@ name: Weekly launch readout
 
 on:
   schedule:
-    - cron: "0 15 * * 1"        # Mondays 15:00 UTC
+    - cron: "0 15 * * *"        # every day 15:00 UTC; run_weekly.py does the light pass, and the full pass on Mondays
   workflow_dispatch:
     inputs:
       send:
@@ -43,4 +43,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state docs
-          git diff --cached --quiet || (git commit -m "Weekly state update" && git push)
+          git diff --cached --quiet || (git commit -m "Scheduled state update" && git push)

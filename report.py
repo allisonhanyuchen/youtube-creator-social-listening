@@ -65,14 +65,14 @@ def build(ins):
 <tr><td style="padding:12px 28px 0;font:600 17px/1.4 Arial,sans-serif;color:{INK}">{esc(n["headline"])}</td></tr>
 <tr><td style="padding:8px 28px 0;font:14px/1.55 Arial,sans-serif;color:{INK}">{esc(n["summary"])}</td></tr>
 <tr><td style="padding:16px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0"><tr>{kpis}</tr></table></td></tr>
-{alerts}
 {h("Coverage")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{coverage}</td></tr>
 {h("Performance: lift and sentiment side by side")}{size}
+<tr><td style="padding:14px 28px 0;font:600 13px Arial,sans-serif;color:{INK}">Content formats: share of videos that beat their baseline</td></tr><tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{frows}</table></td></tr>
 {h("Audience topics")}<tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{trows}</table><div style="font:12px Arial,sans-serif;color:{MUTE};padding-top:4px"><span style="color:{POS}">&#9632;</span> positive <span style="color:{NEU}">&#9632;</span> neutral <span style="color:{NEG}">&#9632;</span> negative. Topics come from local clustering of comments, named by AI; <b>new</b> means found after the first run.</div></td></tr>
 {h("Highlights")}{fnd}
-{h("Highest-lift videos")}<tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{top}</table></td></tr>
-{h("Content formats: share of videos that beat their baseline")}<tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{frows}</table></td></tr>
+<tr><td style="padding:14px 28px 0;font:600 13px Arial,sans-serif;color:{INK}">Highest-lift videos</td></tr><tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{top}</table></td></tr>
 {h("Changes since last refresh")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{changes}</td></tr>
+{alerts}
 {h("Watchlist")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{watch}<div style="padding-top:6px;color:{MUTE}">{esc(n["watch"])}</div></td></tr>
 <tr><td style="padding:22px 28px 24px;font:12px/1.5 Arial,sans-serif;color:{MUTE};border-top:1px solid {LINE};margin-top:18px">Built from public YouTube data (official API) on English-language videos about the iPhone Duo. Comments are a sample of up to 60 per video, labelled by Claude. Differences between groups are associations, and small groups can swing. Open the attached dashboard.html to filter and drill down; reply in Slack to ask a follow-up.</td></tr>
 </table></td></tr></table></body></html>'''

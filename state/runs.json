@@ -1,0 +1,76 @@
+[
+ {
+  "started": "2026-10-04T22:58:39+00:00",
+  "finished": "2026-10-04T23:04:39+00:00",
+  "mode": "weekly",
+  "ok": true,
+  "source": "local",
+  "new_videos": 22,
+  "new_comments": 1472,
+  "new_topics": [
+   "Waiting for Next Year",
+   "Wanting Pro Cameras"
+  ],
+  "alerts": 5,
+  "email": false,
+  "slack": false,
+  "slack_alerts": false,
+  "steps": [
+   {
+    "name": "collect new videos, refresh stats",
+    "status": "ok",
+    "secs": 10
+   },
+   {
+    "name": "classify new videos",
+    "status": "ok",
+    "secs": 14
+   },
+   {
+    "name": "channel baselines and lift",
+    "status": "ok",
+    "secs": 34
+   },
+   {
+    "name": "creator types",
+    "status": "ok",
+    "secs": 10
+   },
+   {
+    "name": "pull and label new comments",
+    "status": "ok",
+    "secs": 59
+   },
+   {
+    "name": "build tables",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "assign comments to topics, discover new ones",
+    "status": "ok",
+    "secs": 9
+   },
+   {
+    "name": "insights, changes and alerts",
+    "status": "ok",
+    "secs": 25
+   },
+   {
+    "name": "paraphrased topic notes",
+    "status": "ok",
+    "secs": 114
+   },
+   {
+    "name": "recorded Q&A examples",
+    "status": "ok",
+    "secs": 81
+   },
+   {
+    "name": "public demo page",
+    "status": "ok",
+    "secs": 4
+   }
+  ]
+ }
+]

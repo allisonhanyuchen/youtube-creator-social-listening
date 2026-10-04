@@ -19,6 +19,13 @@ def read_json(name, default):
 def attach_summaries(data):
     """Paraphrased topic notes (state/summaries.json) go into both builds."""
     data["summaries"] = read_json("summaries.json", {"topics": {}})
+    data["runs"] = read_json("runs.json", [])
+    try:                                                   # what the weekly email and Slack digest look like (text-free: numbers, topic names, paraphrased notes)
+        import report, notify
+        ins = json.load(open(os.path.join(DATA, "insights.json")))
+        data["email"], data["slack"] = report.build(ins), notify.build(ins)
+    except Exception as e:
+        data["email"], data["slack"] = "", None
     return data
 
 
