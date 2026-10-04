@@ -6,7 +6,10 @@ DATA = os.path.join(HERE, "data")
 ENV_FILE = os.path.expanduser("~/.creator-scout.env")   # outside the repo; in CI the same names come from env vars
 YT_API = "https://www.googleapis.com/youtube/v3/"
 MODEL = "claude-sonnet-5-5"
-os.makedirs(DATA, exist_ok=True)
+try:
+    os.makedirs(DATA, exist_ok=True)
+except OSError:                                  # read-only host (serverless): nothing is written there
+    pass
 USAGE = {"calls": 0, "in": 0, "out": 0}      # token tally for cost checks
 
 
