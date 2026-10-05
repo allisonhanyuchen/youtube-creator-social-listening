@@ -93,6 +93,10 @@ python3 -m venv .venv && .venv/bin/pip install slack_bolt
 
 Steps are cached and resumable: searches, baselines, and comment labels are only recomputed for new items.
 
+## View trend for videos
+
+The YouTube API only returns the current view count, never a history. `snapshots.py` therefore stores each video's public view count once a day in `state/view_history.json`, and the content list shows views gained in the last 24 hours and 7 days from two snapshots (a dash until enough days exist). Topic trend works differently: it uses comment timestamps, which carry their own history.
+
 ## Make it your own
 
 The live page is a static demo of one product. To run the same pipeline on your own keywords or product:

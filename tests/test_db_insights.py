@@ -53,6 +53,18 @@ class DatabaseAndBuckets(unittest.TestCase):
         self.assertEqual(m["highest_lift"][2]["product_comments"], 4)    # too few to judge: reported as a count, not hidden
 
 
+class ViewGain(unittest.TestCase):
+    def test_needs_an_old_enough_snapshot(self):
+        import build_dashboard as b
+        h = {"2026-10-04": 1000}
+        self.assertIsNone(b.gain(h, 1, 3))
+        h.update({"2026-10-03": 900, "2026-09-27": 600})
+        self.assertEqual(b.gain(h, 1, 3), 100)                 # vs yesterday
+        self.assertEqual(b.gain(h, 7, 10), 400)                # vs a week ago
+        self.assertIsNone(b.gain({"2026-10-04": 5, "2026-09-20": 1}, 1, 3))       # too old to call it 24h
+        self.assertIsNone(b.gain(None, 1, 3))
+
+
 class HostedChat(unittest.TestCase):
     def test_limits_per_visitor_and_per_day(self):
         import importlib, sys, os

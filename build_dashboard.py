@@ -16,6 +16,16 @@ def read_json(name, default):
     return json.load(open(p)) if os.path.exists(p) else default
 
 
+def gain(h, days, max_gap):
+    """Views gained since the latest snapshot that is at least `days` old (and not older than max_gap days). None until enough daily snapshots exist."""
+    if not h: return None
+    last = max(h); end = date.fromisoformat(last)
+    old = [d for d in h if (end - date.fromisoformat(d)).days >= days]
+    if not old: return None
+    d0 = max(old)
+    return h[last] - h[d0] if (end - date.fromisoformat(d0)).days <= max_gap else None
+
+
 def attach_summaries(data):
     """Paraphrased topic notes (state/summaries.json) go into both builds."""
     data["summaries"] = read_json("summaries.json", {"topics": {}})
@@ -52,6 +62,7 @@ def scrub_public(data):
 def main():
     public = "--public" in sys.argv
     pr = product()
+    hist = read_json("view_history.json", {})
     con = sqlite3.connect(os.path.join(DATA, "pulse.db")); con.row_factory = sqlite3.Row
     vids = [dict(r) for r in con.execute(f"select * from v_content v where {scope_sql()} order by views desc")]
     vidx = {v["video_id"]: i for i, v in enumerate(vids)}
@@ -99,7 +110,7 @@ def main():
         if cid not in creators: creators[cid] = dict(i=len(creators), name=v["creator"], kol=v["kol_type"], tier=v["tier"], subs=v["subscribers"], region=v["region"])
         rows.append(dict(id=v["video_id"], url=v["url"], t=v["title"][:110], c=creators[cid]["i"], f=v["format"], tp=v["topic"], d=v["day_since_launch"],
                          sh=v["is_short"], vw=v["views"], rl=v["rel_lift"], op=v["outperformer"], er=v["eng_rate"], cr=v["comment_rate"], pub=v["published"], fr=v["title_framing"],
-                         lk=v["likes"], cc=v["comment_count"], bv=v["baseline_views"],
+                         lk=v["likes"], cc=v["comment_count"], bv=v["baseline_views"], d1=gain(hist.get(v["video_id"]), 1, 3), d7=gain(hist.get(v["video_id"]), 7, 10),
                          un=(int(v["rel_lift"] <= cut[v["is_short"]]) if v["rel_lift"] is not None and v["is_short"] in cut else None), a=agg[i]))
     prod_comments = sum(1 for c in comments if c["target"] in PRODUCT_SIDE)
     counts = dict(videos=len(vids), creators=len(creators), comments_en=sum(a["n"] for a in agg), as_of=last,
