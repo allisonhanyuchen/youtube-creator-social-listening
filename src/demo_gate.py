@@ -3,9 +3,10 @@ Only whoever knows DEMO_CODE (a Vercel environment variable, never in the page o
 Limits are best effort per serverless instance; the hard stop is the spend limit on the API keys."""
 import hmac, os, time
 
-FAILS, RUNS = {}, {"d": "", "n": 0, "refresh": 0.0}
+FAILS, RUNS = {}, {"d": "", "n": 0, "units": 0, "refresh": 0.0}
 MAX_FAILS, WINDOW = 5, 600
 MAX_RUNS_PER_DAY = int(os.environ.get("DEMO_RUNS_PER_DAY", 25))
+MAX_UNITS_PER_DAY = int(os.environ.get("DEMO_UNITS_PER_DAY", 3000))       # YouTube quota units the live runs may spend a day (the free quota is 10,000)
 REFRESH_COOLDOWN = int(os.environ.get("DEMO_REFRESH_COOLDOWN", 300))
 
 
@@ -24,12 +25,13 @@ def check_code(code, ip="-"):
     return False, "That code is not right." if want else "Live runs are not configured on this host."
 
 
-def allow_run():
-    """Counts a keyword run (called once, at its first stage)."""
+def allow_run(units=0):
+    """Counts a keyword run (called once, at its first stage) against the day's run count and YouTube quota budget."""
     today = time.strftime("%Y-%m-%d", time.gmtime())
-    if RUNS["d"] != today: RUNS.update(d=today, n=0)
+    if RUNS["d"] != today: RUNS.update(d=today, n=0, units=0)
     if RUNS["n"] >= MAX_RUNS_PER_DAY: return False, "Today's live run budget is used up."
-    RUNS["n"] += 1
+    if RUNS["units"] + units > MAX_UNITS_PER_DAY: return False, f"This run needs about {units:,} YouTube quota units and today's live budget has {max(0, MAX_UNITS_PER_DAY - RUNS['units']):,} left. Try fewer videos."
+    RUNS["n"] += 1; RUNS["units"] += units
     return True, ""
 
 

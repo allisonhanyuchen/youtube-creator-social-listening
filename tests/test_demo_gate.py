@@ -6,7 +6,7 @@ import demo_gate as gate
 
 class DemoGate(unittest.TestCase):
     def setUp(self):
-        gate.FAILS.clear(); gate.RUNS.update(d="", n=0, refresh=0.0)
+        gate.FAILS.clear(); gate.RUNS.update(d="", n=0, units=0, refresh=0.0)
 
     def test_only_the_right_code_passes_and_the_code_is_never_defaulted(self):
         with mock.patch.dict(os.environ, {"DEMO_CODE": "s3cret"}):
@@ -30,6 +30,13 @@ class DemoGate(unittest.TestCase):
         self.assertTrue(gate.allow_refresh()[0])
         self.assertFalse(gate.allow_refresh()[0])
 
+    def test_youtube_quota_budget_limits_big_runs(self):
+        self.assertTrue(gate.allow_run(1300)[0])
+        self.assertTrue(gate.allow_run(1300)[0])
+        ok, why = gate.allow_run(1300)                       # a third 200-video run would pass 3,000 units
+        self.assertFalse(ok); self.assertIn("quota units", why)
+        self.assertTrue(gate.allow_run(100)[0])              # a small run still fits
+
     def test_same_site_only(self):
         self.assertTrue(gate.same_site({"Origin": "https://x.vercel.app", "Host": "x.vercel.app"}))
         self.assertFalse(gate.same_site({"Origin": "https://evil.example", "Host": "x.vercel.app"}))
@@ -47,6 +54,22 @@ class StageMap(unittest.TestCase):
         names = [n for sg in ("refresh", "analyse", "report") for n, _ in rw.stage_steps(sg, "daily", True)]
         for slow in rw.DAILY_SKIP: self.assertNotIn(slow, names)
         self.assertEqual([n for n, _ in rw.stage_steps("push", "daily", False)], [])          # --no-send
+
+
+class RunUsage(unittest.TestCase):
+    def test_usage_is_summed_across_steps_and_priced(self):
+        import json, tempfile
+        import run_weekly as rw
+        tmp = tempfile.mkdtemp()
+        old = rw.USAGE_LOG; rw.USAGE_LOG = os.path.join(tmp, "u.jsonl")
+        try:
+            with open(rw.USAGE_LOG, "w") as f:
+                f.write(json.dumps(dict(step="a", claude_in=100_000, claude_out=20_000, calls=3, yt_units=900)) + "\n" + json.dumps(dict(step="b", claude_in=2_000, claude_out=500, calls=1, yt_units=700)) + "\n")
+            u = rw.run_usage()
+        finally:
+            rw.USAGE_LOG = old
+        self.assertEqual((u["claude_in"], u["claude_out"], u["yt_units"]), (102_000, 20_500, 1_600))
+        self.assertAlmostEqual(u["usd"], 0.613, places=3)           # 3 dollars per million in, 15 per million out
 
 
 if __name__ == "__main__":

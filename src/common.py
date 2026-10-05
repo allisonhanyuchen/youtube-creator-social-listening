@@ -12,6 +12,7 @@ try:
 except OSError:                                  # read-only host (serverless): nothing is written there
     pass
 USAGE = {"calls": 0, "in": 0, "out": 0}      # token tally for cost checks
+YT = {"calls": 0, "units": 0}               # YouTube quota units used by this process (a search costs 100, a list call 1)
 
 
 def secret(name, required=True):
@@ -35,6 +36,7 @@ def yt(endpoint, soft=False, **params):
     for attempt in range(4):
         try:
             with urllib.request.urlopen(YT_API + endpoint + "?" + urllib.parse.urlencode(params), timeout=30) as r:
+                YT["calls"] += 1; YT["units"] += 100 if endpoint == "search" else 1
                 return json.load(r)
         except urllib.error.HTTPError as e:
             body = e.read().decode()[:300]
@@ -94,6 +96,30 @@ def product():
     p.setdefault("topics", {p["topic"]: p["name"], "other": "another product or not about the product"})      # labels classify.py may give a video
     p.setdefault("competitors", {})
     return p
+
+
+def pricing():
+    """USD per million tokens, used for cost estimates only. Defaults to a Sonnet-class list price; set "pricing" in product.json to match your plan."""
+    return product().get("pricing") or {"input_per_m": 3.0, "output_per_m": 15.0}
+
+
+def usd(tokens_in, tokens_out):
+    p = pricing()
+    return tokens_in / 1e6 * p["input_per_m"] + tokens_out / 1e6 * p["output_per_m"]
+
+
+def _log_usage():
+    """When a script ends, append what it used to data/usage.jsonl; run_weekly.py reads it to show tokens, quota units and cost per run."""
+    if not (USAGE["calls"] or YT["units"]): return
+    try:
+        with open(os.path.join(DATA, "usage.jsonl"), "a") as f:
+            f.write(json.dumps(dict(step=os.environ.get("PULSE_STEP", ""), claude_in=USAGE["in"], claude_out=USAGE["out"], calls=USAGE["calls"], yt_units=YT["units"])) + "\n")
+    except OSError:
+        pass
+
+
+import atexit
+atexit.register(_log_usage)
 
 
 def title():

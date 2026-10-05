@@ -44,7 +44,7 @@ class H(BaseHTTPRequestHandler):
                 with LOCK:
                     r = ask(q, d.get("history", [])[-3:], str(d.get("context", ""))[:400])
                 return self._send(200, json.dumps(dict(answer=r["answer"], sql=r["sql"], cols=r["cols"], rows=r["rows"][:15]), default=str))
-            if self.path == "/api/explore": return self._explore(str(d.get("keyword", "")).strip()[:80], bool(d.get("push")))
+            if self.path == "/api/explore": return self._explore(str(d.get("keyword", "")).strip()[:80], bool(d.get("push")), d.get("n_videos"), d.get("n_comments"))
             if self.path == "/api/explore/send":
                 if not LAST.get("report"): return self._send(400, json.dumps({"error": "run a keyword first"}))
                 return self._send(200, json.dumps({"sent": explore.deliver(LAST["report"])}))
@@ -56,13 +56,13 @@ class H(BaseHTTPRequestHandler):
             try: self._send(500, json.dumps({"error": str(e)[:200]}))
             except Exception: pass
 
-    def _explore(self, kw, push=False):
+    def _explore(self, kw, push=False, n_videos=explore.DEFAULT_VIDEOS, n_comments=explore.DEFAULT_COMMENTS):
         if len(kw) < 2: return self._send(400, json.dumps({"error": "type a keyword"}))
         if not BUSY.acquire(blocking=False): return self._send(409, json.dumps({"error": "another run is in progress"}))
         try:
             self._stream_start()
             try:
-                rep = explore.build(kw, self._event, push)
+                rep = explore.build(kw, self._event, push, n_videos, n_comments)
                 LAST["report"] = explore.clean(rep)
                 self._event(dict(done=True, report=LAST["report"]))
             except SystemExit as e:

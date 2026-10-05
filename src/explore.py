@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Keyword explorer: type a product or topic, get a small report in about a minute.
 YouTube search -> channel baselines (lift) -> top comments -> Claude labels each comment -> local clustering finds topics, Claude names them -> summary.
-Capped on purpose (20 videos, 20 comments each) so one run stays cheap: roughly 150 YouTube quota units and a few cents to a few tens of cents of Claude.
+You choose how many videos and how many comments per video (defaults 200 and 20, capped at 200 and 100); the estimate() function says what that costs in YouTube quota units and Claude tokens before you run it.
 Run from the terminal:  python3 explore.py "iPhone Duo"      (add --sample to save the text-free sample shown on the public page, --push to also push the full report's key summary to your Slack and inbox)
 The local server (serve.py) calls run() and streams the progress events to the dashboard."""
 import json, os, statistics, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
-from common import HERE, USAGE, claude, parse_json, secret, yt
+from common import HERE, USAGE, YT, claude, parse_json, secret, yt, pricing, usd
 import textcluster as tc
 
-MAX_VIDEOS, MAX_COMMENTS = 20, 20
+DEFAULT_VIDEOS, DEFAULT_COMMENTS = 200, 20          # what the page offers
+CAP_VIDEOS, CAP_COMMENTS = 200, 100                # the most a single run may ask for
+MAX_VIDEOS, MAX_COMMENTS = DEFAULT_VIDEOS, DEFAULT_COMMENTS
 PRODUCT_SIDE = {"product", "price_value", "competitor"}
 STEPS = [("search", "Retrieving videos from the YouTube API"), ("baseline", "Checking each channel's usual views"), ("comments", "Pulling the top comments"),
          ("label", "Reading every comment with Claude"), ("topics", "Finding and naming topics"), ("report", "Writing the report"), ("push", "Pushing the full report's key summary to email and Slack")]
@@ -35,16 +37,40 @@ def pool(fn, items, workers=8):
         return list(ex.map(fn, items))
 
 
-def search_videos(keyword, n=MAX_VIDEOS):
+def clamp(v, default, cap):
+    try: v = int(v)
+    except (TypeError, ValueError): v = default
+    return max(1, min(cap, v))
+
+
+def estimate(n_videos, n_comments):
+    """What a run will cost, before running it. YouTube units: search pages (100 each), their video details, about 3 calls per video for the channel baseline, and one comment call per video.
+    Claude: about 45 input and 8 output tokens per comment read, plus a fixed 2.5k in / 1.5k out for naming topics and writing the summary (from measured runs). Dollars use pricing()."""
+    n, m = clamp(n_videos, DEFAULT_VIDEOS, CAP_VIDEOS), clamp(n_comments, DEFAULT_COMMENTS, CAP_COMMENTS)
+    pages = min(5, -(-n // 50) + (1 if n >= 100 else 0))
+    units = 100 * pages + pages + 3 * n + n * (-(-m // 100))
+    comments = round(n * m * 0.85)
+    tin, tout = 45 * comments + 2500, 8 * comments + 1500
+    return dict(videos=n, comments_per_video=m, comments=comments, yt_units=units, tokens_in=tin, tokens_out=tout, usd=round(usd(tin, tout), 2))
+
+
+def search_videos(keyword, n=DEFAULT_VIDEOS):
+    """Top videos for the keyword by relevance, English, last 12 months, at least 1,000 views. The API returns 50 results a page, so a large n takes several pages."""
     after = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    ids = [it["id"]["videoId"] for it in yt("search", part="snippet", q=keyword, type="video", maxResults=30, order="relevance", relevanceLanguage="en", publishedAfter=after).get("items", [])]
-    out = []
-    for it in (yt("videos", part="snippet,statistics", id=",".join(ids)).get("items", []) if ids else []):
-        st, sn = it.get("statistics", {}), it["snippet"]
-        views = int(st.get("viewCount", 0) or 0)
-        if views < 1000: continue
-        out.append(dict(id=it["id"], url="https://www.youtube.com/watch?v=" + it["id"], title=sn["title"], channel=sn["channelTitle"], channel_id=sn["channelId"],
-                        published=sn["publishedAt"][:10], views=views, likes=int(st.get("likeCount", 0) or 0), comment_count=int(st.get("commentCount", 0) or 0)))
+    out, seen, token, pages = [], set(), None, min(5, -(-n // 50) + (1 if n >= 100 else 0))
+    for _ in range(pages):
+        res = yt("search", part="snippet", q=keyword, type="video", maxResults=50, order="relevance", relevanceLanguage="en", publishedAfter=after, **({"pageToken": token} if token else {}))
+        ids = [it["id"]["videoId"] for it in res.get("items", []) if it["id"]["videoId"] not in seen]
+        seen.update(ids)
+        for i in range(0, len(ids), 50):
+            for it in yt("videos", part="snippet,statistics", id=",".join(ids[i:i + 50])).get("items", []):
+                st, sn = it.get("statistics", {}), it["snippet"]
+                views = int(st.get("viewCount", 0) or 0)
+                if views < 1000: continue
+                out.append(dict(id=it["id"], url="https://www.youtube.com/watch?v=" + it["id"], title=sn["title"], channel=sn["channelTitle"], channel_id=sn["channelId"],
+                                published=sn["publishedAt"][:10], views=views, likes=int(st.get("likeCount", 0) or 0), comment_count=int(st.get("commentCount", 0) or 0)))
+        token = res.get("nextPageToken")
+        if len(out) >= n or not token: break
     return out[:n]
 
 
@@ -60,28 +86,43 @@ def channel_baseline(v):
     return v, (statistics.median(views) if len(views) >= 3 else None), subs
 
 
-def pull_comments(v):
-    res = yt("commentThreads", soft=True, part="snippet", videoId=v["id"], maxResults=MAX_COMMENTS, order="relevance", textFormat="plainText")
-    return v["id"], [x["snippet"]["topLevelComment"]["snippet"]["textDisplay"][:300] for x in (res or {}).get("items", [])]
+def pull_comments(v, m=DEFAULT_COMMENTS):
+    res = yt("commentThreads", soft=True, part="snippet", videoId=v["id"], maxResults=m, order="relevance", textFormat="plainText")
+    return v["id"], [x["snippet"]["topLevelComment"]["snippet"]["textDisplay"][:200] for x in (res or {}).get("items", [])]
 
 
-def label(texts, keyword):
-    """Same compact line format as the main pipeline, with a neutral prompt that works for any product or topic."""
-    out = [None] * len(texts)
-    for start in range(0, len(texts), 60):
-        batch = texts[start:start + 60]
-        lines = "\n".join(f"{k}: {t[:260]}" for k, t in enumerate(batch))
-        prompt = (f"Label YouTube comments on videos about '{keyword}'.\nOutput exactly one line per comment, format  i|lang|target|sent|intent  and nothing else.\n"
-                  "lang: e (English) or o (other)\n"
-                  f"target (what the comment is about): P='{keyword}' itself, V=its price or value, C=the video or creator, R=a competing product or brand, O=other\n"
-                  "sent (toward that target): + positive, 0 neutral, - negative. Curious or anticipatory comments are 0 unless they show a clear lean.\n"
-                  "intent: b=buy, u=upgrade/wait, s=skip, w=switch from a competitor, n=none\nExample line:  7|e|P|-|n\n\nCOMMENTS:\n" + lines)
-        for attempt in range(3):
-            parsed = parse_label_lines(claude(prompt, 3000, thinking={"type": "between_tools"}))
-            if len(parsed) >= len(batch) * 0.9: break
-            time.sleep(3)
-        for k in range(len(batch)): out[start + k] = parsed.get(k)
-    return out
+def label_batch(batch, keyword):
+    lines = "\n".join(f"{k}: {t[:260]}" for k, t in enumerate(batch))
+    prompt = (f"Label YouTube comments on videos about '{keyword}'.\nOutput exactly one line per comment, format  i|lang|target|sent|intent  and nothing else.\n"
+              "lang: e (English) or o (other)\n"
+              f"target (what the comment is about): P='{keyword}' itself, V=its price or value, C=the video or creator, R=a competing product or brand, O=other\n"
+              "sent (toward that target): + positive, 0 neutral, - negative. Curious or anticipatory comments are 0 unless they show a clear lean.\n"
+              "intent: b=buy, u=upgrade/wait, s=skip, w=switch from a competitor, n=none\nExample line:  7|e|P|-|n\n\nCOMMENTS:\n" + lines)
+    parsed = {}
+    for attempt in range(3):
+        parsed = parse_label_lines(claude(prompt, 3000, thinking={"type": "between_tools"}))
+        if len(parsed) >= len(batch) * 0.9: break
+        time.sleep(3)
+    return [parsed.get(k) for k in range(len(batch))]
+
+
+BATCH = 60
+
+
+def label(texts, keyword, done=None, budget=None, workers=4):
+    """Labels the comments in batches of 60, a few batches at once. `done` is what is already labelled (so a request can continue where the last one stopped);
+    with a time budget (seconds) it stops between rounds and the caller asks again. Returns (labels, finished)."""
+    out = list(done or [])
+    out += [None] * (len(texts) - len(out))
+    t0 = time.time()
+    starts = [i for i in range(0, len(texts), BATCH) if out[i] is None]
+    for r in range(0, len(starts), workers):
+        if budget is not None and r and time.time() - t0 > budget: return out, False
+        group = starts[r:r + workers]
+        with ThreadPoolExecutor(workers) as ex:
+            for i, res in zip(group, ex.map(lambda i: label_batch(texts[i:i + BATCH], keyword), group)):
+                for k, x in enumerate(res): out[i + k] = x if x is not None else {"l": "other", "t": None, "s": None, "in": "none"}
+    return out, True
 
 
 def name_topics(cl, texts, keyword):
@@ -107,34 +148,37 @@ SENT = {"positive": 0, "neutral": 1, "negative": 2}
 
 
 def do_search(state):
-    state["vids"] = search_videos(state["keyword"])
+    state["vids"] = search_videos(state["keyword"], state["n_videos"])
     if not state["vids"]: raise SystemExit(f"No English videos with 1,000+ views found for '{state['keyword']}'. Try a broader keyword.")
     return f"{len(state['vids'])} videos from {len({x['channel_id'] for x in state['vids']})} channels"
 
 
 def do_baseline(state):
-    for v, base, subs in pool(channel_baseline, state["vids"]):
+    for v, base, subs in pool(channel_baseline, state["vids"], 12):
         v["subs"] = subs
         v["lift"] = round(v["views"] / base, 2) if base else None
     return f"lift vs the channel's own usual views for {sum(1 for v in state['vids'] if v['lift'])} of {len(state['vids'])} videos"
 
 
 def do_comments(state):
-    state["raw"] = dict(pool(pull_comments, state["vids"]))
+    m = state["n_comments"]
+    state["raw"] = dict(pool(lambda v: pull_comments(v, m), state["vids"], 12))
     return f"{sum(len(x) for x in state['raw'].values()):,} comments from {sum(1 for x in state['raw'].values() if x)} videos"
 
 
-def do_label(state):
+def do_label(state, budget=None):
     flat = [t for ts in state["raw"].values() for t in ts]
-    state["labs"] = label(flat, state["keyword"])
-    return f"{sum(1 for x in state['labs'] if x)} of {len(flat)} comments labelled (target, sentiment, intent)"
+    state["labs"], finished = label(flat, state["keyword"], state.get("labs"), budget)
+    state["_more"] = not finished
+    n = sum(1 for x in state["labs"] if x)
+    return f"{n:,} of {len(flat):,} comments labelled (target, sentiment, intent)"
 
 
 def do_topics(state):
     side = side_rows(state); texts = [r["text"] for r in side]
     state["topics"] = []
     if len(texts) < 40: return "too few product comments to find topics"
-    vecs, cl = tc.clusters(texts, k=max(3, min(7, len(texts) // 40)), min_size=max(8, len(texts) // 25))
+    vecs, cl = tc.clusters(texts, k=max(3, min(10, len(texts) // 60)), min_size=max(8, len(texts) // 30))
     names = name_topics(cl, texts, state["keyword"]) if cl else {}
     for c in cl:
         ps = [0, 0, 0]
@@ -150,7 +194,7 @@ def assemble(state):
     for r in side_rows(state): per.setdefault(r["vid"], [0, 0, 0])[SENT[r["lab"]["s"] or "neutral"]] += 1
     videos = [dict(id=v["id"], url=v["url"], title=v["title"], channel=v["channel"], subs=v.get("subs"), views=v["views"], published=v["published"], lift=v["lift"], ps=per.get(v["id"], [0, 0, 0])) for v in state["vids"]]
     tot = [sum(x["ps"][i] for x in videos) for i in range(3)]
-    return dict(keyword=state["keyword"], generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"), caps=dict(videos=MAX_VIDEOS, comments=MAX_COMMENTS),
+    return dict(keyword=state["keyword"], generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"), caps=dict(videos=state.get("n_videos", DEFAULT_VIDEOS), comments=state.get("n_comments", DEFAULT_COMMENTS)),
                 totals=dict(videos=len(videos), channels=len({v["channel_id"] for v in state["vids"]}), views=sum(v["views"] for v in videos), comments=sum(len(x) for x in state["raw"].values()),
                             product_comments=sum(tot), ps=tot, score=net(tot)), videos=videos, topics=state["topics"])
 
@@ -173,28 +217,37 @@ def do_push(state):
 FUNCS = dict(search=do_search, baseline=do_baseline, comments=do_comments, label=do_label, topics=do_topics, report=do_report, push=do_push)
 
 
-def run_step(sid, state):
-    """One stage on its own: used by the hosted endpoint, which gets the state from the browser and hands it back."""
-    t0 = time.time()
-    detail = FUNCS[sid](state)
+def run_step(sid, state, budget=None):
+    """One stage on its own: used by the hosted endpoint, which gets the state from the browser and hands it back. Adds what the stage used to state["usage"]."""
+    t0, u0, y0 = time.time(), dict(USAGE), dict(YT)
+    state["_more"] = False
+    detail = do_label(state, budget) if sid == "label" else FUNCS[sid](state)
+    u = state.setdefault("usage", dict(claude_in=0, claude_out=0, yt_units=0))
+    u["claude_in"] += USAGE["in"] - u0["in"]; u["claude_out"] += USAGE["out"] - u0["out"]; u["yt_units"] += YT["units"] - y0["units"]
+    u["usd"] = round(usd(u["claude_in"], u["claude_out"]), 3)
     return state, detail, round(time.time() - t0, 1)
 
 
 def finish(state, steps, t_all):
     rep = assemble(state); rep["summary"] = state["summary"]
-    rep["steps"], rep["secs"], rep["usage"] = steps, round(time.time() - t_all, 1), dict(USAGE)
+    rep["steps"], rep["secs"], rep["usage"] = steps, round(time.time() - t_all, 1), dict(state.get("usage") or {})
     return rep
 
 
-def build(keyword, emit=lambda e: None, push=False):
-    t_all, steps, state = time.time(), [], dict(keyword=keyword)
+def build(keyword, emit=lambda e: None, push=False, n_videos=DEFAULT_VIDEOS, n_comments=DEFAULT_COMMENTS):
+    t_all, steps = time.time(), []
+    state = dict(keyword=keyword, n_videos=clamp(n_videos, DEFAULT_VIDEOS, CAP_VIDEOS), n_comments=clamp(n_comments, DEFAULT_COMMENTS, CAP_COMMENTS))
     for sid, label_ in STEPS:
         if sid == "push" and not push:
             emit(dict(step="push", label=label_, status="done", detail="skipped (push is switched off)", secs=0)); continue
         emit(dict(step=sid, label=label_, status="start"))
-        _, detail, secs = run_step(sid, state)
-        steps.append(dict(id=sid, label=label_, secs=secs, detail=detail))
-        emit(dict(step=sid, label=label_, status="done", detail=detail, secs=secs))
+        secs = 0
+        while True:                                       # the label step may need several rounds when a time budget applies; locally it finishes in one
+            _, detail, dt = run_step(sid, state)
+            secs += dt
+            if not state.get("_more"): break
+        steps.append(dict(id=sid, label=label_, secs=round(secs, 1), detail=detail))
+        emit(dict(step=sid, label=label_, status="done", detail=detail, secs=round(secs, 1)))
     rep = finish(state, steps, t_all)
     rep["_corpus"] = [r["text"] for r in side_rows(state)]       # only used in memory for the public-safety check, never written out
     return rep
@@ -246,7 +299,10 @@ def deliver(rep=None):
 def main():
     kw = " ".join(a for a in sys.argv[1:] if not a.startswith("--")).strip()
     if not kw: raise SystemExit('usage: python3 explore.py "keyword" [--sample]')
-    rep = build(kw, push="--push" in sys.argv, emit=lambda e: print(f"  [{e['status']}] {e['label']}" + (f" ({e['secs']}s): {e['detail']}" if e["status"] == "done" else ""), flush=True))
+    arg = lambda name, d: int(sys.argv[sys.argv.index(name) + 1]) if name in sys.argv else d
+    n, m = arg("--videos", DEFAULT_VIDEOS), arg("--comments", DEFAULT_COMMENTS)
+    print("estimate:", estimate(n, m))
+    rep = build(kw, push="--push" in sys.argv, n_videos=n, n_comments=m, emit=lambda e: print(f"  [{e['status']}] {e['label']}" + (f" ({e['secs']}s): {e['detail']}" if e["status"] == "done" else ""), flush=True))
     print("\n" + rep["summary"]["headline"]); [print(" -", b) for b in rep["summary"]["bullets"]]
     print(f"\n{rep['secs']}s | tokens in {rep['usage']['in']:,} out {rep['usage']['out']:,}")
     if "--sample" in sys.argv:

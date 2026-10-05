@@ -25,6 +25,27 @@ class ExploreHelpers(unittest.TestCase):
             self.assertEqual(explore.push_bundle()["subject"], "S")
         tmp.cleanup()
 
+    def test_estimate_scales_with_videos_and_comments_and_matches_a_measured_run(self):
+        small, big = explore.estimate(20, 20), explore.estimate(200, 20)
+        self.assertAlmostEqual(small["tokens_in"], 17_400, delta=1_500)              # a measured 20 x 20 run used about 17.4k input tokens
+        self.assertGreater(big["yt_units"], small["yt_units"] * 5)
+        self.assertGreater(big["usd"], small["usd"] * 5)
+        self.assertEqual(explore.estimate(9999, 9999)["videos"], explore.CAP_VIDEOS)       # capped
+        self.assertEqual(explore.clamp("abc", 200, 200), 200)
+
+    def test_label_can_stop_on_a_budget_and_continue_where_it_left_off(self):
+        from unittest import mock
+        calls = []
+        def fake(batch, kw):
+            calls.append(len(batch)); return [{"l": "en", "t": "product", "s": "positive", "in": "none"}] * len(batch)
+        texts = [f"c{i}" for i in range(60 * 9)]                                      # nine batches
+        with mock.patch.object(explore, "label_batch", fake):
+            part, finished = explore.label(texts, "x", budget=-1, workers=4)             # an exhausted budget stops after the first round
+            self.assertFalse(finished); self.assertEqual(sum(1 for x in part if x), 4 * 60)
+            done, finished = explore.label(texts, "x", part, budget=None, workers=4)
+            self.assertTrue(finished); self.assertTrue(all(done))
+        self.assertEqual(len(calls), 9)                                                  # nothing was labelled twice
+
     def test_the_push_step_is_named_for_the_full_report(self):
         self.assertIn("full report", dict(explore.STEPS)["push"])
 

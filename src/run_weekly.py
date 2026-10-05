@@ -5,7 +5,7 @@ It can also run one stage at a time (--stage refresh|analyse|report|push|finish)
 In CI the run starts from state/ (text-free), and writes it back at the end so the next run is incremental."""
 import json, os, subprocess, sys, time
 from datetime import datetime, timezone
-from common import HERE, SRC
+from common import HERE, SRC, usd
 import state_io
 
 STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]), ("classify new videos", ["classify.py"]), ("daily view snapshot", ["snapshots.py"]), ("channel baselines and lift", ["performance.py"]), ("creator types", ["creators.py"]), ("pull and label new comments", ["comments.py", "--refresh"]),
@@ -14,6 +14,7 @@ SEND = [("email report", ["report.py", "--send"]), ("Slack digest", ["notify.py"
 DAILY_SKIP = {"paraphrased topic notes", "recorded Q&A examples", "text-free database for the hosted Q&A"}              # the slow, Claude-heavy steps only run in the weekly full pass
 DAILY_SEND = [("email report", ["report.py", "--send", "--daily"]), ("Slack digest", ["notify.py", "--daily"])]
 RUNS = os.path.join(HERE, "state", "runs.json")
+USAGE_LOG = os.path.join(HERE, "data", "usage.jsonl")      # every script appends what it used (tokens, quota units) when it ends
 ROWS = os.path.join(HERE, "data", "stage_rows.json")          # progress carried between stages when they run as separate processes
 STAGES = {"refresh": ["collect new videos, refresh stats", "classify new videos", "daily view snapshot", "channel baselines and lift", "creator types"],
           "analyse": ["pull and label new comments", "build tables", "assign comments to topics, discover new ones", "insights, changes and alerts"],
@@ -25,6 +26,17 @@ def mode():
     if "--daily" in sys.argv: return "daily"
     if "--weekly" in sys.argv: return "weekly"
     return "weekly" if datetime.now(timezone.utc).weekday() == 0 else "daily"
+
+
+def run_usage():
+    """Claude tokens, YouTube quota units and the estimated cost of this run, summed from what each step logged."""
+    lines = []
+    if os.path.exists(USAGE_LOG):
+        for ln in open(USAGE_LOG):
+            try: lines.append(json.loads(ln))
+            except ValueError: pass
+    tin, tout, units = sum(x["claude_in"] for x in lines), sum(x["claude_out"] for x in lines), sum(x["yt_units"] for x in lines)
+    return dict(claude_in=tin, claude_out=tout, yt_units=units, usd=round(usd(tin, tout), 3))
 
 
 def record(md, started, rows, failed, send):
@@ -39,6 +51,7 @@ def record(md, started, rows, failed, send):
                new_topics=[t["name"] for t in ch.get("new_topics", [])], alerts=len(ins.get("alerts", [])),
                email=bool(ok.get("email report")), slack=bool(ok.get("Slack digest")), slack_alerts=bool(ok.get("Slack alerts (only if something fired)")),
                steps=[dict(name=a, status=b, secs=int(c.rstrip("s"))) for a, b, c, _ in rows])
+    run["usage"] = run_usage()
     old = json.load(open(RUNS)) if os.path.exists(RUNS) else []
     json.dump((old + [run])[-30:], open(RUNS, "w"), indent=1)
 
@@ -46,7 +59,7 @@ def record(md, started, rows, failed, send):
 def run_one(name, cmd, rows):
     t0 = time.time()
     print(f"[start] {name}", flush=True)
-    r = subprocess.run([sys.executable, os.path.join(SRC, cmd[0])] + cmd[1:], cwd=HERE, capture_output=True, text=True)
+    r = subprocess.run([sys.executable, os.path.join(SRC, cmd[0])] + cmd[1:], cwd=HERE, capture_output=True, text=True, env=dict(os.environ, PULSE_STEP=name))
     out = (r.stdout.strip().splitlines() or [""])[-1][:160]
     err = (r.stderr.strip().splitlines() or [""])[-1][:160]
     ok = r.returncode == 0
@@ -75,7 +88,8 @@ def finish(md, st, send):
     if summ:
         with open(summ, "a") as f:
             f.write("## Launch Pulse run\n\n| Step | Result | Time | Detail |\n|---|---|---|---|\n" + "\n".join(f"| {a} | {b} | {c} | {d.replace('|', '/')} |" for a, b, c, d in rows) + "\n")
-    if os.path.exists(ROWS): os.remove(ROWS)
+    for f in (ROWS, USAGE_LOG):
+        if os.path.exists(f): os.remove(f)
     return failed
 
 
@@ -86,7 +100,8 @@ def main():
     print(f"mode: {md}" + (f" · stage: {stage}" if stage else ""), flush=True)
     if stage in (None, "refresh"):
         state_io.restore()
-        if os.path.exists(ROWS): os.remove(ROWS)
+        for f in (ROWS, USAGE_LOG):
+            if os.path.exists(f): os.remove(f)
     st = load_rows()
     if stage == "finish":
         sys.exit(1 if finish(md, st, send) else 0)

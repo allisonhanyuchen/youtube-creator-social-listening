@@ -5,7 +5,7 @@ Embedded: per-video rows + per-video comment aggregates (sentiment, topics, comp
 import json, os, re, sqlite3, sys
 from collections import defaultdict
 from datetime import date, timedelta
-from common import DATA, HERE, SRC, product, scope_sql, title
+from common import DATA, HERE, SRC, product, scope_sql, title, pricing
 
 PRODUCT_SIDE = {"product", "price_value", "apple_brand", "competitor"}
 SENT = {"positive": 0, "neutral": 1, "negative": 2}
@@ -121,7 +121,7 @@ def main():
     data = dict(topics=[dict(id=t["topic_id"], pool=t["pool"], name=t["name"], summary=t["summary"], terms=t["terms"], origin=t["origin"], first_seen=t["first_seen"], n=t["n"], c=t["c"],
                              recent=t["recent"], prior=t["prior"], trend=t["trend"]) for t in topics],
                 videos=rows, creators=sorted(creators.values(), key=lambda c: c["i"]), quotes=quotes, brands=list(pr["competitors"]), counts=counts,
-                event=pr["launch"], product=dict(name=pr["name"], brand=pr["brand"]))
+                event=pr["launch"], pricing=pricing(), product=dict(name=pr["name"], brand=pr["brand"]))
     attach_summaries(data)
     if public:
         import public_safety as safe

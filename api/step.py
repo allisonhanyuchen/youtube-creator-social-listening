@@ -16,19 +16,20 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not gate.same_site(self.headers): return self._send(403, {"error": "Not allowed from this site."})
         try:
-            d = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0)), 3_000_000)) or b"{}")
+            d = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0)), 4_400_000)) or b"{}")
             ip = (self.headers.get("X-Forwarded-For", "") or self.client_address[0]).split(",")[0].strip()
             ok, why = gate.check_code(d.get("code"), ip)
             if not ok: return self._send(401, {"error": why})
             sid, state = str(d.get("step", "")), d.get("state") or {}
             if sid not in explore.FUNCS: return self._send(400, {"error": "unknown step"})
             if sid == "search":
-                ok, why = gate.allow_run()
+                nv, nc = explore.clamp(d.get("n_videos"), explore.DEFAULT_VIDEOS, explore.CAP_VIDEOS), explore.clamp(d.get("n_comments"), explore.DEFAULT_COMMENTS, explore.CAP_COMMENTS)
+                ok, why = gate.allow_run(explore.estimate(nv, nc)["yt_units"])
                 if not ok: return self._send(429, {"error": why})
-                state = {"keyword": str(d.get("keyword", "")).strip()[:80]}
+                state = {"keyword": str(d.get("keyword", "")).strip()[:80], "n_videos": nv, "n_comments": nc}
                 if len(state["keyword"]) < 2: return self._send(400, {"error": "Type a keyword."})
-            state, detail, secs = explore.run_step(sid, state)
-            out = {"state": state, "detail": detail, "secs": secs}
+            state, detail, secs = explore.run_step(sid, state, budget=40)       # a serverless request has about a minute; the label step stops early and the page asks again
+            out = {"state": state, "detail": detail, "secs": secs, "more": bool(state.get("_more")), "usage": state.get("usage")}
             if sid == "report":
                 rep = explore.assemble(state); rep["summary"] = state["summary"]; rep["steps"] = []; rep["usage"] = {}; rep["secs"] = 0
                 out["report"] = rep

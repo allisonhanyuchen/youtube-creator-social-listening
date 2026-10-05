@@ -15,7 +15,7 @@ One page with a left sidebar of four modules (click one to show it, no scrolling
 |---|---|
 | 1 Who this is for | Creator managers, launch marketers, analysts |
 | 2 How this works | Collect (YouTube Data API: top videos under the keywords, top comments under each video) → Analyse (Claude API + local NLP: overview of creators and content, content performance, audience insights) → Report (dashboard, chat) → Push (Resend, Slack) → Refresh (GitHub Actions, daily) |
-| 3 See it in action | **A** type a keyword and watch each step with the tech it calls; the last step pushes the full report's key summary to email and Slack. **B** the full report and auto-refresh: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
+| 3 See it in action | **A** type a keyword, choose how many top videos (default 200) and comments per video (default 20), see the estimated YouTube quota and Claude cost, and watch each step with the tech it calls; the last step pushes the full report's key summary to email and Slack, and the actual usage is shown afterwards. **B** the full report and auto-refresh: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
 | 4 Make it yours | Bring your own keys, edit one config file, deploy |
 
 Every metric explains itself on hover, starting with the business question it answers. Sentiment is shown as a **net sentiment score** (positive % minus negative %, -100 to +100) next to a bar that keeps the neutral share visible.
@@ -75,7 +75,7 @@ SLACK_APP_TOKEN=xapp-...
 ```bash
 python3 src/run_weekly.py --no-send      # the whole pipeline once (add --daily or --weekly to force a mode)
 python3 src/serve.py                     # http://127.0.0.1:8770 with everything live: keyword input, Refresh now, chat
-python3 src/explore.py "standing desk"   # a keyword run in the terminal (--push also pushes the full report's key summary, --sample saves the public sample)
+python3 src/explore.py "standing desk"   # a keyword run in the terminal (--videos 200 --comments 20 set the size and print the estimate; --push also pushes the full report's key summary; --sample saves the public sample)
 python3 src/build_dashboard.py           # dashboard.html (local, with a few hundred quoted comments)
 
 python3 -m venv .venv && .venv/bin/pip install slack_bolt
@@ -194,8 +194,10 @@ Pick one:
 | `YOUTUBE_API_KEY` | keyword runs |
 | `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` | where a keyword run pushes its report |
 | `GITHUB_TOKEN` | Refresh now: a fine-grained token with Actions read and write on this repo only |
-| optional | `GITHUB_REPO`, `CHAT_PER_HOUR` (8), `CHAT_PER_DAY` (300), `CHAT_DISABLED`, `DEMO_RUNS_PER_DAY` (25), `DEMO_REFRESH_COOLDOWN` (300 s) |
+| optional | `GITHUB_REPO`, `CHAT_PER_HOUR` (8), `CHAT_PER_DAY` (300), `CHAT_DISABLED`, `DEMO_RUNS_PER_DAY` (25), `DEMO_UNITS_PER_DAY` (3,000), `DEMO_REFRESH_COOLDOWN` (300 s) |
 
+- **Keyword run size and cost.** The page lets you pick the number of top videos (up to 200) and comments per video (up to 100) and shows an estimate first: YouTube quota is about `100 x search pages + 3 x videos + one comment call per video`, and Claude is about 45 input and 8 output tokens per comment read plus a small fixed amount. Dollars use `pricing` in `product.json` (default 3 and 15 USD per million input and output tokens; change it to your plan's price). Measured: a 20 x 20 run used about 17k input and 4k output tokens; the default 200 x 20 is estimated at roughly 1,300 quota units and about 1 USD. The hosted page also caps live runs per day by YouTube units (`DEMO_UNITS_PER_DAY`, default 3,000).
+- **Cost per scheduled run.** Every step logs the tokens and quota units it used; the Run log shows them with the estimated cost for each run.
 - **Live chat** (`api/chat.py`) reuses the Q&A core over `api/public.db`, a copy of the database with no comment text. It accepts same-site requests only, short questions, and limited questions per visitor.
 - **Keyword runs** (`api/step.py`) run one stage per request and the browser carries the state, so the page can show the steps live; every call needs the demo code. Five wrong codes lock a visitor out for ten minutes.
 - **Refresh now** (`api/refresh.py`) starts the real workflow on GitHub Actions and the page follows its four stages through GitHub's public API.
