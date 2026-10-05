@@ -242,7 +242,7 @@
     {
      "id": "p04",
      "name": "Duo versus iPhone 18 Pro",
-     "summary": "Viewers compare the foldable Duo with the iPhone 18 Pro and Pro Max, debating price, design, cameras, and features, and whether the Duo is worth choosing over the Pro lineup.",
+     "summary": "Viewers compare the foldable Duo with the iPhone 18 Pro and Pro Max, debating price, features, camera, size, and whether the Duo is worth choosing over a standard Pro.",
      "terms": [
       "pro",
       "max",
@@ -633,6 +633,59 @@
      },
      "origin": "discovered",
      "first_seen": "2026-10-05"
+    },
+    {
+     "id": "p09",
+     "name": "Productivity, keyboard and iPad",
+     "summary": "Commenters discuss typing on the foldable, missing desktop mode and clipboard features, and whether it can replace or compete with an iPad for work.",
+     "terms": [
+      "work",
+      "keyboard",
+      "ipad",
+      "costs",
+      "pay",
+      "may",
+      "yet",
+      "well"
+     ],
+     "centroid": {
+      "work": 0.41,
+      "keyboard": 0.4097,
+      "ipad": 0.3917,
+      "costs": 0.3724,
+      "pay": 0.3,
+      "may": 0.2431,
+      "yet": 0.1775,
+      "well": 0.175,
+      "iphone": 0.1462,
+      "almost": 0.1436,
+      "apps": 0.1327,
+      "try": 0.1204,
+      "nice": 0.105,
+      "cost": 0.097,
+      "money": 0.0881,
+      "books": 0.0764,
+      "doesn": 0.076,
+      "watch": 0.074,
+      "duo": 0.0736,
+      "don": 0.0718,
+      "new": 0.0552,
+      "ecosystem": 0.0545,
+      "literally": 0.0527,
+      "old": 0.0513,
+      "year": 0.0512,
+      "buying": 0.0509,
+      "tax": 0.0474,
+      "device": 0.0471,
+      "buy": 0.0468,
+      "months": 0.0439,
+      "off": 0.0423,
+      "happen": 0.0374,
+      "support": 0.0374,
+      "actually": 0.031
+     },
+     "origin": "discovered",
+     "first_seen": "2026-10-05"
     }
    ],
    "tau": 0.1049
@@ -841,6 +894,23 @@
    "creator": {
     "rows": 487,
     "assigned": 0.752,
+    "topics": 2,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 1490,
+    "assigned": 0.816,
+    "topics": 9,
+    "new": [
+     "p09"
+    ]
+   },
+   "creator": {
+    "rows": 489,
+    "assigned": 0.753,
     "topics": 2,
     "new": []
    }
