@@ -11,7 +11,7 @@
  },
  "topic": "duo",
  "since": "2026-08-01T00:00:00Z",
- "queries": [
+ "keywords": [
   "iPhone Duo review",
   "iPhone Duo hands on",
   "iPhone Duo worth it",
@@ -22,6 +22,8 @@
   "iPhone Duo vs Pixel Fold",
   "Apple event reaction iPhone Duo"
  ],
+ "top_videos": 50,
+ "comments_per_video": 60,
  "topic_regex": "iphone|\\bduo\\b|apple",
  "demo_video": "",
  "topics": {

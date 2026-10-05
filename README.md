@@ -1,6 +1,6 @@
 # 📡 YouTube Creator Social Listening
 
-A self-refreshing workflow that listens to YouTube around a product launch. It collects videos and comments through the **YouTube Data API**, reads them with the **Claude API** and local NLP, builds a report, refreshes itself every day on **GitHub Actions**, and pushes the key summary to **email and Slack**.
+An AI workflow that listens to YouTube around a product launch and tells a marketing team which creators and content beat their own baseline, what the audience is saying, and what changed since yesterday. It refreshes itself every day and pushes the key summary to email and Slack, so nobody builds the report by hand.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue)
 ![YouTube API](https://img.shields.io/badge/YouTube_Data_API-v3-red)
@@ -13,15 +13,32 @@ A self-refreshing workflow that listens to YouTube around a product launch. It c
 
 ---
 
-## ✨ Features
+## 👥 Who This Is For
 
-- 🔍 Type a product keyword, choose how many top videos and comments per video, and see the estimated time, YouTube quota and Claude cost first
-- 🤖 Claude reads every comment (who it is about, sentiment, intent); local NLP finds and tracks topics
-- 📈 Creator performance: lift against each channel's own baseline, views gained, net sentiment score
-- 🗺️ Audience insights: topic map by sentiment and trend, new topics discovered on every refresh
-- 📬 Daily refresh on GitHub Actions; the full report's key summary goes to email (Resend) and Slack
-- 💬 Ask the data: plain-language questions answered with read-only SQL, shown with the query
-- 🔒 Public by design: no comment text published, paid API calls behind a demo code, cost per run logged
+| Who | What they get |
+|---|---|
+| **Creator and influencer managers** | Which creators and content formats beat their own baseline, at which channel level and region, and what the audience says about them |
+| **Launch and brand marketers** | How a new product is landing on YouTube: sentiment, what people talk about, how competitors compare, what changed since yesterday |
+| **Analysts and agencies** | A repeatable readout in the dashboard, email and Slack, without reading thousands of comments or maintaining spreadsheets |
+
+---
+
+## ⚙️ How This Works
+
+| Step | What happens | Tech |
+|---|---|---|
+| 1 **Collect** | The top videos under your keywords and the top comments under each video | YouTube Data API v3 |
+| 2 **Analyse** | Python computes every number locally so it can be checked: lift against each channel's own baseline, views gained, trends. Claude reads each comment (who it is about, sentiment, intent) and names the topics that local clustering finds | Claude API, Python, SQLite |
+| 3 **Report** | A dashboard with Overview, Content performance and Audience insights, plus an Ask-the-data chat that answers with read-only SQL | Static HTML, Vercel |
+| 4 **Push** | The full report's key summary goes to email and Slack, with alerts when something shifts | Resend, Slack |
+| 5 **Refresh** | The whole run repeats every day; each run is logged with its tokens, quota units and cost | GitHub Actions |
+
+**What you get**
+
+- 🔍 A keyword box on the page: choose the keyword, how many top videos and how many comments per video, and see the estimated time, YouTube quota and Claude cost before you run it
+- 📈 Creator performance as lift (views against the channel's own usual views) next to a net sentiment score (positive minus negative), never merged into one number
+- 🗺️ A topic map by sentiment and trend; new topics are discovered on every refresh
+- 🔒 Public by design: no comment text published, paid API calls behind a demo code
 
 ---
 
@@ -35,7 +52,7 @@ A self-refreshing workflow that listens to YouTube around a product launch. It c
 
 ![Watch the steps](screenshots/2-watch-the-steps.png)
 
-**The full report: overview, content performance, audience insights:**
+**The full report:**
 
 ![Overview](screenshots/3-overview.png)
 
@@ -43,43 +60,30 @@ A self-refreshing workflow that listens to YouTube around a product launch. It c
 
 ![Audience insights](screenshots/5-audience-insights.png)
 
-**Run log and the email and Slack push that every refresh sends:**
+**Run log, and the email and Slack push that every refresh sends:**
 
 ![Email and Slack](screenshots/6-email-and-slack-push.png)
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Make It Yours
 
-The short version. The full click-by-click guide for every key is in **[guides/SETUP.md](guides/SETUP.md)**.
+Bring your own API keys, point it at your product, and deploy. The full click-by-click guide for every key is in **[guides/SETUP.md](guides/SETUP.md)**.
 
 1. **Fork** the repo and add five keys as repository secrets: `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO`
-2. **Edit `product.json`**: product name, brand, launch date, search keywords, competitors
+2. **Choose what to listen to** in `product.json`. These map to the inputs on the page:
+
+   | In `product.json` | On the page | Example |
+   |---|---|---|
+   | `keywords` | Keyword | `["Galaxy Z Fold 8 review", "Galaxy Z Fold 8 vs iPhone"]` |
+   | `top_videos` | Top videos | `50` (per keyword) |
+   | `comments_per_video` | Comments per video | `60` |
+   | `name`, `brand`, `launch`, `competitors` | what the report is about and compared with | `Galaxy Z Fold 8`, `Samsung`, `2026-07-22` |
+
 3. **Run the "Refresh and push" workflow** from the Actions tab (10 to 25 minutes the first time); after that it runs every day at 15:00 UTC
 4. **Publish the page** on Vercel (live chat and live runs) or GitHub Pages (static)
 
 Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
-
----
-
-## 📁 Project Structure
-
-```
-├── src/                 all the code (run any script as python3 src/<name>.py)
-│   ├── collect.py classify.py comments.py snapshots.py performance.py   collect and label
-│   ├── db.py topics.py textcluster.py insights.py                       analyse
-│   ├── report.py notify.py build_dashboard.py                           email, Slack, the page
-│   ├── run_weekly.py explore.py ask.py serve.py slack_bot.py            the runner, keyword runs, Q&A
-│   └── dashboard.tmpl.html                                              the page template
-├── api/                 Vercel functions: live chat, demo-code gated runs and refresh
-├── state/               committed, text-free data so every run is incremental
-├── docs/                the public page (rebuilt by every run)
-├── guides/              SETUP.md (keys, deploy) and METRICS.md (definitions, limits, privacy)
-├── screenshots/         images used in this README
-├── tests/               unit tests, standard library only
-├── product.json         the one config file
-└── .github/workflows/   refresh.yml (daily run), tests.yml
-```
 
 ---
 
@@ -96,13 +100,24 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 
 ---
 
-## ⚙️ How It Works
+## 📁 Project Structure
 
-1. **Collect**: the top videos under your keywords and the top comments under each video
-2. **Analyse**: Python computes every number locally so it can be checked; Claude reads each comment and names the topics that local clustering finds
-3. **Report**: a static dashboard (overview, content performance, audience insights) plus the Ask-the-data chat
-4. **Push**: the full report's key summary goes to email and Slack, with alerts when something shifts
-5. **Refresh**: GitHub Actions repeats it every day; each run is logged with its tokens, quota units and cost
+```
+├── src/                 all the code (run any script as python3 src/<name>.py)
+│   ├── collect.py classify.py relevance.py comments.py snapshots.py performance.py   collect and label
+│   ├── db.py topics.py textcluster.py insights.py                                    analyse
+│   ├── report.py notify.py build_dashboard.py                                        email, Slack, the page
+│   ├── run_weekly.py explore.py ask.py serve.py slack_bot.py                         the runner, keyword runs, Q&A
+│   └── dashboard.tmpl.html                                                           the page template
+├── api/                 Vercel functions: live chat, demo-code gated runs and refresh
+├── state/               committed, text-free data so every run is incremental
+├── docs/                the public page (rebuilt by every run)
+├── guides/              SETUP.md (keys, deploy) and METRICS.md (definitions, limits, privacy)
+├── screenshots/         images used in this README
+├── tests/               unit tests, standard library only
+├── product.json         the one config file
+└── .github/workflows/   refresh.yml (daily run), tests.yml
+```
 
 ---
 
@@ -116,4 +131,4 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 | Daily refresh (steady state) | a few hundred new comments, about 0.1 USD |
 | First full run | about 19,000 comments, a few dollars |
 
-Prices use `pricing` in `product.json` (default 3 and 15 USD per million input and output tokens, a Sonnet-class assumption: set your own). Definitions of every metric, data limits and the privacy design are in **[guides/METRICS.md](guides/METRICS.md)**.
+Prices use `pricing` in `product.json` (default 3 and 15 USD per million input and output tokens, a Sonnet-class assumption: set your own). Accessories, other products that share the name, and unrelated videos are checked and left out of the numbers. Definitions of every metric, data limits and the privacy design are in **[guides/METRICS.md](guides/METRICS.md)**.

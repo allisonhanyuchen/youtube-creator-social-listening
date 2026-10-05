@@ -10,7 +10,8 @@ from common import yt, load, save, QuotaError, parse_json, product
 MIN_VIEWS = 2000
 P = product()
 EVENT, SINCE = P["launch"], P.get("since", "2026-08-01T00:00:00Z")      # videos from SINCE on (include pre-launch rumour videos)
-QUERIES = P["queries"]                                                    # search phrases, edit them in product.json
+QUERIES = P.get("keywords") or P["queries"]                                 # what to search for, edit them in product.json
+TOP_VIDEOS = max(1, min(200, int(P.get("top_videos", 50))))                  # results taken per keyword (the API gives 50 a page)
 TOPIC_RE = re.compile(P.get("topic_regex", re.escape(P["name"])), re.I)   # a video must match this to count as on-topic
 
 def iso_seconds(d):
@@ -48,11 +49,16 @@ def main():
         for q in QUERIES:
             if q not in cache:
                 try:
-                    res = yt("search", part="id", q=q, type="video", maxResults=50, order="relevance",
-                             publishedAfter=SINCE, relevanceLanguage="en", regionCode="US")
+                    found, token = [], None
+                    while len(found) < TOP_VIDEOS:                                  # top N videos for this keyword, a page of 50 at a time
+                        res = yt("search", part="id", q=q, type="video", maxResults=min(50, TOP_VIDEOS - len(found)), order="relevance",
+                                 publishedAfter=SINCE, relevanceLanguage="en", regionCode="US", **({"pageToken": token} if token else {}))
+                        found += [i["id"]["videoId"] for i in res.get("items", [])]
+                        token = res.get("nextPageToken")
+                        if not token: break
                 except QuotaError as e:
                     print("STOP:", e); break
-                cache[q] = [i["id"]["videoId"] for i in res.get("items", [])]
+                cache[q] = found
                 save("search_cache.json", cache)
                 print(f"  searched: {q} ({len(cache[q])})")
             ids |= set(cache[q])

@@ -53,7 +53,9 @@ Open `product.json` in your fork (click the file → the pencil icon) and change
 | `name`, `brand` | the product and its maker, for example `Galaxy Z Fold 8` and `Samsung` |
 | `launch` | the launch date, `YYYY-MM-DD`. Lift compares videos after launch with the channel's usual views before it |
 | `since` | the earliest video date to include, ISO format, for example `2026-06-01T00:00:00Z` |
-| `queries` | the YouTube searches, a list. Three to nine is plenty; each costs 100 quota units |
+| `keywords` | what to search for on YouTube, a list. Three to nine is plenty; each costs at least 100 quota units. Same idea as the keyword box on the page |
+| `top_videos` | how many top videos to take per keyword (default 50, up to 200). Same as "Top videos" on the page |
+| `comments_per_video` | how many comments to read under each video (default 60, up to 150): two thirds top comments, the rest newest. Same as "Comments per video" on the page |
 | `topic_regex` | a video's title or channel must match this to count, for example `fold|samsung` |
 | `competitors` | brand name → a pattern that finds it in comments, for example `"Apple": "iphone|apple"` |
 | `demo_video` | optional: a link (for example a Loom) the page offers as the full-flow walkthrough |

@@ -14,8 +14,11 @@ lock = threading.Lock()
 
 
 def pull_video(v):
+    """Up to comments_per_video comments (product.json, default 60): two thirds by relevance (the top comments), the rest the newest."""
     seen, out = set(), []
-    for order, n in (("relevance", 40), ("time", 20)):
+    total = max(3, min(150, int(product().get("comments_per_video", 60))))
+    top = -(-total * 2 // 3)
+    for order, n in (("relevance", top), ("time", total - top)):
         r = yt("commentThreads", soft=True, part="snippet", videoId=v["id"], maxResults=n, order=order, textFormat="plainText")
         for i in (r or {}).get("items", []):
             s = i["snippet"]["topLevelComment"]["snippet"]
