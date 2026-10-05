@@ -22,5 +22,6 @@
   "iPhone Duo vs Pixel Fold",
   "Apple event reaction iPhone Duo"
  ],
- "topic_regex": "iphone|\\bduo\\b|apple"
+ "topic_regex": "iphone|\\bduo\\b|apple",
+ "demo_video": ""
 }

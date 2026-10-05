@@ -30,6 +30,8 @@ def attach_summaries(data):
     """Paraphrased topic notes (state/summaries.json) go into both builds."""
     data["summaries"] = read_json("summaries.json", {"topics": {}})
     data["runs"] = read_json("runs.json", [])
+    data["sample"] = read_json("explore_sample.json", None)               # a recorded keyword run, shown on the public page
+    data["video"] = product().get("demo_video", "")
     try:                                                   # what the weekly email and Slack digest look like (text-free: numbers, topic names, paraphrased notes)
         import report, notify
         ins = json.load(open(os.path.join(DATA, "insights.json")))

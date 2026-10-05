@@ -18,8 +18,8 @@ Built with Python (standard library only), the YouTube Data API v3 (official API
 
 | Surface | Use | Entry point |
 |---|---|---|
-| Dashboard (live demo above, or run locally for quotes and chat) | Four tabs and a chat. A short "who this is for / how this works / key metrics" header explains it; every metric also explains itself on hover, starting with the business question it answers. **Overview**: creator types by channel level and region (click a cell, total or header to filter). **Content performance**: a content-type overview that filters one sortable list of videos (creator, region, level, content type, lift, views gained 24h and 7d, engagement, sentiment score and bar); every header is a sort and filter menu. **Audience insights**: topic map (x sentiment score, y trend, size comments), expandable topics with what people say, collapsed competitors. **Reports & automation**: status strip, run log in four stages, an example weekly email and Slack digest. **Ask the data** (top left): plain-language questions answered with the SQL shown. | `dashboard.html`, `docs/index.html` |
-| Weekly email | Mirrors the dashboard: summary, overview, content performance (highest-lift videos), audience insights (top topics), what changed since the last refresh, watchlist. | `report.py` |
+| Dashboard (live demo above, or run locally for quotes and chat) | Five tabs and a chat. A short "who this is for / how this works / key metrics" header explains it; every metric also explains itself on hover, starting with the business question it answers. **Overview**: creator types by channel level and region (click a cell, total or header to filter). **Content performance**: a content-type overview that filters one sortable list of videos (creator, region, level, content type, lift, views gained 24h and 7d, engagement, sentiment score and bar); every header is a sort and filter menu. **Audience insights**: topic map (x sentiment score, y trend, size comments), expandable topics with what people say, collapsed competitors. **Try a keyword**: type a product or topic and watch each step (YouTube API, Claude, clustering, report) while it builds a small report; it can send the report to your Slack and inbox. **Reports & automation**: status strip with **Refresh now**, run log in four stages, an example weekly email and Slack digest. **Ask the data** (top left): plain-language questions answered with the SQL shown. | `dashboard.html`, `docs/index.html` |
+| Daily update and weekly email | Every run pushes a short update to email and Slack (daily) and the full one on Mondays. Mirrors the dashboard: summary, overview, content performance (highest-lift videos), audience insights (top topics), what changed since the last refresh, watchlist. | `report.py` |
 | Slack digest and alerts | The same readout in a channel on Mondays, plus alerts on their own when something shifts. | `notify.py` |
 | Q&A agent | Ask in Slack, in the local dashboard, or live on the hosted page. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py`, `api/chat.py` |
 
@@ -37,6 +37,7 @@ textcluster.py / topics.py   local TF-IDF + k-means defines topics with stable I
 insights.py       numbers computed in Python, narrative by Claude, changes since last refresh, watchlist, alerts
 summaries.py / examples.py / public_safety.py   paraphrased notes and recorded Q&A for the public demo, checked so nothing reuses a comment's wording
 export_public_db.py  text-free copy of the database for the hosted chat -> api/public.db
+explore.py       keyword explorer: any product or topic -> small report with live progress
 report.py (email) / notify.py (Slack digest and alerts)
 build_dashboard.py [--public]   dashboard.html / docs/index.html (+ docs/data.json)
 ask.py            Q&A core: Slack bot, local server and api/chat.py (Vercel function)
@@ -69,8 +70,9 @@ The split is deliberate: statistics where they are enough, Claude where reading 
 
 `.github/workflows/weekly.yml` runs `run_weekly.py` every day at 15:00 UTC (and on demand from the Actions tab). It starts from `state/`, then works in four stages: refresh source data (new videos, stats for every known video, the daily view snapshot, baselines), analyse (label only comments it has not seen before, assign topics and discover new ones, compute insights and changes), update reports, push to email and Slack.
 
-- **Light pass** (Tuesday to Sunday): skips the slow Claude steps (topic notes, recorded Q&A, the hosted-chat database) and posts to Slack only if an alert fired.
-- **Full pass** (Monday): everything, plus the email and the Slack digest.
+- **Light pass** (Tuesday to Sunday): skips the slow Claude steps (topic notes, recorded Q&A, the hosted-chat database) but still sends a short "daily" email and Slack digest.
+- **Full pass** (Monday): everything, plus the full "weekly" email and Slack digest.
+- **Refresh now** (local server only): runs the light pass on demand and streams the four stages to the page.
 - Each run appends to `state/runs.json`, which the dashboard shows as the status strip and run log, then commits the updated `state/`, `docs/` and `api/` back so the next run is incremental and the hosted page redeploys. API keys come from repository secrets.
 
 ## Run it
@@ -97,6 +99,7 @@ python3 report.py --send            # email
 python3 notify.py                   # Slack digest (add --alerts for alert-only)
 python3 serve.py                    # dashboard with chat on http://127.0.0.1:8770
 python3 run_weekly.py --no-send     # the whole scheduled pipeline in one go (--daily or --weekly to force a mode)
+python3 explore.py "standing desk"  # keyword report in the terminal
 
 python3 -m venv .venv && .venv/bin/pip install slack_bolt
 .venv/bin/python slack_bot.py       # Slack Q&A agent
@@ -108,9 +111,17 @@ Steps are cached and resumable: searches, baselines, and comment labels are only
 
 The YouTube API only returns the current view count, never a history. `snapshots.py` therefore stores each video's public view count once a day in `state/view_history.json`, and the content list shows views gained in the last 24 hours and 7 days from two snapshots (a dash until enough days exist). Topic trend works differently: it uses comment timestamps, which carry their own history.
 
+## Try a keyword and Refresh now
+
+Two live features that spend API quota, so they only run on your own copy:
+
+- **Try a keyword** (`explore.py`): YouTube search for the keyword, each channel's usual views (for lift), the top comments, Claude labels every comment, local clustering finds topics and Claude names them, then a short summary. Capped at 20 videos and 20 comments each, about 30 seconds, roughly 150 YouTube quota units and a few cents to a few tens of cents of Claude. From the terminal: `python3 explore.py "standing desk"` (add `--sample` to save the text-free sample the public page replays).
+- **Refresh now**: `python3 serve.py` and open http://127.0.0.1:8770. The page streams the keyword steps and the four pipeline stages as they happen, and "Send to my Slack and email" pushes a keyword report using your own keys.
+- On the public page both are switched off with a short disclaimer, and it shows the recorded sample run and a replay of its steps. Set `demo_video` in `product.json` to a link (for example a Loom) and the page points to it as the full-flow walkthrough.
+
 ## Make it your own
 
-The live page is a static demo of one product. To run the same pipeline on your own keywords or product:
+The public page is a demo of one product with a recorded sample. To run the same pipeline on your own keywords or product:
 
 1. Fork the repo and add the keys as repository secrets (or put them in `~/.creator-scout.env` locally): `YOUTUBE_API_KEY` and `ANTHROPIC_API_KEY`, plus `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` if you want the digest and email.
 2. Edit `product.json`: `name`, `brand`, `launch` date, `since` (earliest video date), `queries` (the YouTube searches), `topic_regex` (a video must match it to count), and `competitors` (name to regex).

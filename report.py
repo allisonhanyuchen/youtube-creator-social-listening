@@ -28,7 +28,7 @@ def h(t):
     return f'<tr><td style="padding:22px 28px 6px;font:600 12px Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:{MUTE}">{t}</td></tr>'
 
 
-def build(ins, example=False):
+def build(ins, example=False, period="weekly"):
     m, n, al = ins["metrics"], ins["narrative"], ins["alerts"]
     tot, s = m["totals"], m["sentiment"]
     kp = lambda v, l: f'<td style="padding:10px 14px;border:1px solid {LINE};border-radius:8px"><div style="font:600 22px Arial,sans-serif;color:{INK}">{v}</div><div style="font:12px Arial,sans-serif;color:{MUTE}">{l}</div></td><td style="width:8px"></td>'
@@ -62,7 +62,7 @@ def build(ins, example=False):
     ex_note = '<tr><td style="padding:8px 28px 0;font:12px Arial,sans-serif;color:#6b4710">Example of the weekly email, to show the format. Figures are illustrative and not guaranteed to be accurate.</td></tr>' if example else ""
     return f'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YouTube Creator Social Listening</title></head><body style="margin:0;background:#f6f6f3"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f3"><tr><td align="center" style="padding:20px 10px">
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:100%;background:#ffffff;border:1px solid {LINE};border-radius:12px">
-<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{INK}">{ex_tag}iPhone Duo on YouTube<span style="font:13px Arial,sans-serif;color:{MUTE};font-weight:400"> &nbsp;weekly readout · data through {ins["as_of"]}</span></td></tr>
+<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{INK}">{ex_tag}iPhone Duo on YouTube<span style="font:13px Arial,sans-serif;color:{MUTE};font-weight:400"> &nbsp;{period} readout · data through {ins["as_of"]}</span></td></tr>
 {ex_note}
 <tr><td style="padding:12px 28px 0;font:600 17px/1.4 Arial,sans-serif;color:{INK}">{esc(n["headline"])}</td></tr>
 <tr><td style="padding:8px 28px 0;font:14px/1.55 Arial,sans-serif;color:{INK}">{esc(n["summary"])}</td></tr>
@@ -79,13 +79,14 @@ def build(ins, example=False):
 
 def main():
     ins = load("insights.json")
-    html = build(ins)
+    period = "daily" if "--daily" in sys.argv else "weekly"
+    html = build(ins, period=period)
     out = os.path.join(DATA, "report.html"); open(out, "w", encoding="utf-8").write(html)
     print("wrote", out)
     if "--send" not in sys.argv: return
     key, to = secret("RESEND_API_KEY", False), secret("REPORT_EMAIL_TO", False)
     if not (key and to): print("RESEND_API_KEY or REPORT_EMAIL_TO missing; not sent"); return
-    body = {"from": "YouTube Creator Social Listening <onboarding@resend.dev>", "to": [to], "subject": f"iPhone Duo on YouTube: {ins['narrative']['headline'][:80]}", "html": html}
+    body = {"from": "YouTube Creator Social Listening <onboarding@resend.dev>", "to": [to], "subject": f"iPhone Duo on YouTube ({period}): {ins['narrative']['headline'][:80]}", "html": html}
     dash = os.path.join(HERE, "dashboard.html")
     if os.path.exists(dash): body["attachments"] = [{"filename": "launch-pulse-dashboard.html", "content": base64.b64encode(open(dash, "rb").read()).decode()}]
     req = urllib.request.Request("https://api.resend.com/emails", data=json.dumps(body).encode(), method="POST",

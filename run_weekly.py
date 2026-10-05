@@ -11,12 +11,12 @@ STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]),
          ("build tables", ["db.py"]), ("assign comments to topics, discover new ones", ["topics.py"]), ("insights, changes and alerts", ["insights.py"]), ("text-free database for the hosted Q&A", ["export_public_db.py"]), ("paraphrased topic notes", ["summaries.py"]), ("recorded Q&A examples", ["examples.py"]), ("public demo page", ["build_dashboard.py", "--public"])]
 SEND = [("email report", ["report.py", "--send"]), ("Slack digest", ["notify.py"])]
 DAILY_SKIP = {"paraphrased topic notes", "recorded Q&A examples", "text-free database for the hosted Q&A"}              # the slow, Claude-heavy steps only run in the weekly full pass
-DAILY_SEND = [("Slack alerts (only if something fired)", ["notify.py", "--alerts"])]
+DAILY_SEND = [("email report", ["report.py", "--send", "--daily"]), ("Slack digest", ["notify.py", "--daily"])]
 RUNS = os.path.join(HERE, "state", "runs.json")
 
 
 def mode():
-    """daily = light pass (new data, topics, alerts); weekly = full pass with narrative, email and digest. Auto: weekly on Mondays (UTC)."""
+    """daily = light pass (new data, topics, alerts) that still sends a short update; weekly = full pass with topic notes and the full email and digest. Auto: weekly on Mondays (UTC)."""
     if "--daily" in sys.argv: return "daily"
     if "--weekly" in sys.argv: return "weekly"
     return "weekly" if datetime.now(timezone.utc).weekday() == 0 else "daily"
@@ -47,6 +47,7 @@ def main():
     steps = [s for s in STEPS if md == "weekly" or s[0] not in DAILY_SKIP]
     for name, cmd in steps + ((SEND if md == "weekly" else DAILY_SEND) if send else []):
         t0 = time.time()
+        print(f"[start] {name}", flush=True)
         r = subprocess.run([sys.executable] + cmd, cwd=HERE, capture_output=True, text=True)
         out = (r.stdout.strip().splitlines() or [""])[-1][:160]
         err = (r.stderr.strip().splitlines() or [""])[-1][:160]

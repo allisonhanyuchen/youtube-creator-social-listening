@@ -7,7 +7,7 @@ import json, sys, urllib.request
 from common import load, secret
 
 
-def build(ins, alerts_only=False, example=False):
+def build(ins, alerts_only=False, example=False, period="weekly"):
     n, m, al = ins["narrative"], ins["metrics"], ins["alerts"]
     if alerts_only:
         if not al: return None
@@ -15,7 +15,7 @@ def build(ins, alerts_only=False, example=False):
                 {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(f":rotating_light: {a['text']}" for a in al)}},
                 {"type": "context", "elements": [{"type": "mrkdwn", "text": f"Data through {ins['as_of']}. Mention me to dig in, for example: _why did negative sentiment rise this week?_"}]}]}
     t, s = m["totals"], m["sentiment"]
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + "iPhone Duo on YouTube: weekly readout"}},
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + f"iPhone Duo on YouTube: {period} readout"}},
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*{n['headline']}*\n{n['summary']}"}},
               {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.0f}M views · {t['comments_en']:,} English comments · product sentiment {s['pos']*100:.0f}% positive, {s['neg']*100:.0f}% negative · data through {ins['as_of']}"}]}]
     if m.get("highest_lift"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Content performance: highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift" + (f", sentiment {(c['pos'] - c['neg'])*100:+.0f}" if c["pos"] is not None else ", too few comments for sentiment") + ")" for c in m["highest_lift"][:3])}})
@@ -36,7 +36,7 @@ def post(payload):
 
 def main():
     ins = load("insights.json")
-    payload = build(ins, "--alerts" in sys.argv)
+    payload = build(ins, "--alerts" in sys.argv, period="daily" if "--daily" in sys.argv else "weekly")
     if payload is None: print("no alerts; nothing posted"); return
     if "--dry-run" in sys.argv: print(json.dumps(payload, indent=1, ensure_ascii=False)); return
     print("Slack:", *post(payload))
