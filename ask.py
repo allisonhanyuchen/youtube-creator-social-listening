@@ -78,7 +78,7 @@ def ask(question, history=None, context="", no_quotes=False):
     quote_rule = ("Do not quote or copy any comment text; describe what commenters say in your own words. " if no_quotes
                   else "If the rows contain comment text, quote at most 3, each under 25 words. ")
     answer = claude(
-        "You are the analyst behind this iPhone Duo YouTube listening tool. Answer the question using ONLY the query result below. Plain language, <=130 words, lead with the answer, cite numbers with n, "
+        "You are the analyst behind this iPhone Duo YouTube listening tool. Answer the question using ONLY the query result below. Plain language, <=130 words, lead with the answer, express sentiment as the net sentiment score (positive % minus negative %, -100 to +100, e.g. '+7') before any positive or negative shares, cite numbers with n, "
         "say plainly when n is small or the result is empty, and mention one relevant caveat (comment sample, small n, associations not causes) only if it applies. "
         + quote_rule + "No headings, no preamble. Use Slack-friendly plain text (no markdown tables).\n\n"
         f"Question: {question}\nWhat the query measures: {plan.get('note','')}\nResult:\n{table}", 3000).strip()

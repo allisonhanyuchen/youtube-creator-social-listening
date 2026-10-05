@@ -42,7 +42,7 @@ def topic_rows(con):
                       where t.pool='product' and c.lang='en' and c.trivial=0 and {SCOPE} group by 1 order by n desc""", rf)
     tot, rec = sum(r["n"] for r in rows) or 1, sum(r["recent"] for r in rows)
     return [dict(id=r["id"], name=r["name"], summary=r["summary"], discovered=r["origin"] == "discovered", first_seen=r["first_seen"], n=r["n"], share=round(r["n"] / tot, 3),
-                 pos=round(r["pos"], 3), neg=round(r["neg"], 3), recent=r["recent"], trend=round((r["recent"] / r["n"]) / (rec / tot), 2) if rec and r["n"] else None) for r in rows]
+                 pos=round(r["pos"], 3), neg=round(r["neg"], 3), score=round((r["pos"] - r["neg"]) * 100), recent=r["recent"], trend=round((r["recent"] / r["n"]) / (rec / tot), 2) if rec and r["n"] else None) for r in rows]
 
 
 def metrics(con):
@@ -56,6 +56,7 @@ def metrics(con):
                        comments_en=q(con, f"select count(*) n from comments c join content v using(video_id) where c.lang='en' and c.trivial=0 and {SCOPE}")[0]["n"])
     m["outperformer_rate"], m["underperformer_rate"] = rate(ev, "o"), rate(ev, "under")
     m["sentiment"] = sent_of(rows)
+    m["sentiment"]["score"] = round((m["sentiment"]["pos"] - m["sentiment"]["neg"]) * 100)
     m["by_channel_size"] = {g: dict(videos=len(xs), outperformer_rate=rate([x for x in xs if x["o"] is not None], "o"), **sent_of(xs))
                             for g in ("small (<250k)", "mid (250k-1M)", "large (1M+)") for xs in [[x for x in rows if size(x["tier"]) == g]]}
     m["by_creator_type"] = [dict(kol_type=k, videos=len(xs), outperformer_rate=rate([x for x in xs if x["o"] is not None], "o"), **sent_of(xs))
@@ -121,7 +122,7 @@ def watchlist(m):
     out = []
     for t in m["topics"]:
         if (t["trend"] or 0) >= 1.5 and t["recent"] >= 15: out.append(dict(id=t["id"], name=t["name"], why=f"gaining: {t['trend']}x its usual share of recent comments (n={t['recent']})"))
-        elif t["n"] >= 150 and t["neg"] - t["pos"] >= 0.15: out.append(dict(id=t["id"], name=t["name"], why=f"net negative: {t['neg']*100:.0f}% negative vs {t['pos']*100:.0f}% positive (n={t['n']})"))
+        elif t["n"] >= 150 and t["neg"] - t["pos"] >= 0.15: out.append(dict(id=t["id"], name=t["name"], why=f"sentiment score {(t['pos'] - t['neg'])*100:+.0f} (n={t['n']})"))
     return out[:5]
 
 
@@ -129,6 +130,7 @@ def narrative(m):
     prompt = ("You are a creator-marketing analyst writing the weekly readout on how the Apple iPhone Duo (first foldable iPhone, launched 2026-09-09) is landing on YouTube. "
               "Use ONLY numbers in the JSON below; never invent figures. Be direct, plain, no hype. Flag small samples. "
               "Definitions: outperformer = a video in the top quarter of views relative to the channel's own usual views (compared within Shorts or long videos); underperformer = bottom quarter. "
+              "Sentiment score = positive % minus negative %, from -100 to +100: always lead with the score when you talk about sentiment (for example 'sentiment score +7') and mention positive and negative shares only as supporting detail. "
               "Lift and audience sentiment are different measures and must not be merged into a 'scale' or 'fix' recommendation; describe them side by side. "
               "Sponsorship and Apple seeding are NOT analysed; do not mention them. 'topics' are audience topics found by local clustering of comments and named by AI, with share, sentiment and trend (recent share vs usual); 'discovered' ones appeared after the first run. 'changes' is what moved since the last refresh (null on the first run); 'watchlist' lists topics to monitor. "
               "Return JSON only: "

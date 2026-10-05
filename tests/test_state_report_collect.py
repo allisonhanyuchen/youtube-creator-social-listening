@@ -68,7 +68,7 @@ def fake_ins(headline="A headline"):
 class EmailReport(unittest.TestCase):
     def test_renders_the_readout(self):
         html = report.build(fake_ins())
-        for s in ("A headline", "Price mentions are up", "highest-lift videos", "Price Complaints", "Battery Life", "Watchlist", "too few comments for sentiment", "60% positive"):
+        for s in ("A headline", "Price mentions are up", "highest-lift videos", "Price Complaints", "Battery Life", "Watchlist", "too few comments for sentiment", "sentiment +50"):
             self.assertIn(s, html)
 
     def test_no_traces_of_the_removed_paid_seeded_analysis(self):

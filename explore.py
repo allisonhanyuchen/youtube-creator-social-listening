@@ -2,7 +2,7 @@
 """Keyword explorer: type a product or topic, get a small report in about a minute.
 YouTube search -> channel baselines (lift) -> top comments -> Claude labels each comment -> local clustering finds topics, Claude names them -> summary.
 Capped on purpose (20 videos, 20 comments each) so one run stays cheap: roughly 150 YouTube quota units and a few cents to a few tens of cents of Claude.
-Run from the terminal:  python3 explore.py "iPhone Duo"      (add --sample to save the text-free sample shown on the public page)
+Run from the terminal:  python3 explore.py "iPhone Duo"      (add --sample to save the text-free sample shown on the public page, --push to also send it to your Slack and inbox)
 The local server (serve.py) calls run() and streams the progress events to the dashboard."""
 import json, os, statistics, sys, time
 from concurrent.futures import ThreadPoolExecutor
@@ -14,7 +14,7 @@ import textcluster as tc
 MAX_VIDEOS, MAX_COMMENTS = 20, 20
 PRODUCT_SIDE = {"product", "price_value", "competitor"}
 STEPS = [("search", "Retrieving videos from the YouTube API"), ("baseline", "Checking each channel's usual views"), ("comments", "Pulling the top comments"),
-         ("label", "Reading every comment with Claude"), ("topics", "Finding and naming topics"), ("report", "Writing the report")]
+         ("label", "Reading every comment with Claude"), ("topics", "Finding and naming topics"), ("report", "Writing the report"), ("push", "Pushing the report to email and Slack")]
 
 
 def pool(fn, items, workers=8):
@@ -84,7 +84,7 @@ def net(ps):
     return round((ps[0] - ps[2]) / n * 100) if n else None
 
 
-def build(keyword, emit=lambda e: None):
+def build(keyword, emit=lambda e: None, push=False):
     t_all, steps = time.time(), []
 
     def step(sid, fn):
@@ -151,6 +151,10 @@ def build(keyword, emit=lambda e: None):
                               'Return JSON only: {"headline": str (<=20 words), "bullets": [str, str, str] (each <=30 words)}.\n\n' + json.dumps(brief), 1500, thinking={"type": "between_tools"}))
         return s, "headline and three findings"
     rep["summary"] = step("report", write)
+    if push:
+        step("push", lambda: (lambda sent: (sent, ("Sent to " + " and ".join(sent)) if sent else "no Slack or email keys are set"))(deliver(rep)))
+    else:
+        emit(dict(step="push", label=dict(STEPS)["push"], status="done", detail="skipped (push is switched off)", secs=0))
     rep["steps"], rep["secs"], rep["usage"] = steps, round(time.time() - t_all, 1), dict(USAGE)
     rep["_corpus"] = [r["text"] for r in rows]                 # only used in memory for the public-safety check, never written out
     return rep
@@ -204,7 +208,7 @@ def deliver(rep):
 def main():
     kw = " ".join(a for a in sys.argv[1:] if not a.startswith("--")).strip()
     if not kw: raise SystemExit('usage: python3 explore.py "keyword" [--sample]')
-    rep = build(kw, lambda e: print(f"  [{e['status']}] {e['label']}" + (f" ({e['secs']}s): {e['detail']}" if e["status"] == "done" else ""), flush=True))
+    rep = build(kw, push="--push" in sys.argv, emit=lambda e: print(f"  [{e['status']}] {e['label']}" + (f" ({e['secs']}s): {e['detail']}" if e["status"] == "done" else ""), flush=True))
     print("\n" + rep["summary"]["headline"]); [print(" -", b) for b in rep["summary"]["bullets"]]
     print(f"\n{rep['secs']}s | tokens in {rep['usage']['in']:,} out {rep['usage']['out']:,}")
     if "--sample" in sys.argv:
