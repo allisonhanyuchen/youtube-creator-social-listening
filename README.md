@@ -27,7 +27,7 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 
 | Step | What happens | Tech |
 |---|---|---|
-| 1 **Collect** | The top videos under your keywords and the top comments under each video | YouTube Data API v3 |
+| 1 **Collect** | The top videos under the keywords you type and the top comments under each video | YouTube Data API v3 |
 | 2 **Analyse** | Python computes every number locally so it can be checked: lift against each channel's own baseline, views gained, trends. Claude reads each comment (who it is about, sentiment, intent) and names the topics that local clustering finds | Claude API, Python, SQLite |
 | 3 **Report** | An interactive dashboard with Overview, Content performance and Audience insights, plus an Ask-the-data chat that answers with read-only SQL | Interactive HTML page, Vercel |
 | 4 **Push** | The full report's key summary goes to email and Slack, with alerts when something shifts | Resend, Slack |
@@ -68,20 +68,14 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 
 ## 🚀 Make It Yours
 
-Bring your own API keys, point it at your product, and deploy. The full click-by-click guide for every key is in **[guides/SETUP.md](guides/SETUP.md)**.
+Bring your own API keys and deploy. You set what to listen to in the app itself, not in a file. The full click-by-click guide for every key is in **[guides/SETUP.md](guides/SETUP.md)**.
 
 1. **Fork** the repo and add five keys as repository secrets: `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO`
-2. **Choose what to listen to** in `input.json`. These map to the inputs on the page:
+2. **Publish the page** on Vercel and add the same keys, an access code of your choice (`DEMO_CODE`) and a `GITHUB_TOKEN` (Actions and Contents, read and write, this repo only)
+3. **Open your page and type your input**: the keywords, how many top videos per keyword, how many comments per video. Press **Run**: it saves them as the app's input, runs the pipeline on GitHub Actions (collect, analyse, report, push), shows the report and pushes the key summary to your email and Slack
+4. **That is all**: the saved input is repeated every day at 15:00 UTC; change it in the page any time (new keywords for another product start from scratch)
 
-   | In `input.json` | On the page | Example |
-   |---|---|---|
-   | `keywords` | Keyword | `["Galaxy Z Fold 8 review", "Galaxy Z Fold 8 vs iPhone"]` |
-   | `top_videos` | Top videos | `50` (per keyword) |
-   | `comments_per_video` | Comments per video | `60` |
-   | `name`, `brand`, `launch`, `competitors` | what the report is about and compared with | `Galaxy Z Fold 8`, `Samsung`, `2026-07-22` |
-
-3. **Run the "Refresh and push" workflow** from the Actions tab (10 to 25 minutes the first time); after that it runs every day at 15:00 UTC
-4. **Publish the page** on Vercel (live chat and live runs) or GitHub Pages (static)
+The deployed page is the clean app: input, run, report, push. The sidebar, recorded sample, Quick preview, example email and Slack previews and explanations on the public demo are extras for demonstration (they appear when `"demo": true` in `input.json`).
 
 Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 

@@ -34,5 +34,6 @@
   "competitor_foldable": "mainly about a competitor foldable",
   "other": "other"
  },
- "baseline_exclude": "iphone"
+ "baseline_exclude": "iphone",
+ "demo": true
 }

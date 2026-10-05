@@ -45,32 +45,22 @@ In the same Slack app: **Socket Mode** → enable → create an app-level token 
 ### Step 3 · Put the keys into GitHub
 In your fork: **Settings** → **Secrets and variables** → **Actions** → **New repository secret**. Add one secret for each of `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` (name exactly as written, value pasted in). Then open the **Actions** tab and click **I understand my workflows, enable them** (GitHub turns workflows off in forks).
 
-### Step 4 · Point it at your product
-Open `input.json` in your fork (click the file → the pencil icon) and change the values:
+### Step 4 · Tell it what to listen to
+You do this in the app, not in a file. After the page is published (Step 6 or 7), open it and fill in the three boxes: **Keywords** (separate several with commas), **Top videos per keyword** (up to 200) and **Comments per video** (up to 150). Press **Run**. It saves them as the app's input in `input.json`, runs the pipeline, shows the report and pushes the key summary to your email and Slack. The same input is repeated every day.
+
+If you would rather start without the page, you can edit `input.json` yourself and run the workflow. Fields:
 
 | Field | What to put |
 |---|---|
-| `name`, `brand` | the product and its maker, for example `Galaxy Z Fold 8` and `Samsung` |
-| `launch` | the launch date, `YYYY-MM-DD`. Lift compares videos after launch with the channel's usual views before it |
-| `since` | the earliest video date to include, ISO format, for example `2026-06-01T00:00:00Z` |
-| `keywords` | what to search for on YouTube, a list. Three to nine is plenty; each costs at least 100 quota units. Same idea as the keyword box on the page |
-| `top_videos` | how many top videos to take per keyword (default 50, up to 200). Same as "Top videos" on the page |
-| `comments_per_video` | how many comments to read under each video (default 60, up to 150): two thirds top comments, the rest newest. Same as "Comments per video" on the page |
-| `topic_regex` | a video's title or channel must match this to count, for example `fold|samsung` |
-| `competitors` | brand name → a pattern that finds it in comments, for example `"Apple": "iphone|apple"` |
-| `demo_video` | optional: a link (for example a Loom) the page offers as the full-flow walkthrough |
+| `keywords`, `top_videos`, `comments_per_video` | the same three inputs as the boxes on the page |
+| `name`, `brand`, `launch`, `since`, `topic_regex`, `competitors` | what the report is about. When you type keywords in the app these are filled in for you (name from the first keyword, launch date 30 days ago, no competitors); edit them for a better report |
+| `pricing`, `demo`, `demo_video` | cost estimates (USD per million tokens), the demo extras switch, an optional video link |
 
-Then delete the demo's data so your run starts clean: in `state/` delete every file except `.gitkeep` (create one if the folder becomes empty), and delete `docs/data.json`, `docs/index.html` and `api/public.db`. (On the GitHub website: open the file → the trash icon → commit. Or do it locally with `git rm`.)
+Optional fields, with sensible defaults when left out: `blurb`, `topic`/`topics` (labels Claude may give a video), `baseline_exclude`.
 
-Optional fields, with sensible defaults when left out:
+> Good to know: the creator-type list (`src/creators.py`) assumes consumer tech (reviewers, tech news, lifestyle vloggers and so on). For a very different category, edit that short list.
 
-| Field | What it does |
-|---|---|
-| `blurb` | one line the prompts use to describe the product (default: name and launch date) |
-| `topic`, `topics` | the label that marks a video as about your product (default `main`) and the labels Claude may give a video, for example `{"main": "Galaxy Z Fold 8", "fold_7": "last year's Fold 7", "other": "something else"}`. Add labels for products you want kept separate for comparison |
-| `baseline_exclude` | a pattern for pre-launch videos about the product itself (rumours), which should not count as a channel's usual views (default: `topic_regex`) |
-
-> Good to know: the creator-type list (`src/creators.py`) assumes consumer tech (reviewers, tech news, lifestyle vlogger and so on). For a very different category, edit that short list. The name, brand, competitors, titles in the email, Slack and page, and every prompt come from `input.json`.
+Then delete the demo's data if you started from a fork of this repo: in `state/` delete every file, and delete `docs/data.json`, `docs/index.html` and `api/public.db`. (Pressing Run with keywords for a different product does this for you.)
 
 ### Step 5 · First run
 **Actions** tab → **Refresh and push** → **Run workflow** → set **Send the email and Slack update** to off for the very first run → **Run workflow**. Open the run to watch the four stages go green: 1 Refresh source data, 2 Analyse, 3 Update reports, 4 Push. It takes 10 to 25 minutes the first time. When it is green, run it again with send on to check that the email and the Slack message arrive. From then on it runs by itself every day at 15:00 UTC.
@@ -82,7 +72,7 @@ Pick one:
 
 ### Step 7 · Optional: live runs on Vercel
 1. Go to https://vercel.com, sign up with GitHub, **Add New** → **Project** → import your fork. Framework **Other**, leave the build command empty → **Deploy**.
-2. **Settings** → **Environment Variables**: add the variables in the table under "Hosting on Vercel". For `GITHUB_TOKEN`: https://github.com/settings/personal-access-tokens/new → **Only select repositories** → your fork → **Repository permissions** → **Actions: Read and write** → generate and copy.
+2. **Settings** → **Environment Variables**: add the variables in the table under "Hosting on Vercel". For `GITHUB_TOKEN`: https://github.com/settings/personal-access-tokens/new → **Only select repositories** → your fork → **Repository permissions** → set **Actions** and **Contents** both to **Read and write** → generate and copy.
 3. Choose your own `DEMO_CODE`. Redeploy (Deployments → the latest → Redeploy).
 4. Open your Vercel page. The **Generate report** and **Refresh now** buttons now ask for the code.
 
@@ -105,7 +95,7 @@ Pick one:
 | `DEMO_CODE` | the code that unlocks keyword runs and Refresh now. Without it they stay off and the page shows the recorded sample |
 | `YOUTUBE_API_KEY` | keyword runs |
 | `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` | where a keyword run pushes its report |
-| `GITHUB_TOKEN` | Refresh now: a fine-grained token with Actions read and write on this repo only |
+| `GITHUB_TOKEN` | Run and Refresh now: a fine-grained token on this repo only with **Actions** and **Contents** both set to read and write (Run saves the input to `input.json` and starts the workflow) |
 | optional | `GITHUB_REPO`, `CHAT_PER_HOUR` (8), `CHAT_PER_DAY` (300), `CHAT_DISABLED`, `DEMO_RUNS_PER_DAY` (25), `DEMO_UNITS_PER_DAY` (3,000), `DEMO_REFRESH_COOLDOWN` (300 s) |
 
 - **Keyword run size and cost.** The page lets you pick the number of top videos (up to 200) and comments per video (up to 100) and shows an estimate first: YouTube quota is about `100 x search pages + 3 x videos + one comment call per video`, and Claude is about 45 input and 8 output tokens per comment read plus a small fixed amount. Dollars use `pricing` in `input.json` (default 3 and 15 USD per million input and output tokens; change it to your plan's price). Measured: a 20 x 20 run used about 17k input and 4k output tokens; the default 200 x 20 is estimated at roughly 1,300 quota units and about 1 USD. The hosted page also caps live runs per day by YouTube units (`DEMO_UNITS_PER_DAY`, default 3,000).

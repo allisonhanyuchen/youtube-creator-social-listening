@@ -121,7 +121,8 @@ def main():
     data = dict(topics=[dict(id=t["topic_id"], pool=t["pool"], name=t["name"], summary=t["summary"], terms=t["terms"], origin=t["origin"], first_seen=t["first_seen"], n=t["n"], c=t["c"],
                              recent=t["recent"], prior=t["prior"], trend=t["trend"]) for t in topics],
                 videos=rows, creators=sorted(creators.values(), key=lambda c: c["i"]), quotes=quotes, brands=list(pr["competitors"]), counts=counts,
-                event=pr["launch"], pricing=pricing(), product=dict(name=pr["name"], brand=pr["brand"]))
+                event=pr["launch"], pricing=pricing(), demo=bool(pr.get("demo")) and os.environ.get("PULSE_DEMO") != "0",
+                  input=dict(keywords=pr.get("keywords") or pr.get("queries") or [pr["name"]], top_videos=pr.get("top_videos", 50), comments_per_video=pr.get("comments_per_video", 60)), product=dict(name=pr["name"], brand=pr["brand"]))
     attach_summaries(data)
     if public:
         import public_safety as safe
