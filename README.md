@@ -143,7 +143,15 @@ Open `product.json` in your fork (click the file → the pencil icon) and change
 
 Then delete the demo's data so your run starts clean: in `state/` delete every file except `.gitkeep` (create one if the folder becomes empty), and delete `docs/data.json`, `docs/index.html` and `api/public.db`. (On the GitHub website: open the file → the trash icon → commit. Or do it locally with `git rm`.)
 
-> Known limit: the video labelling in `src/classify.py` and the `topic = 'duo'` scope in `src/common.py` still carry the iPhone Duo defaults. Keywords, competitors, titles of the sources and every metric work for any product, but for a product other than the Duo, change the `TOPICS` list in `classify.py` and the `topic` value in `product.json` to your own product label before the first run.
+Optional fields, with sensible defaults when left out:
+
+| Field | What it does |
+|---|---|
+| `blurb` | one line the prompts use to describe the product (default: name and launch date) |
+| `topic`, `topics` | the label that marks a video as about your product (default `main`) and the labels Claude may give a video, for example `{"main": "Galaxy Z Fold 8", "fold_7": "last year's Fold 7", "other": "something else"}`. Add labels for products you want kept separate for comparison |
+| `baseline_exclude` | a pattern for pre-launch videos about the product itself (rumours), which should not count as a channel's usual views (default: `topic_regex`) |
+
+> Good to know: the creator-type list (`src/creators.py`) assumes consumer tech (reviewers, tech news, lifestyle vlogger and so on). For a very different category, edit that short list. The name, brand, competitors, titles in the email, Slack and page, and every prompt come from `product.json`.
 
 ### Step 5 · First run
 **Actions** tab → **Refresh and push** → **Run workflow** → set **Send the email and Slack update** to off for the very first run → **Run workflow**. Open the run to watch the four stages go green: 1 Refresh source data, 2 Analyse, 3 Update reports, 4 Push. It takes 10 to 25 minutes the first time. When it is green, run it again with send on to check that the email and the Slack message arrive. From then on it runs by itself every day at 15:00 UTC.
