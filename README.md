@@ -89,8 +89,20 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 
 ## 🛠️ Tech Stack
 
-| Tool | Purpose |
+APIs it calls:
+
+| API | What it does here |
 |------|---------|
+| YouTube Data API v3 | Videos, channel stats, comments, daily view snapshots |
+| Claude API (Sonnet) | Per-comment labels, topic names, the written summary, text-to-SQL for Ask-the-data |
+| Resend API | Sends the email report |
+| Slack Incoming Webhook API | Posts the digest and alerts to a channel |
+| Slack Events API (Socket Mode, optional) | The @-mentionable Q&A agent |
+| GitHub Actions workflow dispatch API | Starts a refresh from the page and follows its stages |
+
+What it runs on: Python (standard library) with SQLite for lift, trends and TF-IDF + k-means clustering; GitHub Actions for the daily run; Vercel for the page and its serverless functions.
+
+------|---------|
 | YouTube Data API v3 | Videos, channel stats, comments, daily view snapshots |
 | Claude API (Sonnet) | Per-comment labels, topic names, narrative, text-to-SQL for Q&A |
 | Python (standard library) + SQLite | Lift, trends, TF-IDF and k-means clustering, storage |
