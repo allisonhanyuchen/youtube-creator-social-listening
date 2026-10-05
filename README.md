@@ -119,8 +119,7 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 |------|-------|
 | YouTube free quota | 10,000 units a day; a search costs 100 |
 | Keyword run, 20 videos x 20 comments | about 180 units, 17k input and 4k output Claude tokens, roughly 0.1 USD, about 20 seconds (measured) |
-| Keyword run, 200 videos x 20 comments | estimated 1,300 units, about 1 USD, under 2 minutes |
-| Daily refresh (steady state) | a few hundred new comments, about 0.1 USD |
-| First full run | about 19,000 comments, a few dollars |
+| First full run from scratch, 200 videos x 20 comments, one keyword | 1,142 units, 220k input and 59k output tokens, about 1.5 USD, 6 min 40 s (measured) |
+| Daily refresh (steady state) | a few hundred new comments, well under 0.5 USD |
 
 Prices use `pricing` in `input.json` (default 3 and 15 USD per million input and output tokens, a Sonnet-class assumption: set your own). Accessories, other products that share the name, and unrelated videos are checked and left out of the numbers. Definitions of every metric, data limits and the privacy design are in **[guides/METRICS.md](guides/METRICS.md)**.

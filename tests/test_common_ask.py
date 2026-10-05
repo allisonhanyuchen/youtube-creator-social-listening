@@ -65,3 +65,9 @@ class ReadOnlySql(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SlackLinks(unittest.TestCase):
+    def test_slack_link_text_is_escaped(self):
+        import notify
+        self.assertEqual(notify.slack_text("A <b> & c|d"), "A &lt;b&gt; &amp; c/d")

@@ -7,6 +7,10 @@ import json, sys, urllib.request
 from common import load, secret, product, title
 
 
+def slack_text(t):
+    return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("|", "/")
+
+
 def build(ins, alerts_only=False, example=False, period="weekly"):
     n, m, al = ins["narrative"], ins["metrics"], ins["alerts"]
     if alerts_only:
@@ -28,7 +32,8 @@ def build(ins, alerts_only=False, example=False, period="weekly"):
               {"type": "section", "text": {"type": "mrkdwn", "text": "*Content performance* (content types, highest 3 | lowest 3)\n"
                     f"• *Views*: {cl(hl['content']['views']['high'], 'views', num)} | {cl(hl['content']['views']['low'], 'views', num)}\n"
                     f"• *Engagement rate*: {cl(hl['content']['engagement']['high'], 'engagement_rate', lambda v: f'{v*100:.2f}%')} | {cl(hl['content']['engagement']['low'], 'engagement_rate', lambda v: f'{v*100:.2f}%')}\n"
-                    f"• *Sentiment score*: {cl(hl['content']['sentiment']['high'], 'score', sc)} | {cl(hl['content']['sentiment']['low'], 'score', sc)}"}},
+                    f"• *Sentiment score*: {cl(hl['content']['sentiment']['high'], 'score', sc)} | {cl(hl['content']['sentiment']['low'], 'score', sc)}"
+                    + ("\n*Highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{slack_text(c['title'][:70])}> {c['rel_lift']}x lift" + (f" · sentiment {sc(round((c['pos'] - c['neg']) * 100))}" if c.get('pos') is not None and c['product_comments'] >= 10 else " · too few comments for sentiment") for c in m["highest_lift"][:3]) if m.get("highest_lift") else "")}},
               {"type": "section", "text": {"type": "mrkdwn", "text": "*Audience insights* (top 3 topics)\n"
                     f"• *Highest sentiment*: {tl(hl['topics']['sentiment']['high'], lambda x: sc(x['score']))}\n• *Lowest sentiment*: {tl(hl['topics']['sentiment']['low'], lambda x: sc(x['score']))}\n"
                     f"• *Largest*: {tl(hl['topics']['largest'], lambda x: format(x['n'], ','))}\n• *Gaining*: {tl(hl['topics']['gaining'], lambda x: str(x['trend']) + 'x')}"}}]
