@@ -4,7 +4,7 @@
 
 An AI workflow that listens to YouTube around a product and gives a creator or brand marketing team a readout they do not have to build by hand: which creators and formats beat their own baseline, what the audience is saying, and what changed since yesterday. It refreshes itself every day and pushes the update to email and Slack.
 
-**Live demo: https://youtube-creator-social-listening.vercel.app/** (also on GitHub Pages: https://allisonhanyuchen.github.io/youtube-creator-social-listening/, where the chat falls back to recorded answers).
+**Live demo: https://youtube-creator-social-listening.vercel.app/**
 The demo case is the Apple iPhone Duo launch (2026-09-09). The public page shows no comment text.
 
 ## What the page shows
