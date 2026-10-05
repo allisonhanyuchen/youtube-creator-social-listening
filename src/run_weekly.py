@@ -5,7 +5,7 @@ It can also run one stage at a time (--stage refresh|analyse|report|push|finish)
 In CI the run starts from state/ (text-free), and writes it back at the end so the next run is incremental."""
 import json, os, subprocess, sys, time
 from datetime import datetime, timezone
-from common import HERE, SRC, usd
+from common import HERE, SRC, usd, product
 import state_io
 
 STEPS = [("collect new videos, refresh stats", ["collect.py", "--incremental"]), ("classify new videos", ["classify.py"]), ("daily view snapshot", ["snapshots.py"]), ("channel baselines and lift", ["performance.py"]), ("creator types", ["creators.py"]), ("pull and label new comments", ["comments.py", "--refresh"]),
@@ -82,7 +82,8 @@ def run_one(name, cmd, rows):
 def stage_steps(stage, md, send):
     steps = dict(STEPS)
     if stage == "push": return [] if not send else (SEND if md == "weekly" else DAILY_SEND)
-    return [(n, steps[n]) for n in STAGES[stage] if md == "weekly" or n not in DAILY_SKIP]
+    demo = product().get("demo")                          # recorded Q&A answers are only for the public demo page
+    return [(n, steps[n]) for n in STAGES[stage] if (md == "weekly" or n not in DAILY_SKIP) and (demo or n != "recorded Q&A examples")]
 
 
 def load_rows():

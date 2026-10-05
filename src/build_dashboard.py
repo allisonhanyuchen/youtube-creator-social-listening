@@ -45,9 +45,17 @@ def attach_public_text(data, corp):
     """Public demo only: recorded Q&A. Everything published as prose is re-checked against the comment corpus before it goes in."""
     import public_safety as safe
     data["examples"] = read_json("examples.json", [])
-    strings = [b for t in data["summaries"].get("topics", {}).values() for bl in t.values() for b in bl] + [e["a"] for e in data["examples"]] \
-        + [t["summary"] for t in data.get("topics", [])] + [t["name"] for t in data.get("topics", [])]
-    bad = [s[:60] for s in strings if safe.overlap(s, corp)]
+    dropped = []
+    for tid, t in data["summaries"].get("topics", {}).items():                  # a sentence that reuses a comment's wording is left out, not published
+        for k, bl in t.items():
+            keep = [x for x in bl if not safe.overlap(x, corp)]
+            dropped += [x[:60] for x in bl if x not in keep]; t[k] = keep
+    ex = [e for e in data["examples"] if not safe.overlap(e["a"], corp)]
+    dropped += [e["a"][:60] for e in data["examples"] if e not in ex]; data["examples"] = ex
+    for t in data.get("topics", []):
+        if safe.overlap(t["summary"], corp): dropped.append(t["summary"][:60]); t["summary"] = ""
+    bad = [t["name"][:60] for t in data.get("topics", []) if safe.overlap(t["name"], corp)]
+    if dropped: print(f"left out {len(dropped)} sentence(s) that reuse comment wording: {dropped[:3]}")
     if bad: raise SystemExit(f"public text overlaps comment wording, not publishing: {bad[:3]}")
     return data
 

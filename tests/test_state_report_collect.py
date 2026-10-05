@@ -125,14 +125,14 @@ class PublicSafety(unittest.TestCase):
         self.assertFalse(safe.overlap("Many people think the cost is far too high given the missing zoom camera", corp))
         self.assertFalse(safe.overlap("Opinions on the price for the iphone 18 pro are mixed", corp))      # an ordinary phrase many comments share
 
-    def test_build_refuses_text_that_copies_a_comment(self):
+    def test_build_leaves_out_text_that_copies_a_comment(self):
         import build_dashboard, public_safety as safe
         data = {"summaries": {"topics": {"p04": {"positive": [], "negative": ["a completely ridiculous price for a phone with no telephoto lens"]}}}, "topics": []}
         tmp = tempfile.TemporaryDirectory()
         old = build_dashboard.HERE; build_dashboard.HERE = tmp.name          # no examples.json here
         try:
-            with self.assertRaises(SystemExit):
-                build_dashboard.attach_public_text(data, safe.corpus(self.CORPUS_TEXTS))
+            build_dashboard.attach_public_text(data, safe.corpus(self.CORPUS_TEXTS))
+            self.assertEqual(data["summaries"]["topics"]["p04"]["negative"], [])
         finally:
             build_dashboard.HERE = old; tmp.cleanup()
 
