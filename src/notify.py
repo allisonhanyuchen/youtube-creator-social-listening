@@ -4,18 +4,18 @@
   python3 notify.py --alerts     only post when an alert fired
   python3 notify.py --dry-run    print the payload instead of posting"""
 import json, sys, urllib.request
-from common import load, secret
+from common import load, secret, product, title
 
 
 def build(ins, alerts_only=False, example=False, period="weekly"):
     n, m, al = ins["narrative"], ins["metrics"], ins["alerts"]
     if alerts_only:
         if not al: return None
-        return {"text": "iPhone Duo alert", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "iPhone Duo alert"}},
+        return {"text": f"{product()['name']} alert", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": f"{product()['name']} alert"}},
                 {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(f":rotating_light: {a['text']}" for a in al)}},
                 {"type": "context", "elements": [{"type": "mrkdwn", "text": f"Data through {ins['as_of']}. Mention me to dig in, for example: _why did negative sentiment rise this week?_"}]}]}
     t, s = m["totals"], m["sentiment"]
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + f"iPhone Duo on YouTube: {period} readout"}},
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + f"{title()}: {period} readout"}},
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*{n['headline']}*\n{n['summary']}"}},
               {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.0f}M views · {t['comments_en']:,} English comments · sentiment score {(s['pos'] - s['neg'])*100:+.0f} · data through {ins['as_of']}"}]}]
     if m.get("highest_lift"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Content performance: highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift" + (f", sentiment {(c['pos'] - c['neg'])*100:+.0f}" if c["pos"] is not None else ", too few comments for sentiment") + ")" for c in m["highest_lift"][:3])}})

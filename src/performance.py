@@ -5,10 +5,14 @@ compared with a long video. lift = views / baseline. Raw per-channel pulls are c
 Quota ~4 units per channel.
 """
 import statistics
-from common import yt, load, save, QuotaError
+import re
+from datetime import date, timedelta
+from common import yt, load, save, QuotaError, product
 from collect import iso_seconds, EVENT
 
-PRE_CUTOFF = "2026-09-01T00:00:00Z"     # baseline videos must predate the launch week
+P = product()
+PRE_CUTOFF = (date.fromisoformat(P["launch"]) - timedelta(days=8)).isoformat() + "T00:00:00Z"     # baseline videos must predate the launch week
+EXCL = re.compile(P.get("baseline_exclude") or P.get("topic_regex") or re.escape(P["name"]), re.I)   # pre-launch videos about the product itself (rumours) do not count as the channel's usual
 MIN_BASE = 5
 
 
@@ -28,7 +32,7 @@ def pull(channel_id):
             st = v.get("statistics", {})
             if v["snippet"]["publishedAt"] < PRE_CUTOFF and len(titles) < 5: titles.append(v["snippet"]["title"][:60])
             out.append(dict(p=v["snippet"]["publishedAt"], v=int(st.get("viewCount", 0) or 0),
-                            s=iso_seconds(v["contentDetails"].get("duration")) <= 180, ip="iphone" in v["snippet"]["title"].lower()))   # compact: only what the baseline needs
+                            s=iso_seconds(v["contentDetails"].get("duration")) <= 180, ip=bool(EXCL.search(v["snippet"]["title"]))))   # compact: only what the baseline needs
     return out, titles
 
 
@@ -36,7 +40,7 @@ def main():
     vids = load("videos.json")
     cache = load("baselines.json", {})
     for ch, items in cache.items():          # convert the older verbose cache format once
-        cache[ch] = [x if "p" in x else dict(p=x["pub"], v=x["views"], s=x["short"], ip="iphone" in x["title"].lower()) for x in items]
+        cache[ch] = [x if "p" in x else dict(p=x["pub"], v=x["views"], s=x["short"], ip=bool(EXCL.search(x["title"]))) for x in items]
     chans = sorted({v["channel_id"] for v in vids})
     new_titles = {}
     for n, ch in enumerate(chans, 1):

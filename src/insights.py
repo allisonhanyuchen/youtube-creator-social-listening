@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Insights for the iPhone Duo. Python computes every number (so nothing in the report is invented); Claude writes the narrative from those numbers.
+"""Insights for the product in product.json. Python computes every number (so nothing in the report is invented); Claude writes the narrative from those numbers.
 Lift and audience sentiment are reported side by side; they are never combined into a scale-or-fix verdict.
 Output: data/insights.json (metrics + narrative + alerts) and state/snapshot.json (aggregates only, committed, used to detect change next run)."""
 import json, os, sqlite3, statistics
 from datetime import date, timedelta
-from common import DATA, HERE, claude, parse_json, load, save
+from common import DATA, HERE, claude, parse_json, load, save, product, scope_sql, title
 
 PS = "('product','price_value','apple_brand','competitor')"
-SCOPE = "v.topic='duo' and v.format!='official'"
+SCOPE = scope_sql()
 TOL = 0.05
 
 
@@ -20,7 +20,7 @@ def size(tier):
 
 
 def video_rows(con):
-    """Duo videos with lift, engagement and product-side sentiment. Lift and sentiment are reported side by side and never combined into a recommendation."""
+    """Videos about the product with lift, engagement and product-side sentiment. Lift and sentiment are reported side by side and never combined into a recommendation."""
     rows = q(con, f"""select v.video_id, v.title, v.url, v.format, v.is_short, cr.name creator, cr.tier, cr.kol_type, p.views, p.likes, p.comment_count, p.rel_lift, p.outperformer o,
                       s.n_product_side n, s.pct_positive pos, s.pct_negative neg
                       from content v join creators cr using(channel_id) join performance p using(video_id) left join v_video_sentiment s using(video_id) where {SCOPE}""")
@@ -127,12 +127,13 @@ def watchlist(m):
 
 
 def narrative(m):
-    prompt = ("You are a creator-marketing analyst writing the weekly readout on how the Apple iPhone Duo (first foldable iPhone, launched 2026-09-09) is landing on YouTube. "
+    P = product()
+    prompt = (f"You are a creator-marketing analyst writing the readout on how {P['brand']} {P['name']} ({P['blurb']}) is landing on YouTube. "
               "Use ONLY numbers in the JSON below; never invent figures. Be direct, plain, no hype. Flag small samples. "
               "Definitions: outperformer = a video in the top quarter of views relative to the channel's own usual views (compared within Shorts or long videos); underperformer = bottom quarter. "
               "Sentiment score = positive % minus negative %, from -100 to +100: always lead with the score when you talk about sentiment (for example 'sentiment score +7') and mention positive and negative shares only as supporting detail. "
               "Lift and audience sentiment are different measures and must not be merged into a 'scale' or 'fix' recommendation; describe them side by side. "
-              "Sponsorship and Apple seeding are NOT analysed; do not mention them. 'topics' are audience topics found by local clustering of comments and named by AI, with share, sentiment and trend (recent share vs usual); 'discovered' ones appeared after the first run. 'changes' is what moved since the last refresh (null on the first run); 'watchlist' lists topics to monitor. "
+              "Sponsorship and brand seeding are NOT analysed; do not mention them. 'topics' are audience topics found by local clustering of comments and named by AI, with share, sentiment and trend (recent share vs usual); 'discovered' ones appeared after the first run. 'changes' is what moved since the last refresh (null on the first run); 'watchlist' lists topics to monitor. "
               "Return JSON only: "
               '{"headline": str (<=22 words), "summary": str (<=90 words), "findings": [{"title": str, "detail": str (<=45 words, with numbers), "action": str (<=25 words, a concrete creator-brief or measurement step)}] (exactly 4), '
               '"watch": str (<=40 words, what to monitor next week)}\n\nMETRICS:\n' + json.dumps(m, ensure_ascii=False))

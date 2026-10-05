@@ -3,37 +3,40 @@
 Claude writes one SELECT against data/pulse.db (read-only connection, SELECT/WITH only, row and time caps), then summarises the rows.
 Returns the answer plus the SQL it ran, so the asker can check the work.  CLI: python3 ask.py "your question" """
 import json, os, re, sqlite3, sys, time
-from common import DATA, claude, parse_json
+from common import DATA, claude, parse_json, product
 
 DB = os.environ.get("PULSE_DB") or os.path.join(DATA, "pulse.db")
 PUBLIC = bool(os.environ.get("PULSE_PUBLIC"))          # the hosted copy: a text-free database
 MAX_ROWS = 40
 
 SCHEMA = """
-YouTube data on the Apple iPhone Duo (first foldable iPhone, launched 2026-09-09). iPhone 18 Pro videos are in the database as a comparison. SQLite, read only.
-Default scope: topic='duo' and format!='official' (official = Apple's own channel, no lift). Only use other topics when the question names them (e.g. iPhone 18 Pro, comparisons).
+YouTube data on @BRAND@ @NAME@ (@BLURB@). Videos about other products may be in the database as a comparison. SQLite, read only.
+Default scope: topic='@TOPIC@' and format!='official' (official = @BRAND@'s own channel, no lift). Only use other topics when the question names them.
 
 creators(channel_id, name, kol_type, tier, subscribers, region)
-  kol_type: pro_reviewer, apple_focused, lifestyle_vlogger, tech_news_media, commentary_analyst, entertainment_shorts, official_brand, other
+  kol_type: pro_reviewer, apple_focused (= focused on @BRAND@'s products), lifestyle_vlogger, tech_news_media, commentary_analyst, entertainment_shorts, official_brand, other
   tier: 'nano <50k','micro 50-250k','mid 250k-1M','macro 1-5M','mega 5M+'   region: channel-declared country code or 'undeclared'
 content(video_id, url, title, channel_id, format, topic, title_framing, published, day_since_launch, is_short, duration_s)
   format: first_impressions, full_review, comparison, upgrade_advice, keynote_recap, durability_test, explainer_tips, rumor_leak, meme_short, official, other
-  topic: duo, iphone_18_pro, iphone_18, event_general, competitor_foldable, other
+  topic: @TOPICS@
 performance(video_id, views, likes, comment_count, eng_rate, comment_rate, baseline_n, baseline_views, lift, rel_lift, outperformer)
-  lift = views / the channel's own pre-launch median for the same format class (Short vs long). rel_lift = lift / median lift of that class, computed among Duo videos for Duo videos (1.0 = typical Duo video).
-  outperformer = 1 if top quartile of rel_lift within Shorts or long; NULL for official Apple videos or videos without a baseline. avg(outperformer) = outperformer rate. Underperformer = bottom quartile of rel_lift in its class.
+  lift = views / the channel's own pre-launch median for the same format class (Short vs long). rel_lift = lift / median lift of that class, computed among videos about the product for those videos (1.0 = a typical video about it).
+  outperformer = 1 if top quartile of rel_lift within Shorts or long; NULL for @BRAND@'s own channel videos or videos without a baseline. avg(outperformer) = outperformer rate. Underperformer = bottom quartile of rel_lift in its class.
 comments(comment_id, video_id, text, likes, published, day_since_launch, source, lang, target, sentiment, intent, label_mode, trivial)
-  Always filter lang='en' AND trivial=0. target: product, price_value, apple_brand, competitor (= product-side), video_or_creator, other.
+  Always filter lang='en' AND trivial=0. target: product, price_value, apple_brand (= the brand), competitor (= product-side), video_or_creator, other.
   Headline sentiment uses only product-side targets. sentiment: positive|neutral|negative (toward the target). intent: buy, upgrade_wait, skip, switch_from_android, none.
-  published = comment date; day_since_launch counts from 2026-09-09.
-topics(topic_id, pool, name, summary, terms, origin, first_seen)  audience topics found by local clustering and named by AI. pool 'product' = comments about the product, price, Apple or competitors; pool 'creator' = comments about the video or creator.
+  published = comment date; day_since_launch counts from @LAUNCH@.
+topics(topic_id, pool, name, summary, terms, origin, first_seen)  audience topics found by local clustering and named by AI. pool 'product' = comments about the product, price, the brand or competitors; pool 'creator' = comments about the video or creator.
   origin 'seed' (first run) or 'discovered' (appeared on a later refresh, first_seen = date). comments.topic_id joins topics.topic_id; NULL = fits no topic. Topic ids are stable across refreshes.
 views: v_content (content + creator + performance + video-level sentiment: n_product_side, pct_positive, pct_neutral, pct_negative), v_video_sentiment, 
 Joins: comments.video_id = content.video_id; content.channel_id = creators.channel_id; comments.topic_id = topics.topic_id.
 Rules: report n with every rate. Prefer rel_lift / outperformer over raw views when comparing groups. Channel size groups: small = tier nano+micro, mid = 'mid 250k-1M', large = macro+mega.
 Lift and sentiment are separate measures and are never combined into a scale-or-fix verdict; report both. Net sentiment = positive share minus negative share (product-side), judged only with >=10 product-side comments.
-Sponsorship and Apple seeding are not analysed (no sponsor in this data was Apple or a competitor; seeding could not be verified). Say so if asked.
+Sponsorship and brand seeding are not analysed (seeding could not be verified). Say so if asked.
 """
+_P = product()
+SCHEMA = (SCHEMA.replace("@BRAND@", _P["brand"]).replace("@NAME@", _P["name"]).replace("@BLURB@", _P["blurb"]).replace("@TOPIC@", _P["topic"])
+          .replace("@TOPICS@", ", ".join(_P["topics"])).replace("@LAUNCH@", _P["launch"]))
 SQL_PROMPT = SCHEMA + ("\nIn this deployment comments.text is empty (no comment text is stored): never select it; use the labels, topics and counts.\n" if PUBLIC else "") + """
 Write ONE SQLite SELECT (CTEs allowed) that answers the question. Use LIMIT <= 40. Round rates to 3 decimals. Include counts (n) as columns.
 If the question cannot be answered from this data (e.g. ad spend, sales, private data, other platforms), return {"clarify": "<one sentence on what the data can and cannot say>"}.
@@ -78,7 +81,7 @@ def ask(question, history=None, context="", no_quotes=False):
     quote_rule = ("Do not quote or copy any comment text; describe what commenters say in your own words. " if no_quotes
                   else "If the rows contain comment text, quote at most 3, each under 25 words. ")
     answer = claude(
-        "You are the analyst behind this iPhone Duo YouTube listening tool. Answer the question using ONLY the query result below. Plain language, <=130 words, lead with the answer, express sentiment as the net sentiment score (positive % minus negative %, -100 to +100, e.g. '+7') before any positive or negative shares, cite numbers with n, "
+        "You are the analyst behind this YouTube listening tool for " + _P["name"] + ". Answer the question using ONLY the query result below. Plain language, <=130 words, lead with the answer, express sentiment as the net sentiment score (positive % minus negative %, -100 to +100, e.g. '+7') before any positive or negative shares, cite numbers with n, "
         "say plainly when n is small or the result is empty, and mention one relevant caveat (comment sample, small n, associations not causes) only if it applies. "
         + quote_rule + "No headings, no preamble. Use Slack-friendly plain text (no markdown tables).\n\n"
         f"Question: {question}\nWhat the query measures: {plan.get('note','')}\nResult:\n{table}", 3000).strip()

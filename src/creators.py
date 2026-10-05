@@ -2,10 +2,10 @@
 """Step 2b: creator table. Claude assigns a KOL type from the channel's name, about text and recent pre-launch titles;
 size tier comes from subscribers; region is the channel-declared country (blank = not declared). Output: data/creators.json, fields copied onto videos."""
 import json
-from common import claude, parse_json, load, save
+from common import claude, parse_json, load, save, product
 
 KOL = {"pro_reviewer": "professional tech reviewer: broad consumer-tech reviews, testing and benchmarks (MKBHD, Mrwhosetheboss type)",
-       "apple_focused": "creator or outlet whose core subject is Apple products and ecosystem",
+       "apple_focused": f"creator or outlet whose core subject is {product()['brand']} products and ecosystem",
        "lifestyle_vlogger": "lifestyle, vlog, photography, productivity or daily-life creator who covers gadgets as part of their life",
        "tech_news_media": "news outlet or publication that reports and recaps (The Verge, CNET, MacRumors type)",
        "commentary_analyst": "opinion, analysis or business-of-tech commentary",

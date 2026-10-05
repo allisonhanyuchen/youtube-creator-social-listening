@@ -3,7 +3,7 @@
 checked against the comment corpus; an answer that shares a 5-word run with any comment is regenerated once, then dropped.
 Output: state/examples.json  [{q, a, sql}]"""
 import json, os, sqlite3
-from common import DATA, HERE
+from common import product, DATA, HERE
 from ask import ask
 import public_safety as safe
 
@@ -12,8 +12,8 @@ QUESTIONS = [
     "Which content formats work best for mid-sized channels?",
     "Which high-lift videos have the most negative audience reaction? Name two examples, with lift and sentiment shown separately.",
     "Which audience topics are largest, and which are growing fastest this week?",
-    "How does audience sentiment on the iPhone Duo compare with the iPhone 18 Pro?",
-    "What do people like most about the Duo, and what do they criticise most?",
+    "How does audience sentiment on the main product compare with the other products in the data?",
+    f"What do people like most about {product()['name']}, and what do they criticise most?",
 ]
 
 

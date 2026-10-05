@@ -2,7 +2,7 @@
 """Step 7: HTML email report from data/insights.json. Table layout and inline CSS so it renders in mail clients.
 Always writes data/report.html (preview). Sends through Resend only when RESEND_API_KEY and REPORT_EMAIL_TO exist and --send is passed."""
 import base64, json, os, sys, urllib.request
-from common import DATA, HERE, load, secret
+from common import DATA, HERE, load, secret, title
 
 INK, MUTE, LINE, ACC = "#1d1d1b", "#66665f", "#e3e3dd", "#2f5bea"
 POS, NEU, NEG = "#2f8f5b", "#c4c4bb", "#d0553f"
@@ -62,7 +62,7 @@ def build(ins, example=False, period="weekly"):
     ex_note = '<tr><td style="padding:8px 28px 0;font:12px Arial,sans-serif;color:#6b4710">Example of the weekly email, to show the format. Figures are illustrative and not guaranteed to be accurate.</td></tr>' if example else ""
     return f'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YouTube Creator Social Listening</title></head><body style="margin:0;background:#f6f6f3"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f3"><tr><td align="center" style="padding:20px 10px">
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:100%;background:#ffffff;border:1px solid {LINE};border-radius:12px">
-<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{INK}">{ex_tag}iPhone Duo on YouTube<span style="font:13px Arial,sans-serif;color:{MUTE};font-weight:400"> &nbsp;{period} readout · data through {ins["as_of"]}</span></td></tr>
+<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{INK}">{ex_tag}{esc(title())}<span style="font:13px Arial,sans-serif;color:{MUTE};font-weight:400"> &nbsp;{period} readout · data through {ins["as_of"]}</span></td></tr>
 {ex_note}
 <tr><td style="padding:12px 28px 0;font:600 17px/1.4 Arial,sans-serif;color:{INK}">{esc(n["headline"])}</td></tr>
 <tr><td style="padding:8px 28px 0;font:14px/1.55 Arial,sans-serif;color:{INK}">{esc(n["summary"])}</td></tr>
@@ -73,7 +73,7 @@ def build(ins, example=False, period="weekly"):
 {h("What changed since last refresh")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{changes}</td></tr>
 {alerts}
 {h("Watchlist")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{watch}<div style="padding-top:6px;color:{MUTE}">{esc(n["watch"])}</div></td></tr>
-<tr><td style="padding:22px 28px 24px;font:12px/1.5 Arial,sans-serif;color:{MUTE};border-top:1px solid {LINE};margin-top:18px">Built from public YouTube data (official API) on English-language videos about the iPhone Duo. Comments are a sample of up to 60 per video, labelled by Claude. Differences between groups are associations, and small groups can swing. Open the attached dashboard.html to filter and drill down; reply in Slack to ask a follow-up.</td></tr>
+<tr><td style="padding:22px 28px 24px;font:12px/1.5 Arial,sans-serif;color:{MUTE};border-top:1px solid {LINE};margin-top:18px">Built from public YouTube data (official API) on English-language videos about the product. Comments are a sample of up to 60 per video, labelled by Claude. Differences between groups are associations, and small groups can swing. Open the attached dashboard.html to filter and drill down; reply in Slack to ask a follow-up.</td></tr>
 </table></td></tr></table></body></html>'''
 
 
@@ -86,7 +86,7 @@ def main():
     if "--send" not in sys.argv: return
     key, to = secret("RESEND_API_KEY", False), secret("REPORT_EMAIL_TO", False)
     if not (key and to): print("RESEND_API_KEY or REPORT_EMAIL_TO missing; not sent"); return
-    body = {"from": "YouTube Creator Social Listening <onboarding@resend.dev>", "to": [to], "subject": f"iPhone Duo on YouTube ({period}): {ins['narrative']['headline'][:80]}", "html": html}
+    body = {"from": "YouTube Creator Social Listening <onboarding@resend.dev>", "to": [to], "subject": f"{title()} ({period}): {ins['narrative']['headline'][:80]}", "html": html}
     dash = os.path.join(HERE, "dashboard.html")
     if os.path.exists(dash): body["attachments"] = [{"filename": "launch-pulse-dashboard.html", "content": base64.b64encode(open(dash, "rb").read()).decode()}]
     req = urllib.request.Request("https://api.resend.com/emails", data=json.dumps(body).encode(), method="POST",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 1: collect YouTube videos about the Apple launch (event: 2026-09-09, iPhone Duo + iPhone 18 Pro).
+"""Step 1: collect YouTube videos for the product in product.json: its search queries, from product.json "since" on.
 Search results are cached per query in data/search_cache.json so re-runs cost nothing. Output: data/videos_raw.json.
 Quota: ~100 units per new search query, ~1 per 50 videos/channels.
 """

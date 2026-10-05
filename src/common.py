@@ -88,7 +88,17 @@ def save(name, obj):
 
 def product():
     """What the pipeline is about (product.json at the repo root). Prompts and labels read it, so another launch needs a new file, not new code."""
-    return json.load(open(os.path.join(HERE, "product.json"), encoding="utf-8"))
+    p = json.load(open(os.path.join(HERE, "product.json"), encoding="utf-8"))
+    p.setdefault("topic", "main")                                                     # the label that marks videos about THIS product
+    p.setdefault("blurb", f"{p['name']}, launched {p['launch']}")
+    p.setdefault("topics", {p["topic"]: p["name"], "other": "another product or not about the product"})      # labels classify.py may give a video
+    p.setdefault("competitors", {})
+    return p
+
+
+def title():
+    """Used in the email, Slack and page titles."""
+    return f"{product()['name']} on YouTube"
 
 
 def scope_sql(alias="v"):

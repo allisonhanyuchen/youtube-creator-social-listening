@@ -5,7 +5,7 @@ Topics come from topics.py (state/topics.json + state/comment_topics.json) and a
 rel_lift = lift / median lift of the same class (iPhone Duo videos vs the rest, Short vs long); outperformer = top quartile of rel_lift in its class.
 Apple's own channel (format = official) is excluded from lift and outperformer. Paid/seeded labels were dropped: no sponsor in this data was Apple or a competitor, and seeding could only be inferred."""
 import json, os, sqlite3, statistics
-from common import load, DATA, HERE
+from common import load, DATA, HERE, product
 
 DB = os.path.join(DATA, "pulse.db")
 STATE = os.path.join(HERE, "state")
@@ -60,7 +60,7 @@ def main():
     vids = load("videos.json")
     for c in load("creators.json"):
         con.execute("INSERT INTO creators VALUES (?,?,?,?,?,?)", (c["channel_id"], c["name"], c["kol_type"], c["tier"], c["subs"], c["region"]))
-    grp = lambda v: v["topic"] == "duo"                  # a Duo video is compared with other Duo videos
+    grp = lambda v: v["topic"] == product()["topic"]       # a video about the product is compared with the others about it
     ok = lambda v: v["format"] != "official" and v.get("lift") is not None
     groups = {}                                           # (is Duo, is Short) -> lifts; a group may be empty (no Shorts, no other topics), so build it from the data
     for v in vids:
@@ -94,7 +94,7 @@ def main():
     con.commit()
     for t in ("creators", "content", "performance", "comments", "topics"):
         print(f"{t:15} {con.execute(f'select count(*) from {t}').fetchone()[0]:>7} rows")
-    print("outperformer cutoffs (rel_lift, top quartile):", {("duo " if k[0] else "other ") + ("short" if k[1] else "long"): round(x, 2) for k, x in cut.items()})
+    print("outperformer cutoffs (rel_lift, top quartile):", {(product()["topic"] + " " if k[0] else "other ") + ("short" if k[1] else "long"): round(x, 2) for k, x in cut.items()})
     con.close()
 
 

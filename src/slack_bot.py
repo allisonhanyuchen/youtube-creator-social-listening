@@ -6,13 +6,13 @@ import re, threading, uuid
 from collections import defaultdict
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
-from common import secret
+from common import secret, product
 from ask import ask
 
 app = App(token=secret("SLACK_BOT_TOKEN"))
 HIST, SQLS, LOCK = defaultdict(list), {}, threading.Lock()
-HELP = ("Ask me about the iPhone Duo on YouTube, for example:\n• what topics are people talking about, and which are growing?\n• which channel sizes break out, and how do their audiences react?\n"
-        "• which formats work best for Duo under 250k subs?\n• why did negative sentiment rise this week?")
+HELP = (f"Ask me about {product()['name']} on YouTube, for example:\n• what topics are people talking about, and which are growing?\n• which channel sizes break out, and how do their audiences react?\n"
+        "• which formats work best under 250k subs?\n• why did the sentiment score change this week?")
 
 
 def answer(client, channel, thread_ts, question):

@@ -2,14 +2,16 @@
 """Step 1b: Claude labels every collected video with content format, topic and framing.
 Output: data/videos.json (videos_raw + labels). Labels are cached by video id, so re-runs only classify new videos."""
 import json
-from common import claude, parse_json, load, save
+from common import claude, parse_json, load, save, product
+
+P = product()
 
 FORMATS = {
-    "official": "Apple's own channel",
+    "official": f"{P['brand']}'s own channel",
     "keynote_recap": "event recap / reaction / everything announced",
     "first_impressions": "hands-on or first impressions right after launch",
     "full_review": "in-depth review after real usage",
-    "comparison": "vs another phone (Samsung, Pixel, Xiaomi, older iPhone)",
+    "comparison": "vs a competing product" + (f" ({', '.join(P['competitors'])})" if P["competitors"] else "") + " or an older model",
     "upgrade_advice": "should you buy / worth upgrading / don't buy",
     "durability_test": "crease, bend, drop, scratch or teardown tests",
     "explainer_tips": "features explained, tips, how it works, camera tests",
@@ -17,9 +19,7 @@ FORMATS = {
     "meme_short": "meme, reaction or skit, usually a Short",
     "other": "none of the above",
 }
-TOPICS = {"duo": "iPhone Duo (the new foldable)", "iphone_18_pro": "iPhone 18 Pro / Pro Max", "iphone_18": "base iPhone 18",
-          "event_general": "whole event or multiple products", "competitor_foldable": "mainly about a competitor foldable",
-          "other": "other"}
+TOPICS = P["topics"]                      # key -> what it means; the key in P["topic"] marks videos about the product itself
 BATCH = 30
 
 
@@ -33,7 +33,7 @@ def main():
         batch = todo[i:i + BATCH]
         payload = [{"id": v["id"], "title": v["title"], "channel": v["channel"], "short": v["is_short"], "desc": v["desc"][:160]} for v in batch]
         out = parse_json(claude(
-            "Label YouTube videos about Apple's Sept 2026 launch (iPhone Duo foldable, iPhone 18 Pro). Use ONLY these values.\n"
+            f"Label YouTube videos about {P['brand']} {P['name']} ({P['blurb']}). Use ONLY these values.\n"
             f"format: {json.dumps(FORMATS)}\ntopic: {json.dumps(TOPICS)}\n"
             "framing: how the TITLE frames the product: positive | neutral | negative | clickbait_alarm (e.g. 'DON'T BUY', 'is it dead?').\n"
             "Return JSON only: {\"results\": [{\"id\": str, \"format\": str, \"topic\": str, \"framing\": str}]}\n\n"
@@ -50,11 +50,12 @@ def main():
     from collections import Counter
     for key in ("format", "topic", "framing"):
         print(key, dict(Counter(v[key] for v in vids).most_common()))
-    print("\nformat x topic views (M):")
+    main_t = P["topic"]
+    print(f"\nformat x views (M), {main_t} vs the rest:")
     for f in FORMATS:
-        row = {t: round(sum(v["views"] for v in vids if v["format"] == f and v["topic"] == t) / 1e6, 1) for t in ("duo", "iphone_18_pro")}
-        n = sum(1 for v in vids if v["format"] == f)
-        print(f"  {f:18} n={n:3}  duo {row['duo']:>6}M  18pro {row['iphone_18_pro']:>6}M")
+        a = round(sum(v["views"] for v in vids if v["format"] == f and v["topic"] == main_t) / 1e6, 1)
+        b = round(sum(v["views"] for v in vids if v["format"] == f and v["topic"] != main_t) / 1e6, 1)
+        print(f"  {f:18} n={sum(1 for v in vids if v['format'] == f):3}  {main_t} {a:>6}M  rest {b:>6}M")
 
 
 if __name__ == "__main__":
