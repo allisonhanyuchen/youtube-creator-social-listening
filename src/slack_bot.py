@@ -2,11 +2,12 @@
 """Step 9b: Slack Q&A agent (Socket Mode, runs on your machine, no public URL needed).
 Mention @Launch Pulse in a channel or DM it. It answers from the SQLite tables through ask.py and offers a button to show the query it ran.
 Run:  .venv/bin/python slack_bot.py     Needs SLACK_BOT_TOKEN (xoxb-) and SLACK_APP_TOKEN (xapp-) in ~/.creator-scout.env"""
-import re, threading, uuid
+import os, re, threading, uuid
 from collections import defaultdict
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
-from common import secret, product
+from common import HERE, secret, product
+os.environ.setdefault("PULSE_DB", os.path.join(HERE, "api", "public.db"))   # the same database the page's chat reads, so both give the same answer; refreshed by git pull
 from ask import ask
 
 app = App(token=secret("SLACK_BOT_TOKEN"))
