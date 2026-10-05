@@ -2,7 +2,7 @@
 Saves the input to input.json in the repository (so every later daily refresh repeats it) and starts the real pipeline on GitHub Actions: collect, analyse, report, push.
 New keywords for a different product start from an empty state. The page follows the run's four stages through GitHub's public API.
 Needs the demo code and a GITHUB_TOKEN with Contents and Actions read and write on this repository."""
-import base64, json, os, sys, time, urllib.request
+import base64, json, os, sys, time, urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
@@ -51,7 +51,14 @@ class handler(BaseHTTPRequestHandler):
             self._send(200, {"run_id": run["id"] if run else None, "url": run["html_url"] if run else None, "fresh": fresh, "input": {k: new[k] for k in ("keywords", "top_videos", "comments_per_video")}})
         except ValueError as e:
             self._send(400, {"error": str(e)})
-        except Exception:
-            self._send(500, {"error": "Could not start the run."})
+        except urllib.error.HTTPError as e:
+            gate.RUNS["refresh"] = 0
+            try: msg = json.loads(e.read()).get("message", "")
+            except Exception: msg = ""
+            hint = {401: "The GitHub token is invalid or expired.", 403: "The GitHub token lacks permission: it needs Actions and Contents read and write on this repository.", 404: "The GitHub token cannot see this repository or input.json (check the repository access and Contents permission)."}.get(e.code, "")
+            self._send(502, {"error": f"GitHub refused the request ({e.code}). {hint} {msg}".strip()})
+        except Exception as e:
+            gate.RUNS["refresh"] = 0
+            self._send(500, {"error": "Could not start the run: " + type(e).__name__})
 
     def log_message(self, *a): pass
