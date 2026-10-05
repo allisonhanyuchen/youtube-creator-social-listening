@@ -1743,7 +1743,7 @@
     {
      "id": "p23",
      "name": "No Face ID",
-     "summary": "Many commenters see the lack of Face ID, with Touch ID used instead, as a dealbreaker and prefer Face ID's convenience.",
+     "summary": "Viewers debate the lack of Face ID on the foldable iPhone, discussing reliance on Touch ID fingerprint unlocking, whether it's acceptable, and waiting for better biometric options.",
      "terms": [
       "face",
       "touch",
@@ -2207,7 +2207,7 @@
     {
      "id": "c05",
      "name": "Abu Abdullah shirt",
-     "summary": "Many commenters point out and laugh at the creator's shirt reading Abu Abdullah's restaurant is lit.",
+     "summary": "Viewers joke about and react to a reviewer's shirt, with casual comments about liking it, being glad to see it, and wanting to get one.",
      "terms": [
       "shirt",
       "take",
@@ -2569,6 +2569,21 @@
    "creator": {
     "rows": 190,
     "assigned": 0.768,
+    "topics": 6,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 2089,
+    "assigned": 0.988,
+    "topics": 24,
+    "new": []
+   },
+   "creator": {
+    "rows": 675,
+    "assigned": 0.764,
     "topics": 6,
     "new": []
    }
