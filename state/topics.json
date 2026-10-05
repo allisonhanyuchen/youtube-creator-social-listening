@@ -1818,6 +1818,70 @@
      },
      "origin": "discovered",
      "first_seen": "2026-10-05"
+    },
+    {
+     "id": "p24",
+     "name": "Steve, Tim, John Joke",
+     "summary": "Many commenters repeat a joke that Steve Jobs started Apple, Tim Cook ran it, and now John Ternus gets his turn, plus a Jobs-and-stylus quip.",
+     "terms": [
+      "steve",
+      "watch",
+      "wrong",
+      "jobs",
+      "tim",
+      "steve jobs",
+      "his",
+      "mind"
+     ],
+     "centroid": {
+      "steve": 0.3273,
+      "watch": 0.3237,
+      "wrong": 0.2829,
+      "jobs": 0.2591,
+      "tim": 0.2463,
+      "steve jobs": 0.2252,
+      "his": 0.2216,
+      "mind": 0.2159,
+      "able": 0.2029,
+      "cooked": 0.2009,
+      "animation": 0.1944,
+      "miss": 0.1621,
+      "nothing": 0.1617,
+      "now": 0.1547,
+      "preorder": 0.1543,
+      "put": 0.1474,
+      "steve his": 0.1446,
+      "his job": 0.1446,
+      "job tim": 0.1446,
+      "job": 0.1404,
+      "tim cooked": 0.1136,
+      "cooked now": 0.1136,
+      "wait": 0.1129,
+      "turn": 0.1098,
+      "everyone": 0.0977,
+      "through": 0.0922,
+      "folding": 0.0849,
+      "laptop": 0.0665,
+      "already": 0.0664,
+      "finally": 0.0601,
+      "buying": 0.0585,
+      "button": 0.0544,
+      "smooth": 0.0531,
+      "stop": 0.046,
+      "old": 0.0405,
+      "viewing": 0.039,
+      "holding": 0.0389,
+      "side": 0.0341,
+      "love": 0.0275,
+      "telephoto": 0.0266,
+      "pocket": 0.0266,
+      "work": 0.0266,
+      "perfect": 0.0258,
+      "use": 0.024,
+      "phone": 0.0235
+     },
+     "origin": "discovered",
+     "first_seen": "2026-10-05"
     }
    ],
    "tau": 0.1331
@@ -2352,6 +2416,23 @@
    },
    "creator": {
     "rows": 1675,
+    "assigned": 0.74,
+    "topics": 6,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 5499,
+    "assigned": 0.953,
+    "topics": 24,
+    "new": [
+     "p24"
+    ]
+   },
+   "creator": {
+    "rows": 1670,
     "assigned": 0.74,
     "topics": 6,
     "new": []

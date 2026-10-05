@@ -165,5 +165,88 @@
     "secs": 0
    }
   ]
+ },
+ {
+  "started": "2026-10-05T18:00:01+00:00",
+  "finished": "2026-10-05T18:04:16+00:00",
+  "mode": "weekly",
+  "ok": true,
+  "source": "github-actions",
+  "new_videos": 0,
+  "new_comments": 27,
+  "new_topics": [
+   "Steve, Tim, John Joke"
+  ],
+  "alerts": 3,
+  "email": false,
+  "slack": false,
+  "slack_alerts": false,
+  "steps": [
+   {
+    "name": "collect new videos, refresh stats",
+    "status": "ok",
+    "secs": 8
+   },
+   {
+    "name": "classify new videos",
+    "status": "ok",
+    "secs": 2
+   },
+   {
+    "name": "daily view snapshot",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "channel baselines and lift",
+    "status": "ok",
+    "secs": 2
+   },
+   {
+    "name": "creator types",
+    "status": "ok",
+    "secs": 2
+   },
+   {
+    "name": "pull and label new comments",
+    "status": "ok",
+    "secs": 27
+   },
+   {
+    "name": "build tables",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "assign comments to topics, discover new ones",
+    "status": "ok",
+    "secs": 9
+   },
+   {
+    "name": "insights, changes and alerts",
+    "status": "ok",
+    "secs": 17
+   },
+   {
+    "name": "text-free database for the hosted Q&A",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "paraphrased topic notes",
+    "status": "ok",
+    "secs": 112
+   },
+   {
+    "name": "recorded Q&A examples",
+    "status": "ok",
+    "secs": 74
+   },
+   {
+    "name": "public demo page",
+    "status": "ok",
+    "secs": 0
+   }
+  ]
  }
 ]
