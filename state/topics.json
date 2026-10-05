@@ -1739,6 +1739,85 @@
      },
      "origin": "discovered",
      "first_seen": "2026-10-04"
+    },
+    {
+     "id": "p23",
+     "name": "No Face ID",
+     "summary": "Many commenters see the lack of Face ID, with Touch ID used instead, as a dealbreaker and prefer Face ID's convenience.",
+     "terms": [
+      "face",
+      "touch",
+      "unlock",
+      "finger",
+      "until",
+      "foldable",
+      "sim",
+      "faster"
+     ],
+     "centroid": {
+      "face": 0.8223,
+      "touch": 0.3134,
+      "unlock": 0.1882,
+      "finger": 0.157,
+      "until": 0.1119,
+      "foldable": 0.1115,
+      "sim": 0.1103,
+      "faster": 0.1057,
+      "wanted": 0.1012,
+      "faceid": 0.0834,
+      "felt": 0.0797,
+      "ipod": 0.0782,
+      "feature": 0.0778,
+      "duo": 0.0707,
+      "pencil": 0.0667,
+      "isn't": 0.0662,
+      "able": 0.0594,
+      "long": 0.0571,
+      "thick": 0.057,
+      "watch": 0.0569,
+      "apple": 0.0567,
+      "heavy": 0.0563,
+      "sold": 0.0498,
+      "pass": 0.0494,
+      "works": 0.0489,
+      "having": 0.0478,
+      "since": 0.0458,
+      "love": 0.0457,
+      "person": 0.0412,
+      "imagine": 0.0407,
+      "literally": 0.0402,
+      "gen": 0.0392,
+      "around": 0.0389,
+      "either": 0.0388,
+      "fun": 0.0369,
+      "asked": 0.0363,
+      "issue": 0.0359,
+      "nothing": 0.0355,
+      "those": 0.0351,
+      "daily": 0.0349,
+      "moment": 0.0348,
+      "mini": 0.034,
+      "yet": 0.0336,
+      "buying duo": 0.0329,
+      "button": 0.0324,
+      "single": 0.0324,
+      "everyone": 0.0324,
+      "basically": 0.0319,
+      "pretty": 0.0312,
+      "size": 0.0296,
+      "rather": 0.0294,
+      "buying": 0.0284,
+      "time": 0.028,
+      "i'd": 0.0277,
+      "sure": 0.025,
+      "apps": 0.0248,
+      "open": 0.0248,
+      "iphone": 0.0218,
+      "times": 0.0218,
+      "making": 0.0208
+     },
+     "origin": "discovered",
+     "first_seen": "2026-10-05"
     }
    ],
    "tau": 0.1331
@@ -2257,6 +2336,23 @@
    "creator": {
     "rows": 1882,
     "assigned": 0.741,
+    "topics": 6,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 5495,
+    "assigned": 0.923,
+    "topics": 23,
+    "new": [
+     "p23"
+    ]
+   },
+   "creator": {
+    "rows": 1675,
+    "assigned": 0.74,
     "topics": 6,
     "new": []
    }
