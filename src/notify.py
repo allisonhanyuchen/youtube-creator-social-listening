@@ -14,18 +14,30 @@ def build(ins, alerts_only=False, example=False, period="weekly"):
         return {"text": f"{product()['name']} alert", "blocks": [{"type": "header", "text": {"type": "plain_text", "text": f"{product()['name']} alert"}},
                 {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(f":rotating_light: {a['text']}" for a in al)}},
                 {"type": "context", "elements": [{"type": "mrkdwn", "text": f"Data through {ins['as_of']}. Mention me to dig in, for example: _why did negative sentiment rise this week?_"}]}]}
-    t, s = m["totals"], m["sentiment"]
+    o, hl = m["overview"], m["highlights"]
+    sc = lambda x: "–" if x is None else f"{x:+d}"
+    num = lambda x: f"{x/1e9:.1f}B" if x >= 1e9 else f"{x/1e6:.1f}M" if x >= 1e6 else f"{x/1e3:.0f}k" if x >= 1e3 else str(x)
+    names = {"first_impressions": "First impressions", "full_review": "Full review", "comparison": "Comparison", "upgrade_advice": "Upgrade advice", "keynote_recap": "Keynote recap",
+             "durability_test": "Durability test", "explainer_tips": "Explainer / tips", "rumor_leak": "Rumor / leak", "meme_short": "Meme / reaction", "other": "Other"}
+    cl = lambda items, key, f: ", ".join(f"{names.get(c['format'], c['format'])} {f(c[key])}" for c in items) or "not enough data"
+    tl = lambda items, f: ", ".join(f"{x['name']} {f(x)}" for x in items) or "none right now"
     blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + f"{title()}: {period} readout"}},
-              {"type": "section", "text": {"type": "mrkdwn", "text": f"*{n['headline']}*\n{n['summary']}"}},
-              {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.0f}M views · {t['comments_en']:,} English comments · sentiment score {(s['pos'] - s['neg'])*100:+.0f} · data through {ins['as_of']}"}]}]
-    if m.get("highest_lift"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Content performance: highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift" + (f", sentiment {(c['pos'] - c['neg'])*100:+.0f}" if c["pos"] is not None else ", too few comments for sentiment") + ")" for c in m["highest_lift"][:3])}})
-    if m.get("topics"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Audience insights: top topics*\n" + "\n".join(f"• *{c['name']}* ({c['n']:,} comments, sentiment {(c['pos'] - c['neg'])*100:+.0f}" + (", new" if c["discovered"] else "") + (", gaining" if (c["trend"] or 0) >= 1.5 and c["recent"] >= 15 else "") + ")" for c in m["topics"][:5])}})
+              {"type": "section", "text": {"type": "mrkdwn", "text": f"*Summary*\n*{n['headline']}*\n{n['summary']}"}},
+              {"type": "section", "text": {"type": "mrkdwn", "text": f"*Overview*\n{o['creators']} creators · {o['videos']} content · {num(o['views'])} views · {num(o['engagements'])} engagements · {o['engagement_rate']*100:.2f}% engagement rate · "
+                                                                  f"{o['outperformer_rate']*100:.0f}% outperformers ({o['underperformer_rate']*100:.0f}% under)"}},
+              {"type": "section", "text": {"type": "mrkdwn", "text": "*Content performance* (content types, highest 3 | lowest 3)\n"
+                    f"• *Views*: {cl(hl['content']['views']['high'], 'views', num)} | {cl(hl['content']['views']['low'], 'views', num)}\n"
+                    f"• *Engagement rate*: {cl(hl['content']['engagement']['high'], 'engagement_rate', lambda v: f'{v*100:.2f}%')} | {cl(hl['content']['engagement']['low'], 'engagement_rate', lambda v: f'{v*100:.2f}%')}\n"
+                    f"• *Sentiment score*: {cl(hl['content']['sentiment']['high'], 'score', sc)} | {cl(hl['content']['sentiment']['low'], 'score', sc)}"}},
+              {"type": "section", "text": {"type": "mrkdwn", "text": "*Audience insights* (top 3 topics)\n"
+                    f"• *Highest sentiment*: {tl(hl['topics']['sentiment']['high'], lambda x: sc(x['score']))}\n• *Lowest sentiment*: {tl(hl['topics']['sentiment']['low'], lambda x: sc(x['score']))}\n"
+                    f"• *Largest*: {tl(hl['topics']['largest'], lambda x: format(x['n'], ','))}\n• *Gaining*: {tl(hl['topics']['gaining'], lambda x: str(x['trend']) + 'x')}"}}]
     ch = m.get("changes")
-    chg = "*Changes since last refresh*\n" + (f"{ch['new_videos']} new videos, {ch['new_comments']:,} new comments since {ch['since']}" + "".join(f"\n• new topic: *{t['name']}* ({t['n']})" for t in ch["new_topics"]) if ch else "First refresh: nothing to compare with yet.")
+    chg = "*What changed since last refresh*\n" + (f"{ch['new_videos']} new videos, {ch['new_comments']:,} new comments since {ch['since']}" + "".join(f"\n• new topic: *{t['name']}* ({t['n']})" for t in ch["new_topics"]) if ch else "First refresh: nothing to compare with yet.")
     if al: chg += "\n" + "\n".join(f":rotating_light: {a['text']}" for a in al[:3])
     blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": chg}})
     blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Watchlist*\n" + ("\n".join(f"• *{w['name']}*: {w['why']}" for w in m["watchlist"]) if m.get("watchlist") else "Nothing flagged by the numbers this week.")}})
-    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": ("Example of the Slack digest, to show the format. Figures are illustrative and not guaranteed to be accurate. " if example else "") + "Ask a follow-up: mention the app or message it. The full report is in your inbox."}]})
+    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": ("Example of the Slack digest, to show the format. Figures are illustrative and not guaranteed to be accurate. " if example else "") + f"Data through {ins['as_of']}. Ask a follow-up: mention the app or message it."}]})
     return {"text": n["headline"], "blocks": blocks}
 
 

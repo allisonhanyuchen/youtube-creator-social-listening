@@ -53,12 +53,16 @@ class StateHasNoText(unittest.TestCase):
 
 
 def fake_ins(headline="A headline"):
-    size = lambda: dict(videos=10, outperformer_rate=0.3, pos=0.4, neg=0.3)
+    import insights
+    topics = [dict(id="p04", name="Price Complaints", summary="s", discovered=True, first_seen="2026-10-04", n=200, share=0.2, pos=0.2, neg=0.6, score=-40, recent=40, trend=1.8),
+              dict(id="p05", name="Eager to Buy", summary="s", discovered=False, first_seen="2026-10-01", n=300, share=0.3, pos=0.6, neg=0.1, score=50, recent=20, trend=1.0)]
+    ctypes = [dict(format=f, videos=6 + i, views=1_000_000 * (i + 1), engagements=10_000 * (i + 1), engagement_rate=0.01 * (i + 1), product_comments=60, score=10 * i - 20)
+              for i, f in enumerate(["first_impressions", "full_review", "comparison", "upgrade_advice", "keynote_recap", "other"])]
     return dict(as_of="2026-10-04", alerts=[dict(kind="topic", text="Price mentions are up")],
                 narrative=dict(headline=headline, summary="Summary.", watch="Watch.", findings=[dict(title=f"F{i}", detail="d", action="a") for i in range(4)]),
-                metrics=dict(totals=dict(videos=10, views=5_000_000, comments_en=1234), sentiment=dict(pos=0.4, neg=0.3), by_channel_size={k: size() for k in ("small (<250k)", "mid (250k-1M)", "large (1M+)")},
-                             by_format=[dict(format="first_impressions", videos=12, outperformer_rate=0.4)], topics=[dict(id="p04", name="Price Complaints", summary="s", discovered=True, first_seen="2026-10-04", n=200, share=0.2, pos=0.2, neg=0.6, recent=40, trend=1.8)],
-                             coverage=dict(videos=10, creators=8, with_sentiment=6, comments_en=1234, by_level={"small (<250k)": 4, "mid (250k-1M)": 3, "large (1M+)": 3}),
+                metrics=dict(totals=dict(videos=10, views=5_000_000, comments_en=1234), sentiment=dict(pos=0.4, neg=0.3),
+                             overview=dict(creators=8, videos=10, views=5_000_000, engagements=120_000, engagement_rate=0.024, outperformer_rate=0.25, underperformer_rate=0.27),
+                             content_types=ctypes, topics=topics, highlights=insights.highlights(ctypes, topics),
                              changes=dict(since="2026-09-27", new_videos=3, new_comments=120, new_topics=[dict(id="p21", name="Battery Life", n=40)], moved=[], sentiment_delta=dict(pos=0.01, neg=-0.02)),
                              watchlist=[dict(id="p04", name="Price Complaints", why="gaining")],
                              highest_lift=[dict(title="Good", url="https://y/1", creator="C", channel_size="small (<250k)", format="comparison", rel_lift=3.1, views=1000, product_comments=40, pos=0.6, neg=0.1),
@@ -68,7 +72,7 @@ def fake_ins(headline="A headline"):
 class EmailReport(unittest.TestCase):
     def test_renders_the_readout(self):
         html = report.build(fake_ins())
-        for s in ("A headline", "Price mentions are up", "highest-lift videos", "Price Complaints", "Battery Life", "Watchlist", "too few comments for sentiment", "sentiment +50"):
+        for s in ("A headline", "Price mentions are up", "Highest-lift videos", "Price Complaints", "Eager to Buy", "Battery Life", "Watchlist", "Overview", "Content performance", "Audience insights", "too few comments for sentiment", "sentiment +50"):
             self.assertIn(s, html)
 
     def test_no_traces_of_the_removed_paid_seeded_analysis(self):

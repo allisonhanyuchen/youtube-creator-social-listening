@@ -65,6 +65,21 @@ class ViewGain(unittest.TestCase):
         self.assertIsNone(b.gain(None, 1, 3))
 
 
+class Highlights(unittest.TestCase):
+    def test_small_groups_never_top_a_list_and_missing_scores_are_skipped(self):
+        cts = [dict(format="a", videos=2, views=9_000_000, engagement_rate=0.9, score=90), dict(format="b", videos=8, views=1_000_000, engagement_rate=0.02, score=None),
+               dict(format="c", videos=9, views=3_000_000, engagement_rate=0.05, score=10), dict(format="d", videos=7, views=2_000_000, engagement_rate=0.03, score=-5)]
+        h = insights.highlights(cts, [])
+        self.assertEqual([c["format"] for c in h["content"]["views"]["high"]], ["c", "d", "b"])         # "a" has only 2 videos
+        self.assertEqual([c["format"] for c in h["content"]["sentiment"]["high"]], ["c", "d"])           # "b" has no score
+
+    def test_topics_need_50_comments_to_be_ranked_by_sentiment(self):
+        tps = [dict(name="small", n=20, score=99, trend=1, recent=1), dict(name="big", n=80, score=10, trend=2.0, recent=30), dict(name="neg", n=90, score=-30, trend=1, recent=5)]
+        h = insights.highlights([], tps)["topics"]
+        self.assertEqual([t["name"] for t in h["sentiment"]["high"]], ["big", "neg"])
+        self.assertEqual([t["name"] for t in h["gaining"]], ["big"])
+
+
 class HostedChat(unittest.TestCase):
     def test_limits_per_visitor_and_per_day(self):
         import importlib, sys, os

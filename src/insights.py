@@ -45,6 +45,31 @@ def topic_rows(con):
                  pos=round(r["pos"], 3), neg=round(r["neg"], 3), score=round((r["pos"] - r["neg"]) * 100), recent=r["recent"], trend=round((r["recent"] / r["n"]) / (rec / tot), 2) if rec and r["n"] else None) for r in rows]
 
 
+def content_types(rows):
+    """One row per content type, the same measures as the Content performance overview: videos, views, engagement rate, sentiment score (needs 30+ product comments)."""
+    out = []
+    for f in sorted({x["format"] for x in rows}):
+        xs = [x for x in rows if x["format"] == f]
+        views = sum(x["views"] for x in xs); eng = sum(x["likes"] + x["comment_count"] for x in xs)
+        n = sum((x["n"] or 0) for x in xs)
+        score = round((sum((x["pos"] or 0) * (x["n"] or 0) for x in xs) - sum((x["neg"] or 0) * (x["n"] or 0) for x in xs)) / n * 100) if n >= 30 else None
+        out.append(dict(format=f, videos=len(xs), views=views, engagements=eng, engagement_rate=round(eng / max(views, 1), 4), product_comments=n, score=score))
+    return out
+
+
+def highlights(ctypes, topics, k=3):
+    """The summaries the email and Slack show: top and bottom k content types by views, engagement rate and sentiment score, and topics by sentiment score, size and trend.
+    Groups that are too small are left out so a two-video content type cannot top a list."""
+    cts = [c for c in ctypes if c["videos"] >= 5]
+    def hl(items, key):
+        ok = sorted([x for x in items if x.get(key) is not None], key=lambda x: -x[key])
+        return dict(high=ok[:k], low=list(reversed(ok[-k:])) if len(ok) > k else [])
+    tps = [t for t in topics if t["n"] >= 50]
+    return dict(content=dict(views=hl(cts, "views"), engagement=hl(cts, "engagement_rate"), sentiment=hl(cts, "score")),
+                topics=dict(sentiment=hl(tps, "score"), largest=sorted(topics, key=lambda t: -t["n"])[:k],
+                            gaining=sorted([t for t in topics if (t["trend"] or 0) >= 1.5 and t["recent"] >= 15], key=lambda t: -t["trend"])[:k]))
+
+
 def metrics(con):
     rows = video_rows(con)
     ev = [x for x in rows if x["o"] is not None]
@@ -67,6 +92,10 @@ def metrics(con):
     m["coverage"] = dict(videos=len(rows), creators=len({x["creator"] for x in rows}), with_sentiment=sum(1 for x in rows if (x["n"] or 0) >= 10), comments_en=m["totals"]["comments_en"],
                          by_level={g: sum(1 for x in rows if size(x["tier"]) == g) for g in ("small (<250k)", "mid (250k-1M)", "large (1M+)")})
     m["topics"] = topic_rows(con)
+    m["overview"] = dict(creators=m["totals"]["creators"], videos=m["totals"]["videos"], views=m["totals"]["views"], engagements=m["totals"]["engagements"],
+                         engagement_rate=round(m["totals"]["engagements"] / max(m["totals"]["views"], 1), 4), outperformer_rate=m["outperformer_rate"], underperformer_rate=m["underperformer_rate"])
+    m["content_types"] = content_types(rows)
+    m["highlights"] = highlights(m["content_types"], m["topics"])
     m["intent"] = {r["intent"]: r["n"] for r in q(con, f"select intent, count(*) n from comments c join content v using(video_id) where c.lang='en' and c.trivial=0 and c.intent!='none' and {SCOPE} group by 1")}
     top = sorted([x for x in rows if x["rel_lift"] is not None], key=lambda x: -x["rel_lift"])[:6]
     m["highest_lift"] = [dict(title=x["title"], url=x["url"], creator=x["creator"], channel_size=size(x["tier"]), format=x["format"], rel_lift=round(x["rel_lift"], 1), views=x["views"],
@@ -134,9 +163,10 @@ def narrative(m):
               "Sentiment score = positive % minus negative %, from -100 to +100: always lead with the score when you talk about sentiment (for example 'sentiment score +7') and mention positive and negative shares only as supporting detail. "
               "Lift and audience sentiment are different measures and must not be merged into a 'scale' or 'fix' recommendation; describe them side by side. "
               "Sponsorship and brand seeding are NOT analysed; do not mention them. 'topics' are audience topics found by local clustering of comments and named by AI, with share, sentiment and trend (recent share vs usual); 'discovered' ones appeared after the first run. 'changes' is what moved since the last refresh (null on the first run); 'watchlist' lists topics to monitor. "
+              "Channel-size groups are retired: do not talk about small, mid or large channels. Talk about the Overview numbers, content types (views, engagement rate, sentiment score) and audience topics. "
               "Return JSON only: "
               '{"headline": str (<=22 words), "summary": str (<=90 words), "findings": [{"title": str, "detail": str (<=45 words, with numbers), "action": str (<=25 words, a concrete creator-brief or measurement step)}] (exactly 4), '
-              '"watch": str (<=40 words, what to monitor next week)}\n\nMETRICS:\n' + json.dumps(m, ensure_ascii=False))
+              '"watch": str (<=40 words, what to monitor next week)}\n\nMETRICS:\n' + json.dumps({k: v for k, v in m.items() if k not in ("by_channel_size", "coverage")}, ensure_ascii=False))
     for attempt in range(3):
         try:
             return parse_json(claude(prompt + ("\n\nReturn strictly valid JSON. Do not use double quotes inside string values; use single quotes." if attempt else ""), 4000))
