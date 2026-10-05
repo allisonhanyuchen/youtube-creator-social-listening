@@ -1,5 +1,5 @@
 import contextlib, io, json, os, sqlite3, sys, tempfile
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 import common, db
 ORIG_DATA, ORIG_DB, ORIG_STATE = common.DATA, db.DB, db.STATE
 

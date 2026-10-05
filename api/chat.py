@@ -7,7 +7,7 @@ import json, os, sys, time
 from http.server import BaseHTTPRequestHandler
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "src"))
 os.environ.setdefault("PULSE_DB", os.path.join(ROOT, "api", "public.db"))
 os.environ["PULSE_PUBLIC"] = "1"
 import ask as core                                         # noqa: E402

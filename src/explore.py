@@ -8,13 +8,26 @@ import json, os, statistics, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from common import HERE, USAGE, claude, parse_json, secret, yt
-import comments as cm
 import textcluster as tc
 
 MAX_VIDEOS, MAX_COMMENTS = 20, 20
 PRODUCT_SIDE = {"product", "price_value", "competitor"}
 STEPS = [("search", "Retrieving videos from the YouTube API"), ("baseline", "Checking each channel's usual views"), ("comments", "Pulling the top comments"),
          ("label", "Reading every comment with Claude"), ("topics", "Finding and naming topics"), ("report", "Writing the report"), ("push", "Pushing the report to email and Slack")]
+
+
+T_CODE = {"P": "product", "V": "price_value", "C": "video_or_creator", "R": "competitor", "O": "other"}
+S_CODE = {"+": "positive", "0": "neutral", "-": "negative"}
+
+
+def parse_label_lines(text):
+    """Parse the compact reply  i|lang|target|sent|intent  into {index: label}. Malformed lines are skipped."""
+    out = {}
+    for ln in text.splitlines():
+        p = ln.strip().split("|")
+        if len(p) != 5 or not p[0].strip().isdigit(): continue
+        out[int(p[0])] = {"l": "en" if p[1].strip() == "e" else "other", "t": T_CODE.get(p[2].strip()), "s": S_CODE.get(p[3].strip()), "in": p[4].strip()}
+    return out
 
 
 def pool(fn, items, workers=8):
@@ -64,7 +77,7 @@ def label(texts, keyword):
                   "sent (toward that target): + positive, 0 neutral, - negative. Curious or anticipatory comments are 0 unless they show a clear lean.\n"
                   "intent: b=buy, u=upgrade/wait, s=skip, w=switch from a competitor, n=none\nExample line:  7|e|P|-|n\n\nCOMMENTS:\n" + lines)
         for attempt in range(3):
-            parsed = cm.parse_label_lines(claude(prompt, 3000, thinking={"type": "between_tools"}))
+            parsed = parse_label_lines(claude(prompt, 3000, thinking={"type": "between_tools"}))
             if len(parsed) >= len(batch) * 0.9: break
             time.sleep(3)
         for k in range(len(batch)): out[start + k] = parsed.get(k)
@@ -84,79 +97,107 @@ def net(ps):
     return round((ps[0] - ps[2]) / n * 100) if n else None
 
 
-def build(keyword, emit=lambda e: None, push=False):
-    t_all, steps = time.time(), []
+def side_rows(state):
+    """English, product-side comments with their labels, rebuilt from the state so each stage can run in its own request."""
+    flat = [(vid, t) for vid, ts in state["raw"].items() for t in ts]
+    return [dict(vid=vid, text=t, lab=l) for (vid, t), l in zip(flat, state["labs"]) if l and l["l"] == "en" and l["t"] in PRODUCT_SIDE]
 
-    def step(sid, fn):
-        label_ = dict(STEPS)[sid]
+
+SENT = {"positive": 0, "neutral": 1, "negative": 2}
+
+
+def do_search(state):
+    state["vids"] = search_videos(state["keyword"])
+    if not state["vids"]: raise SystemExit(f"No English videos with 1,000+ views found for '{state['keyword']}'. Try a broader keyword.")
+    return f"{len(state['vids'])} videos from {len({x['channel_id'] for x in state['vids']})} channels"
+
+
+def do_baseline(state):
+    for v, base, subs in pool(channel_baseline, state["vids"]):
+        v["subs"] = subs
+        v["lift"] = round(v["views"] / base, 2) if base else None
+    return f"lift vs the channel's own usual views for {sum(1 for v in state['vids'] if v['lift'])} of {len(state['vids'])} videos"
+
+
+def do_comments(state):
+    state["raw"] = dict(pool(pull_comments, state["vids"]))
+    return f"{sum(len(x) for x in state['raw'].values()):,} comments from {sum(1 for x in state['raw'].values() if x)} videos"
+
+
+def do_label(state):
+    flat = [t for ts in state["raw"].values() for t in ts]
+    state["labs"] = label(flat, state["keyword"])
+    return f"{sum(1 for x in state['labs'] if x)} of {len(flat)} comments labelled (target, sentiment, intent)"
+
+
+def do_topics(state):
+    side = side_rows(state); texts = [r["text"] for r in side]
+    state["topics"] = []
+    if len(texts) < 40: return "too few product comments to find topics"
+    vecs, cl = tc.clusters(texts, k=max(3, min(7, len(texts) // 40)), min_size=max(8, len(texts) // 25))
+    names = name_topics(cl, texts, state["keyword"]) if cl else {}
+    for c in cl:
+        ps = [0, 0, 0]
+        for i in c["members"]: ps[SENT[side[i]["lab"]["s"] or "neutral"]] += 1
+        nm = names.get(c["id"], {})
+        state["topics"].append(dict(name=nm.get("name") or "Topic", summary=nm.get("summary", ""), n=c["n"], share=round(c["n"] / len(texts), 3), ps=ps, score=net(ps), terms=c["terms"][:6]))
+    state["topics"].sort(key=lambda t: -t["n"])
+    return f"{len(state['topics'])} topics covering {sum(t['n'] for t in state['topics'])} of {len(texts)} product comments"
+
+
+def assemble(state):
+    per = {}
+    for r in side_rows(state): per.setdefault(r["vid"], [0, 0, 0])[SENT[r["lab"]["s"] or "neutral"]] += 1
+    videos = [dict(id=v["id"], url=v["url"], title=v["title"], channel=v["channel"], subs=v.get("subs"), views=v["views"], published=v["published"], lift=v["lift"], ps=per.get(v["id"], [0, 0, 0])) for v in state["vids"]]
+    tot = [sum(x["ps"][i] for x in videos) for i in range(3)]
+    return dict(keyword=state["keyword"], generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"), caps=dict(videos=MAX_VIDEOS, comments=MAX_COMMENTS),
+                totals=dict(videos=len(videos), channels=len({v["channel_id"] for v in state["vids"]}), views=sum(v["views"] for v in videos), comments=sum(len(x) for x in state["raw"].values()),
+                            product_comments=sum(tot), ps=tot, score=net(tot)), videos=videos, topics=state["topics"])
+
+
+def do_report(state):
+    rep = assemble(state)
+    brief = dict(keyword=state["keyword"], totals=rep["totals"], topics=[{k: t[k] for k in ("name", "n", "score")} for t in rep["topics"]],
+                 top_lift=[{k: v[k] for k in ("title", "channel", "lift", "views")} for v in sorted([x for x in rep["videos"] if x["lift"]], key=lambda x: -x["lift"])[:3]])
+    state["summary"] = parse_json(claude("You write a three-line readout of how a topic is landing on YouTube. Lead with the net sentiment score (positive % minus negative %, -100 to +100) when you mention sentiment. "
+                                         "Use ONLY the numbers below, never invent figures, flag small samples, plain and direct. "
+                                         'Return JSON only: {"headline": str (<=20 words), "bullets": [str, str, str] (each <=30 words)}.\n\n' + json.dumps(brief), 1500, thinking={"type": "between_tools"}))
+    return "headline and three findings"
+
+
+def do_push(state):
+    rep = assemble(state); rep["summary"] = state["summary"]
+    sent = deliver(rep)
+    return ("Sent to " + " and ".join(sent)) if sent else "no Slack or email keys are set"
+
+
+FUNCS = dict(search=do_search, baseline=do_baseline, comments=do_comments, label=do_label, topics=do_topics, report=do_report, push=do_push)
+
+
+def run_step(sid, state):
+    """One stage on its own: used by the hosted endpoint, which gets the state from the browser and hands it back."""
+    t0 = time.time()
+    detail = FUNCS[sid](state)
+    return state, detail, round(time.time() - t0, 1)
+
+
+def finish(state, steps, t_all):
+    rep = assemble(state); rep["summary"] = state["summary"]
+    rep["steps"], rep["secs"], rep["usage"] = steps, round(time.time() - t_all, 1), dict(USAGE)
+    return rep
+
+
+def build(keyword, emit=lambda e: None, push=False):
+    t_all, steps, state = time.time(), [], dict(keyword=keyword)
+    for sid, label_ in STEPS:
+        if sid == "push" and not push:
+            emit(dict(step="push", label=label_, status="done", detail="skipped (push is switched off)", secs=0)); continue
         emit(dict(step=sid, label=label_, status="start"))
-        t0 = time.time()
-        res, detail = fn()
-        secs = round(time.time() - t0, 1)
+        _, detail, secs = run_step(sid, state)
         steps.append(dict(id=sid, label=label_, secs=secs, detail=detail))
         emit(dict(step=sid, label=label_, status="done", detail=detail, secs=secs))
-        return res
-
-    vids = step("search", lambda: (lambda v: (v, f"{len(v)} videos from {len({x['channel_id'] for x in v})} channels"))(search_videos(keyword)))
-    if not vids: raise SystemExit(f"No English videos with 1,000+ views found for '{keyword}'. Try a broader keyword.")
-
-    def baselines():
-        for v, base, subs in pool(channel_baseline, vids):
-            v["subs"] = subs
-            v["lift"] = round(v["views"] / base, 2) if base else None
-        return None, f"lift vs the channel's own usual views for {sum(1 for v in vids if v['lift'])} of {len(vids)} videos"
-    step("baseline", baselines)
-
-    def comments():
-        got = dict(pool(pull_comments, vids))
-        return got, f"{sum(len(x) for x in got.values()):,} comments from {sum(1 for x in got.values() if x)} videos"
-    raw = step("comments", comments)
-    flat = [(v["id"], t) for v in vids for t in raw.get(v["id"], [])]
-
-    def labelling():
-        labs = label([t for _, t in flat], keyword)
-        return labs, f"{sum(1 for x in labs if x)} of {len(flat)} comments labelled (target, sentiment, intent)"
-    labs = step("label", labelling)
-    rows = [dict(vid=vid, text=t, lab=l) for (vid, t), l in zip(flat, labs) if l and l["l"] == "en"]
-    side = [r for r in rows if r["lab"]["t"] in PRODUCT_SIDE]
-
-    def topics():
-        texts = [r["text"] for r in side]
-        if len(texts) < 40: return [], "too few product comments to find topics"
-        vecs, cl = tc.clusters(texts, k=max(3, min(7, len(texts) // 40)), min_size=max(8, len(texts) // 25))
-        names = name_topics(cl, texts, keyword) if cl else {}
-        res = []
-        for c in cl:
-            ps = [0, 0, 0]
-            for i in c["members"]: ps[{"positive": 0, "neutral": 1, "negative": 2}[side[i]["lab"]["s"] or "neutral"]] += 1
-            nm = names.get(c["id"], {})
-            res.append(dict(name=nm.get("name") or "Topic", summary=nm.get("summary", ""), n=c["n"], share=round(c["n"] / len(texts), 3), ps=ps, score=net(ps), terms=c["terms"][:6]))
-        res.sort(key=lambda t: -t["n"])
-        return res, f"{len(res)} topics covering {sum(t['n'] for t in res)} of {len(texts)} product comments"
-    tops = step("topics", topics)
-
-    per = {}
-    for r in side: per.setdefault(r["vid"], [0, 0, 0])[{"positive": 0, "neutral": 1, "negative": 2}[r["lab"]["s"] or "neutral"]] += 1
-    videos = [dict(id=v["id"], url=v["url"], title=v["title"], channel=v["channel"], subs=v.get("subs"), views=v["views"], published=v["published"], lift=v["lift"],
-                   ps=per.get(v["id"], [0, 0, 0])) for v in vids]
-    tot = [sum(x["ps"][i] for x in videos) for i in range(3)]
-    rep = dict(keyword=keyword, generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"), caps=dict(videos=MAX_VIDEOS, comments=MAX_COMMENTS),
-               totals=dict(videos=len(videos), channels=len({v["channel_id"] for v in vids}), views=sum(v["views"] for v in videos), comments=len(flat), product_comments=sum(tot),
-                           ps=tot, score=net(tot)), videos=videos, topics=tops)
-
-    def write():
-        brief = dict(keyword=keyword, totals=rep["totals"], topics=[{k: t[k] for k in ("name", "n", "score")} for t in tops],
-                     top_lift=[{k: v[k] for k in ("title", "channel", "lift", "views")} for v in sorted([x for x in videos if x["lift"]], key=lambda x: -x["lift"])[:3]])
-        s = parse_json(claude("You write a three-line readout of how a topic is landing on YouTube. Use ONLY the numbers below, never invent figures, flag small samples, plain and direct. "
-                              'Return JSON only: {"headline": str (<=20 words), "bullets": [str, str, str] (each <=30 words)}.\n\n' + json.dumps(brief), 1500, thinking={"type": "between_tools"}))
-        return s, "headline and three findings"
-    rep["summary"] = step("report", write)
-    if push:
-        step("push", lambda: (lambda sent: (sent, ("Sent to " + " and ".join(sent)) if sent else "no Slack or email keys are set"))(deliver(rep)))
-    else:
-        emit(dict(step="push", label=dict(STEPS)["push"], status="done", detail="skipped (push is switched off)", secs=0))
-    rep["steps"], rep["secs"], rep["usage"] = steps, round(time.time() - t_all, 1), dict(USAGE)
-    rep["_corpus"] = [r["text"] for r in rows]                 # only used in memory for the public-safety check, never written out
+    rep = finish(state, steps, t_all)
+    rep["_corpus"] = [r["text"] for r in side_rows(state)]       # only used in memory for the public-safety check, never written out
     return rep
 
 

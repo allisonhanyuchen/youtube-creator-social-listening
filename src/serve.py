@@ -8,7 +8,7 @@
 Bound to localhost; your API keys never reach the browser. The public page has none of these: its input and Refresh button are disabled."""
 import json, os, subprocess, sys, threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from common import HERE
+from common import HERE, SRC
 from ask import ask
 import explore
 
@@ -74,7 +74,7 @@ class H(BaseHTTPRequestHandler):
         if not BUSY.acquire(blocking=False): return self._send(409, json.dumps({"error": "another run is in progress"}))
         try:
             self._stream_start()
-            p = subprocess.Popen([sys.executable, "-u", "run_weekly.py", "--daily"], cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            p = subprocess.Popen([sys.executable, "-u", os.path.join(SRC, "run_weekly.py"), "--daily"], cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             for line in p.stdout:
                 line = line.strip()
                 if line.startswith("[start] "): self._event(dict(step=line[8:], status="start"))
@@ -83,7 +83,7 @@ class H(BaseHTTPRequestHandler):
                     name, _, rest = body.partition(" (")
                     self._event(dict(step=name, status="done" if ok else "failed", detail=rest.split(") ", 1)[-1] if rest else "", secs=rest.split("s)")[0] if rest else ""))
             p.wait()
-            subprocess.run([sys.executable, "build_dashboard.py"], cwd=HERE, capture_output=True)          # the local dashboard (with quotes) is rebuilt too
+            subprocess.run([sys.executable, os.path.join(SRC, "build_dashboard.py")], cwd=HERE, capture_output=True)          # the local dashboard (with quotes) is rebuilt too
             self._event(dict(done=True, ok=p.returncode == 0))
         finally:
             BUSY.release()

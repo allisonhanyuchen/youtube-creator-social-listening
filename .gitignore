@@ -10,3 +10,4 @@ __pycache__/
 workbench.html
 dashboard.html
 .venv/
+.playwright-mcp/

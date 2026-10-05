@@ -5,7 +5,7 @@ Embedded: per-video rows + per-video comment aggregates (sentiment, topics, comp
 import json, os, re, sqlite3, sys
 from collections import defaultdict
 from datetime import date, timedelta
-from common import DATA, HERE, product, scope_sql
+from common import DATA, HERE, SRC, product, scope_sql
 
 PRODUCT_SIDE = {"product", "price_value", "apple_brand", "competitor"}
 SENT = {"positive": 0, "neutral": 1, "negative": 2}
@@ -126,7 +126,7 @@ def main():
     if public:
         import public_safety as safe
         data = attach_public_text(scrub_public(data), safe.corpus(r[0] for r in con.execute("select text from comments where text is not null")))
-    html = open(os.path.join(HERE, "dashboard.tmpl.html"), encoding="utf-8").read().replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
+    html = open(os.path.join(SRC, "dashboard.tmpl.html"), encoding="utf-8").read().replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
     out = os.path.join(HERE, "docs", "index.html") if public else os.path.join(HERE, "dashboard.html")
     os.makedirs(os.path.dirname(out), exist_ok=True); open(out, "w", encoding="utf-8").write(html)
     if public:                                           # the same text-free data as plain JSON, handy for rebuilding the UI in another tool

@@ -1,0 +1,61 @@
+name: Refresh and push
+
+on:
+  schedule:
+    - cron: "0 15 * * *"        # every day 15:00 UTC: a light pass, and the full pass on Mondays
+  workflow_dispatch:
+    inputs:
+      send:
+        description: "Send the email and Slack update"
+        type: boolean
+        default: true
+      mode:
+        description: "auto = full on Mondays, light otherwise"
+        type: choice
+        options: [auto, daily, weekly]
+        default: auto
+
+permissions:
+  contents: write                # commits the text-free state/ folder and the public page back
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+env:
+  YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+  REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
+  # flags every stage shares: --no-send when "send" is off, --daily or --weekly when a mode was picked
+  RUN_FLAGS: ${{ github.event.inputs.send == 'false' && '--no-send' || '' }} ${{ github.event.inputs.mode == 'daily' && '--daily' || '' }} ${{ github.event.inputs.mode == 'weekly' && '--weekly' || '' }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # one workflow step per stage, so progress can be followed live (the page's Refresh now does exactly that)
+      - name: 1 Refresh source data
+        run: python src/run_weekly.py --stage refresh $RUN_FLAGS
+      - name: 2 Analyse
+        run: python src/run_weekly.py --stage analyse $RUN_FLAGS
+      - name: 3 Update reports
+        run: python src/run_weekly.py --stage report $RUN_FLAGS
+      - name: 4 Push to email and Slack
+        run: python src/run_weekly.py --stage push $RUN_FLAGS
+      - name: Record run and save state
+        if: always()
+        run: python src/run_weekly.py --stage finish $RUN_FLAGS
+      - name: Commit updated state
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state docs api
+          git diff --cached --quiet || (git commit -m "Scheduled state update" && git push)

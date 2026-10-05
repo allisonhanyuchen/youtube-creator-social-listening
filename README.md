@@ -2,82 +2,66 @@
 
 [![Tests](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml/badge.svg)](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml)
 
-**Live demo: https://youtube-creator-social-listening.vercel.app/** (the dashboard on iPhone Duo data, with a live "Ask the data" chat). The same page is on GitHub Pages at https://allisonhanyuchen.github.io/youtube-creator-social-listening/, where the chat falls back to recorded answers. The public page shows no comment text: topics are summarised in paraphrase and checked against the comments. It refreshes every day (a light check) and does the full report on Mondays.
+An AI workflow that listens to YouTube around a product and gives a creator or brand marketing team a readout they do not have to build by hand: which creators and formats beat their own baseline, what the audience is saying, and what changed since yesterday. It refreshes itself every day and pushes the update to email and Slack.
 
-An AI workflow that listens to YouTube around a product and answers three questions for a creator or brand marketing team:
+**Live demo: https://youtube-creator-social-listening.vercel.app/** (also on GitHub Pages: https://allisonhanyuchen.github.io/youtube-creator-social-listening/, where the chat falls back to recorded answers).
+The demo case is the Apple iPhone Duo launch (2026-09-09). The public page shows no comment text.
 
-1. Which creators and content formats beat their own baseline, and at what channel size?
-2. How do lift and audience reaction line up for each video? They are shown side by side, not merged into a score, because they measure different things.
-3. What is the audience actually saying (topics, sentiment score, competitors), which topics are new or growing, and what changed since the last refresh?
+## What the page shows
 
-The demo case is the Apple iPhone Duo (the first foldable iPhone, launched 2026-09-09). iPhone 18 Pro videos are kept in the database as a comparison for the Q&A agent. The pipeline is pointed at another product by editing `product.json` (name, brand, launch date, search queries, competitors); topics are discovered from the comments, not hand-written. See "Make it your own".
+One page of five expandable sections, plus an "Ask the data" chat.
 
-Built with Python (standard library only), the YouTube Data API v3 (official API, no scraping), the Claude API, SQLite, GitHub Actions, Slack, Resend for email and Vercel for hosting.
+| Section | What it is |
+|---|---|
+| 1 Who this is for | Creator managers, launch marketers, analysts |
+| 2 How this works | Collect (YouTube Data API) → Analyse (Claude API + local NLP) → Report (dashboard, chat) → Refresh (GitHub Actions) → Push (Resend, Slack) |
+| 3 See an example | Type a keyword and watch each step with the tech it calls, then get a small report; the last step pushes it to email and Slack. The public page replays a recorded run |
+| 4 The full report | Overview (creator types by level and region) · Content performance (a content-type overview that filters a sortable list: lift, views gained, sentiment score) · Audience insights (topic map, expandable topics, competitors) · Reports & automation (run log, example email and Slack digest, Refresh now) |
+| 5 Make it yours | Bring your own keys, edit one config file, deploy |
 
-## What you get
+Every metric explains itself on hover, starting with the business question it answers. Sentiment is shown as a **net sentiment score** (positive % minus negative %, -100 to +100) next to a bar that keeps the neutral share visible.
 
-| Surface | Use | Entry point |
-|---|---|---|
-| Dashboard (live demo above, or run locally for quotes and chat) | One page of five expandable sections (who it is for, how it works, an example keyword run, the full report, make it yours) and a chat. The full report has four views. A short "who this is for / how this works / key metrics" header explains it; every metric also explains itself on hover, starting with the business question it answers. **Overview**: creator types by channel level and region (click a cell, total or header to filter). **Content performance**: a content-type overview that filters one sortable list of videos (creator, region, level, content type, lift, views gained 24h and 7d, engagement, sentiment score and bar); every header is a sort and filter menu. **Audience insights**: topic map (x sentiment score, y trend, size comments), expandable topics with what people say, collapsed competitors. **See an example (Try a keyword)**: type a product or topic and watch each step (YouTube API, Claude, clustering, report) while it builds a small report; the last step pushes the report to your Slack and inbox. **Reports & automation**: status strip with **Refresh now**, run log in four stages, an example weekly email and Slack digest. **Ask the data** (top left): plain-language questions answered with the SQL shown. | `dashboard.html`, `docs/index.html` |
-| Daily update and weekly email | Every run pushes a short update to email and Slack (daily) and the full one on Mondays. Mirrors the dashboard: summary, overview, content performance (highest-lift videos), audience insights (top topics), what changed since the last refresh, watchlist. | `report.py` |
-| Slack digest and alerts | The same readout in a channel on Mondays, plus alerts on their own when something shifts. | `notify.py` |
-| Q&A agent | Ask in Slack, in the local dashboard, or live on the hosted page. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py`, `api/chat.py` |
-
-## Pipeline
+## Architecture
 
 ```
-collect.py        YouTube search + videos + channels          -> data/videos_raw.json
-classify.py       Claude labels content format and topic       -> data/videos.json
-snapshots.py      daily view-count snapshot                    -> state/view_history.json (views gained 24h / 7d)
-performance.py    channel baselines, lift
-creators.py       creator type, size tier, region
-comments.py       pull comments, Claude labels each one        -> target, sentiment, intent
-db.py             builds data/pulse.db (SQLite base tables and views)
-textcluster.py / topics.py   local TF-IDF + k-means defines topics with stable IDs; Claude names them; every refresh assigns new comments and looks for new topics
-insights.py       numbers computed in Python, narrative by Claude, changes since last refresh, watchlist, alerts
-summaries.py / examples.py / public_safety.py   paraphrased notes and recorded Q&A for the public demo, checked so nothing reuses a comment's wording
-export_public_db.py  text-free copy of the database for the hosted chat -> api/public.db
-explore.py       keyword explorer: any product or topic -> small report with live progress
-report.py (email) / notify.py (Slack digest and alerts)
-build_dashboard.py [--public]   dashboard.html / docs/index.html (+ docs/data.json)
-ask.py            Q&A core: Slack bot, local server and api/chat.py (Vercel function)
-run_weekly.py     the scheduled runner: daily light pass, Monday full pass, writes state/runs.json
+YouTube Data API v3 ──► Claude API + local NLP ──► SQLite ──► dashboard (static HTML) + Ask the data
+  videos, stats,          per-comment labels,        lift,        │
+  comments, daily         topic clustering,          trends,      ├─► daily email (Resend) and Slack digest / alerts / @mention agent
+  view snapshots          narrative                  topics       └─► Vercel: the page, live Q&A, demo-code-gated keyword runs and Refresh now
+                                  ▲
+                      GitHub Actions, every day 15:00 UTC: light pass; full pass on Mondays
 ```
-
-## What runs locally and what uses AI
 
 The split is deliberate: statistics where they are enough, Claude where reading and judgement add something.
 
 | Step | Where | Why |
 |---|---|---|
-| Lift, baselines, outperformer cut-offs, alerts, every number in the report | Local Python | Deterministic and testable, nothing is generated |
-| Language, no-signal filtering, SQL guard, public-demo safety check | Local Python | Cheap rules |
-| Audience topics (`topics.py`) | **Local**: TF-IDF over unigrams and bigrams, spherical k-means, nearest-topic assignment, trend index, all pure Python. **AI**: one-time merge and naming of clusters, one paraphrased sentence each, and a yes/no on whether a new cluster is a real new topic | Topics come from the comments, so a new product or a new conversation needs no code change. Topic IDs and centroids are stored, so counts stay comparable week to week; comments that fit nothing are re-clustered on each refresh to discover new topics |
-| Per-comment target, sentiment, intent | Claude | Needs reading: is it about the phone, the price, or the creator? Sarcasm? A lexicon cannot tell, and about a quarter of comments are about the creator |
-| Narrative, Q&A, topic notes | Claude, on numbers computed locally | Grounded in the data, with the SQL shown |
+| Lift, baselines, outperformer cut-offs, trends, alerts, every number in a report | Local Python | Deterministic and testable, nothing is generated |
+| Topics: TF-IDF, k-means, nearest-topic assignment, new-topic discovery | Local Python (`textcluster.py`, `topics.py`) | Topics come from the comments, so a new product needs no code change; IDs are stable week to week |
+| Per-comment target, sentiment, intent | Claude | Needs reading: is it about the phone, the price or the creator? Sarcasm? |
+| Naming topics, paraphrased notes, narrative, Q&A | Claude, on numbers computed locally | Grounded in the data, with the SQL shown |
 
-## Definitions
+## Repository layout
 
-- **Lift**: a video's views divided by the median views of the same channel's comparable pre-launch videos (Shorts compared with Shorts, long with long), then divided by the typical value among videos of the same product and format. 1.0 is a typical video.
-- **Outperformer**: top quarter of lift within its format class. A fixed "2x baseline" bar was too loose in launch week, when most videos beat their baseline. **Underperformer**: bottom quarter.
-- **Audience reaction**: sentiment is labelled per comment toward what the comment is about. Headline numbers count only comments about the product, price, Apple, or competitors; comments about the video or creator are excluded. A video needs at least 10 such comments before its reaction is judged.
-- **Sentiment score**: positive share minus negative share of the product-side comments, from -100 to +100, shown next to every sentiment bar. The bar keeps the neutral share visible.
-- **Views gained (24h / 7d)**: views added since the latest daily snapshot that is at least a day (or a week) old. The API has no history, so this appears once snapshots have accumulated.
-- **Topic trend**: the share of a topic's comments posted in the last 7 days divided by its usual share. Above 1.5x with at least 15 recent comments is "gaining". New topics are marked "new this week".
-- **Channel size**: small (under 250k subscribers), mid (250k to 1M), large (1M and above).
+```
+src/                  all the code (flat; run any script as  python3 src/<name>.py)
+  collect.py classify.py snapshots.py performance.py creators.py comments.py   pipeline: videos, formats, view snapshots, baselines, comments
+  db.py textcluster.py topics.py insights.py summaries.py examples.py          analysis: SQLite tables, topics, insights, paraphrased notes
+  report.py notify.py build_dashboard.py dashboard.tmpl.html                    outputs: email, Slack, the page
+  run_weekly.py state_io.py                                                    the scheduled runner (also runs one stage at a time)
+  ask.py slack_bot.py serve.py explore.py demo_gate.py                         the agent, the local server, the keyword explorer, the demo-code gate
+  common.py public_safety.py export_public_db.py                               helpers, the no-quoted-comments check, the text-free database
+api/                  Vercel functions: chat.py (live Q&A), verify.py, step.py, refresh.py (demo-code gated), public.db (text-free copy of the data)
+state/                committed, text-free: video stats, our labels per comment ID, topics, snapshots, run log, recorded sample
+docs/                 the public page (index.html) and its data (data.json), rebuilt by every run
+tests/                unit tests, standard library only
+product.json         the one config file: product, keywords, launch date, competitors
+.github/workflows/    refresh.yml (daily run, one step per stage), tests.yml
+```
 
-## Scheduled run
+## Run it yourself
 
-`.github/workflows/weekly.yml` runs `run_weekly.py` every day at 15:00 UTC (and on demand from the Actions tab). It starts from `state/`, then works in four stages: refresh source data (new videos, stats for every known video, the daily view snapshot, baselines), analyse (label only comments it has not seen before, assign topics and discover new ones, compute insights and changes), update reports, push to email and Slack.
-
-- **Light pass** (Tuesday to Sunday): skips the slow Claude steps (topic notes, recorded Q&A, the hosted-chat database) but still sends a short "daily" email and Slack digest.
-- **Full pass** (Monday): everything, plus the full "weekly" email and Slack digest.
-- **Refresh now** (local server only): runs the light pass on demand and streams the four stages to the page.
-- Each run appends to `state/runs.json`, which the dashboard shows as the status strip and run log, then commits the updated `state/`, `docs/` and `api/` back so the next run is incremental and the hosted page redeploys. API keys come from repository secrets.
-
-## Run it
-
-Keys live outside the repo in `~/.creator-scout.env` (or as environment variables in CI):
+Keys live outside the repo in `~/.creator-scout.env` (or as environment variables / GitHub secrets):
 
 ```
 YOUTUBE_API_KEY=...
@@ -85,78 +69,73 @@ ANTHROPIC_API_KEY=...
 SLACK_WEBHOOK_URL=...            # digest and alerts
 RESEND_API_KEY=...               # email
 REPORT_EMAIL_TO=you@example.com  # the Resend test sender can only deliver to the account owner
-SLACK_BOT_TOKEN=xoxb-...         # Q&A agent (Socket Mode)
+SLACK_BOT_TOKEN=xoxb-...         # Q&A agent (Socket Mode), optional
 SLACK_APP_TOKEN=xapp-...
 ```
 
 ```bash
-python3 collect.py && python3 classify.py
-python3 snapshots.py && python3 performance.py && python3 creators.py
-python3 comments.py
-python3 db.py && python3 topics.py && python3 insights.py && python3 summaries.py
-python3 build_dashboard.py          # dashboard.html
-python3 report.py --send            # email
-python3 notify.py                   # Slack digest (add --alerts for alert-only)
-python3 serve.py                    # dashboard with chat on http://127.0.0.1:8770
-python3 run_weekly.py --no-send     # the whole scheduled pipeline in one go (--daily or --weekly to force a mode)
-python3 explore.py "standing desk"  # keyword report in the terminal
+python3 src/run_weekly.py --no-send      # the whole pipeline once (add --daily or --weekly to force a mode)
+python3 src/serve.py                     # http://127.0.0.1:8770 with everything live: keyword input, Refresh now, chat
+python3 src/explore.py "standing desk"   # a keyword report in the terminal (--push sends it, --sample saves the public sample)
+python3 src/build_dashboard.py           # dashboard.html (local, with a few hundred quoted comments)
 
 python3 -m venv .venv && .venv/bin/pip install slack_bolt
-.venv/bin/python slack_bot.py       # Slack Q&A agent
+.venv/bin/python src/slack_bot.py        # Slack agent: mention it to ask a question
 ```
 
-Steps are cached and resumable: searches, baselines, and comment labels are only recomputed for new items.
-
-## View trend for videos
-
-The YouTube API only returns the current view count, never a history. `snapshots.py` therefore stores each video's public view count once a day in `state/view_history.json`, and the content list shows views gained in the last 24 hours and 7 days from two snapshots (a dash until enough days exist). Topic trend works differently: it uses comment timestamps, which carry their own history.
-
-## Try a keyword and Refresh now
-
-Two live features that spend API quota, so they only run on your own copy:
-
-- **Try a keyword** (`explore.py`): YouTube search for the keyword, each channel's usual views (for lift), the top comments, Claude labels every comment, local clustering finds topics and Claude names them, then a short summary. Capped at 20 videos and 20 comments each, about 30 seconds, roughly 150 YouTube quota units and a few cents to a few tens of cents of Claude. From the terminal: `python3 explore.py "standing desk"` (add `--sample` to save the text-free sample the public page replays).
-- **Refresh now**: `python3 serve.py` and open http://127.0.0.1:8770. The page streams the keyword steps and the four pipeline stages as they happen, and "Send to my Slack and email" pushes a keyword report using your own keys.
-- On the public page both are switched off with a short disclaimer, and it shows the recorded sample run and a replay of its steps. Set `demo_video` in `product.json` to a link (for example a Loom) and the page points to it as the full-flow walkthrough.
+On the local server the keyword input and **Refresh now** run for real (Refresh now runs the daily pass and pushes to email and Slack with your keys). Tests: `python3 -m unittest discover -s tests -t .` (no keys, no network).
 
 ## Make it your own
 
-The public page is a demo of one product with a recorded sample. To run the same pipeline on your own keywords or product:
+1. Fork the repo and add the keys as repository secrets.
+2. Edit `product.json`: `name`, `brand`, `launch`, `since` (earliest video date), `queries` (the YouTube searches), `topic_regex` (a video must match it), `competitors`, and optionally `demo_video` (a link shown on the page).
+3. Clear `state/`, then run the **Refresh and push** workflow (Actions tab). Topics are rediscovered from your comments.
+4. Turn on GitHub Pages from `/docs`, or deploy to Vercel (below).
 
-1. Fork the repo and add the keys as repository secrets (or put them in `~/.creator-scout.env` locally): `YOUTUBE_API_KEY` and `ANTHROPIC_API_KEY`, plus `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` if you want the digest and email.
-2. Edit `product.json`: `name`, `brand`, `launch` date, `since` (earliest video date), `queries` (the YouTube searches), `topic_regex` (a video must match it to count), and `competitors` (name to regex).
-3. Clear `state/` and `data/`, then run `python3 run_weekly.py --no-send` (or the Actions workflow). Topics are rediscovered from your comments, so there is no taxonomy to rewrite.
-4. Open `dashboard.html`, or turn on GitHub Pages from `/docs`. `docs/data.json` holds the same text-free data as the public page, if you want to rebuild the UI in another tool.
+Still specific to the Duo case, worth a look when you switch product: the product labels in `classify.py` (`TOPICS`) and the `topic = 'duo'` scope in `common.scope_sql()`. Content-type labels are generic. A search costs 100 YouTube quota units.
 
-Still specific to the Duo case and worth a look when you switch product: the product labels in `classify.py` (`TOPICS`) and the `topic = 'duo'` scope in `common.scope_sql()`. Content-type labels (first impressions, review, comparison and so on) are generic. The search costs 100 quota units per query per day.
+## The daily run
 
-## Live demo on Vercel
+`refresh.yml` runs every day at 15:00 UTC and on demand, in four stages that appear as four workflow steps: **1 Refresh source data** (new videos, stats, daily view snapshot, baselines) → **2 Analyse** (label new comments, assign topics and discover new ones, insights and changes) → **3 Update reports** (topic notes, recorded Q&A, the text-free database, the page) → **4 Push to email and Slack**. Then it records the run in `state/runs.json` and commits `state/`, `docs/` and `api/` back, so the next run is incremental and the hosted page redeploys.
 
-GitHub Pages can only serve static files, so the recorded Q&A is what it shows. On Vercel the same page answers live:
+- **Light pass** (Tuesday to Sunday): skips the slow Claude steps but still sends a short "daily" email and Slack digest.
+- **Full pass** (Monday): everything, plus the full "weekly" email and digest.
+- Inputs when started by hand: `send` (off = no email or Slack) and `mode` (auto, daily, weekly).
 
-- `vercel.json` serves `docs/` and adds one serverless function, `api/chat.py`. It reuses the Q&A core (`ask.py`) over `api/public.db`, a copy of the database with **no comment text** (`export_public_db.py` writes it in the Monday full run).
-- Import the repo in Vercel (Framework: Other, no build command) and set `ANTHROPIC_API_KEY` in the project's environment variables. Use a dedicated key with a spend limit set in the Anthropic console; that limit is the hard cap.
-- Guards in the function: same-site requests only, questions of at most 300 characters, 8 questions per visitor per hour and 300 per day (`CHAT_PER_HOUR`, `CHAT_PER_DAY`, best effort per instance), and a kill switch (`CHAT_DISABLED=1`). If the function is not there (GitHub Pages), the page falls back to the recorded answers by itself.
-- Each push to `main` redeploys, so the scheduled run's commits update the hosted page too.
+## Hosting on Vercel
 
-## Tests
+`vercel.json` serves `docs/` and adds serverless functions in `api/`. Import the repo in Vercel (Framework: Other, no build command) and set these environment variables:
 
-```bash
-python3 -m unittest discover -s tests -t . -v      # standard library only, no keys, no network
-```
+| Variable | For |
+|---|---|
+| `ANTHROPIC_API_KEY` | live chat and keyword runs. Use a dedicated key with a spend limit set in the Anthropic console: that limit is the hard cap |
+| `DEMO_CODE` | the code that unlocks keyword runs and Refresh now. Without it they stay off and the page shows the recorded sample |
+| `YOUTUBE_API_KEY` | keyword runs |
+| `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` | where a keyword run pushes its report |
+| `GITHUB_TOKEN` | Refresh now: a fine-grained token with Actions read and write on this repo only |
+| optional | `GITHUB_REPO`, `CHAT_PER_HOUR` (8), `CHAT_PER_DAY` (300), `CHAT_DISABLED`, `DEMO_RUNS_PER_DAY` (25), `DEMO_REFRESH_COOLDOWN` (300 s) |
 
-They cover the pieces that decide what the dashboard says: the compact label parser, the text clustering and nearest-topic assignment, change and watchlist detection, the no-signal comment filter, outperformer cut-offs, week-over-week alerts, the read-only SQL guard behind the Q&A agent, the hosted chat limits, views-gained from snapshots, that `state/` and the public demo contain no comment text, and that the email report renders and escapes HTML. They run on every push (Python 3.9 and 3.12).
+- **Live chat** (`api/chat.py`) reuses the Q&A core over `api/public.db`, a copy of the database with no comment text. It accepts same-site requests only, short questions, and limited questions per visitor.
+- **Keyword runs** (`api/step.py`) run one stage per request and the browser carries the state, so the page can show the steps live; every call needs the demo code. Five wrong codes lock a visitor out for ten minutes.
+- **Refresh now** (`api/refresh.py`) starts the real workflow on GitHub Actions and the page follows its four stages through GitHub's public API.
+- Where the functions are missing (GitHub Pages), the page falls back to the recorded sample and recorded answers by itself.
+
+## Definitions
+
+- **Lift**: a video's views divided by the median views of the same channel's comparable pre-launch videos (Shorts with Shorts, long with long), then divided by the typical value among videos of the same product and format. 1.0 is a typical video.
+- **Outperformer**: top quarter of lift within its format class. **Underperformer**: bottom quarter.
+- **Sentiment score**: positive share minus negative share of the comments about the product, price, Apple or competitors (comments about the video or creator are left out). A video needs at least 10 such comments before its reaction is shown.
+- **Views gained (24h / 7d)**: views added since the latest daily snapshot that is at least a day (or a week) old. The API has no history, so `snapshots.py` stores one count a day; the columns fill in as snapshots accumulate.
+- **Topic trend**: the share of a topic's comments posted in the last 7 days divided by its usual share. Above 1.5x with 15+ recent comments is "gaining". New topics are marked "new this week".
+- **Channel size**: small (under 250k subscribers), mid (250k to 1M), large (1M and above).
 
 ## Data and limits
 
-- English-language videos only, found through search. This is a sample of YouTube, not a census.
-- Comments are a sample of up to 60 per video (40 top, 20 newest), so top comments lean toward liked opinions. Videos with fewer than 10 comments are skipped. Labels come from Claude.
-- Comments were labelled in two modes on different videos: deeper reasoning first, then a faster mode. Small differences between videos can partly reflect the labelling mode.
-- Topics cover about 85% of product comments; the rest fit no topic and are shown as unassigned. In the scheduled run old comment text is not kept, so new topics are discovered only among that week's unassigned comments.
-- Region is the channel-declared country. Audience geography is not public.
-- Lift compares a video with its own channel's usual videos, so small channels reach high multiples more easily. Differences between groups are associations, and small groups can swing.
-- Sponsorship and Apple seeding are deliberately not analysed. In an earlier version, none of the 58 sponsored videos was sponsored by Apple or a competitor (they were case makers, VPNs and similar), and seeding could only be inferred from posting time, which also drives views. Neither produced a reliable comparison.
+- English-language videos found through search: a sample of YouTube, not a census. Comments are up to 60 per video (40 top, 20 newest), so liked opinions are over-represented. Labels come from Claude and were produced in two modes (deeper reasoning, then a faster one).
+- About 85% of product comments fit a topic; the rest are shown as unassigned. In the scheduled run old comment text is not kept, so new topics are discovered among that run's unassigned comments.
+- Region is the channel-declared country. Lift compares a video with its own channel, so small channels reach high multiples more easily; differences between groups are associations.
+- Sponsorship and Apple seeding are deliberately not analysed: in an earlier version none of the 58 sponsored videos was sponsored by Apple or a competitor, and seeding could only be inferred from timing, which also drives views.
 
 ## Privacy and keys
 
-Comment text, the SQLite database, and the local dashboard (which embeds a few hundred quoted comments) stay on your machine and are excluded by `.gitignore`. The public demo in `docs/` contains no comment text; its paraphrased notes and recorded answers are checked at build time and the build fails if any of them shares a distinctive 5-word run with a comment. Only code and a text-free `state/` folder are committed: video titles, IDs and public stats, our labels per comment ID, channel baselines, and weekly snapshots. No comment text and no video descriptions. API keys are never stored in the repository.
+Comment text, the SQLite database and the local dashboard (which embeds a few hundred quotes) stay on your machine and are git-ignored. The public page contains no comment text; its paraphrased notes and recorded answers are checked at build time and the build fails if any shares a distinctive 5-word run with a comment. Only code and text-free state are committed: video titles, IDs and public stats, our labels per comment ID, baselines, topics and snapshots. API keys are never stored in the repository, and the demo code lives only in the host's environment.

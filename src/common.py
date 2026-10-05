@@ -1,7 +1,8 @@
 """Shared helpers: keys, YouTube Data API v3 calls, Claude calls. Standard library only."""
 import json, os, time, urllib.parse, urllib.request
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.dirname(os.path.abspath(__file__))        # the code lives in src/
+HERE = os.path.dirname(SRC)                              # the repository root: product.json, data/, state/, docs/, api/
 DATA = os.path.join(HERE, "data")
 ENV_FILE = os.path.expanduser("~/.creator-scout.env")   # outside the repo; in CI the same names come from env vars
 YT_API = "https://www.googleapis.com/youtube/v3/"
