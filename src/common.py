@@ -2,7 +2,7 @@
 import json, os, time, urllib.parse, urllib.request
 
 SRC = os.path.dirname(os.path.abspath(__file__))        # the code lives in src/
-HERE = os.path.dirname(SRC)                              # the repository root: product.json, data/, state/, docs/, api/
+HERE = os.path.dirname(SRC)                              # the repository root: input.json, data/, state/, docs/, api/
 DATA = os.path.join(HERE, "data")
 ENV_FILE = os.path.expanduser("~/.creator-scout.env")   # outside the repo; in CI the same names come from env vars
 YT_API = "https://www.googleapis.com/youtube/v3/"
@@ -89,8 +89,10 @@ def save(name, obj):
 
 
 def product():
-    """What the pipeline is about (product.json at the repo root). Prompts and labels read it, so another launch needs a new file, not new code."""
-    p = json.load(open(os.path.join(HERE, "product.json"), encoding="utf-8"))
+    """What to listen to and what the report is about (input.json at the repo root: keywords, top_videos, comments_per_video, then the product, brand, launch date, competitors). Prompts and labels read it, so another launch needs a new file, not new code."""
+    path = os.path.join(HERE, "input.json")
+    if not os.path.exists(path): path = os.path.join(HERE, "product.json")                # older forks used this name
+    p = json.load(open(path, encoding="utf-8"))
     p.setdefault("topic", "main")                                                     # the label that marks videos about THIS product
     p.setdefault("blurb", f"{p['name']}, launched {p['launch']}")
     p.setdefault("topics", {p["topic"]: p["name"], "other": "another product or not about the product"})      # labels classify.py may give a video
@@ -99,7 +101,7 @@ def product():
 
 
 def pricing():
-    """USD per million tokens, used for cost estimates only. Defaults to a Sonnet-class list price; set "pricing" in product.json to match your plan."""
+    """USD per million tokens, used for cost estimates only. Defaults to a Sonnet-class list price; set "pricing" in input.json to match your plan."""
     return product().get("pricing") or {"input_per_m": 3.0, "output_per_m": 15.0}
 
 
@@ -128,5 +130,5 @@ def title():
 
 
 def scope_sql(alias="v"):
-    """SQL for 'videos about this product': the topic label from product.json, excluding the brand's own channel."""
+    """SQL for 'videos about this product': the topic label from input.json, excluding the brand's own channel."""
     return f"{alias}.topic='{product()['topic']}' and {alias}.format!='official'"

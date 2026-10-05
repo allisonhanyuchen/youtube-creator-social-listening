@@ -3,7 +3,7 @@
   "outputDirectory": "docs",
   "buildCommand": null,
   "functions": {
-    "api/chat.py": { "maxDuration": 60, "includeFiles": "{src/ask.py,src/common.py,product.json,api/public.db}" },
+    "api/chat.py": { "maxDuration": 60, "includeFiles": "{src/ask.py,src/common.py,input.json,api/public.db}" },
     "api/verify.py": { "maxDuration": 10, "includeFiles": "src/demo_gate.py" },
     "api/step.py": { "maxDuration": 60, "includeFiles": "{src/demo_gate.py,src/explore.py,src/relevance.py,src/common.py,src/textcluster.py,docs/data.json}" },
     "api/refresh.py": { "maxDuration": 30, "includeFiles": "src/demo_gate.py" }

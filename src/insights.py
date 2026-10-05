@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Insights for the product in product.json. Python computes every number (so nothing in the report is invented); Claude writes the narrative from those numbers.
+"""Insights for the product in input.json. Python computes every number (so nothing in the report is invented); Claude writes the narrative from those numbers.
 Lift and audience sentiment are reported side by side; they are never combined into a scale-or-fix verdict.
 Output: data/insights.json (metrics + narrative + alerts) and state/snapshot.json (aggregates only, committed, used to detect change next run)."""
 import json, os, sqlite3, statistics

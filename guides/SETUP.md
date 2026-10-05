@@ -1,6 +1,6 @@
 # Setup guide
 
-Everything you need to run this for your own product, from the first account to a live page. Short version: fork, add five keys, edit `product.json`, run the workflow.
+Everything you need to run this for your own product, from the first account to a live page. Short version: fork, add five keys, edit `input.json`, run the workflow.
 
 
 A step-by-step guide, no coding needed except editing one small file. You will create accounts for five services, copy a key from each, and paste the keys into GitHub and Vercel. Plan on about an hour, plus 10 to 25 minutes for the first run.
@@ -46,7 +46,7 @@ In the same Slack app: **Socket Mode** → enable → create an app-level token 
 In your fork: **Settings** → **Secrets and variables** → **Actions** → **New repository secret**. Add one secret for each of `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` (name exactly as written, value pasted in). Then open the **Actions** tab and click **I understand my workflows, enable them** (GitHub turns workflows off in forks).
 
 ### Step 4 · Point it at your product
-Open `product.json` in your fork (click the file → the pencil icon) and change the values:
+Open `input.json` in your fork (click the file → the pencil icon) and change the values:
 
 | Field | What to put |
 |---|---|
@@ -70,7 +70,7 @@ Optional fields, with sensible defaults when left out:
 | `topic`, `topics` | the label that marks a video as about your product (default `main`) and the labels Claude may give a video, for example `{"main": "Galaxy Z Fold 8", "fold_7": "last year's Fold 7", "other": "something else"}`. Add labels for products you want kept separate for comparison |
 | `baseline_exclude` | a pattern for pre-launch videos about the product itself (rumours), which should not count as a channel's usual views (default: `topic_regex`) |
 
-> Good to know: the creator-type list (`src/creators.py`) assumes consumer tech (reviewers, tech news, lifestyle vlogger and so on). For a very different category, edit that short list. The name, brand, competitors, titles in the email, Slack and page, and every prompt come from `product.json`.
+> Good to know: the creator-type list (`src/creators.py`) assumes consumer tech (reviewers, tech news, lifestyle vlogger and so on). For a very different category, edit that short list. The name, brand, competitors, titles in the email, Slack and page, and every prompt come from `input.json`.
 
 ### Step 5 · First run
 **Actions** tab → **Refresh and push** → **Run workflow** → set **Send the email and Slack update** to off for the very first run → **Run workflow**. Open the run to watch the four stages go green: 1 Refresh source data, 2 Analyse, 3 Update reports, 4 Push. It takes 10 to 25 minutes the first time. When it is green, run it again with send on to check that the email and the Slack message arrive. From then on it runs by itself every day at 15:00 UTC.
@@ -108,7 +108,7 @@ Pick one:
 | `GITHUB_TOKEN` | Refresh now: a fine-grained token with Actions read and write on this repo only |
 | optional | `GITHUB_REPO`, `CHAT_PER_HOUR` (8), `CHAT_PER_DAY` (300), `CHAT_DISABLED`, `DEMO_RUNS_PER_DAY` (25), `DEMO_UNITS_PER_DAY` (3,000), `DEMO_REFRESH_COOLDOWN` (300 s) |
 
-- **Keyword run size and cost.** The page lets you pick the number of top videos (up to 200) and comments per video (up to 100) and shows an estimate first: YouTube quota is about `100 x search pages + 3 x videos + one comment call per video`, and Claude is about 45 input and 8 output tokens per comment read plus a small fixed amount. Dollars use `pricing` in `product.json` (default 3 and 15 USD per million input and output tokens; change it to your plan's price). Measured: a 20 x 20 run used about 17k input and 4k output tokens; the default 200 x 20 is estimated at roughly 1,300 quota units and about 1 USD. The hosted page also caps live runs per day by YouTube units (`DEMO_UNITS_PER_DAY`, default 3,000).
+- **Keyword run size and cost.** The page lets you pick the number of top videos (up to 200) and comments per video (up to 100) and shows an estimate first: YouTube quota is about `100 x search pages + 3 x videos + one comment call per video`, and Claude is about 45 input and 8 output tokens per comment read plus a small fixed amount. Dollars use `pricing` in `input.json` (default 3 and 15 USD per million input and output tokens; change it to your plan's price). Measured: a 20 x 20 run used about 17k input and 4k output tokens; the default 200 x 20 is estimated at roughly 1,300 quota units and about 1 USD. The hosted page also caps live runs per day by YouTube units (`DEMO_UNITS_PER_DAY`, default 3,000).
 - **Cost per scheduled run.** Every step logs the tokens and quota units it used; the Run log shows them with the estimated cost for each run.
 - **Live chat** (`api/chat.py`) reuses the Q&A core over `api/public.db`, a copy of the database with no comment text. It accepts same-site requests only, short questions, and limited questions per visitor.
 - **Keyword runs** (`api/step.py`) run one stage per request and the browser carries the state, so the page can show the steps live; every call needs the demo code. Five wrong codes lock a visitor out for ten minutes.

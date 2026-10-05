@@ -14,7 +14,7 @@ lock = threading.Lock()
 
 
 def pull_video(v):
-    """Up to comments_per_video comments (product.json, default 60): two thirds by relevance (the top comments), the rest the newest."""
+    """Up to comments_per_video comments (input.json, default 60): two thirds by relevance (the top comments), the rest the newest."""
     seen, out = set(), []
     total = max(3, min(150, int(product().get("comments_per_video", 60))))
     top = -(-total * 2 // 3)

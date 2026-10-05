@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 1: collect YouTube videos for the product in product.json: its search queries, from product.json "since" on.
+"""Step 1: collect YouTube videos for the product in input.json: its search queries, from input.json "since" on.
 Search results are cached per query in data/search_cache.json so re-runs cost nothing. Output: data/videos_raw.json.
 Quota: ~100 units per new search query, ~1 per 50 videos/channels.
 """
@@ -10,7 +10,7 @@ from common import yt, load, save, QuotaError, parse_json, product
 MIN_VIEWS = 2000
 P = product()
 EVENT, SINCE = P["launch"], P.get("since", "2026-08-01T00:00:00Z")      # videos from SINCE on (include pre-launch rumour videos)
-QUERIES = P.get("keywords") or P["queries"]                                 # what to search for, edit them in product.json
+QUERIES = P.get("keywords") or P["queries"]                                 # what to search for, edit them in input.json
 TOP_VIDEOS = max(1, min(200, int(P.get("top_videos", 50))))                  # results taken per keyword (the API gives 50 a page)
 TOPIC_RE = re.compile(P.get("topic_regex", re.escape(P["name"])), re.I)   # a video must match this to count as on-topic
 

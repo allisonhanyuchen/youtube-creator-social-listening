@@ -1,16 +1,4 @@
 {
- "name": "iPhone Duo",
- "brand": "Apple",
- "launch": "2026-09-09",
- "blurb": "the first foldable iPhone, launched 2026-09-09",
- "competitors": {
-  "Samsung": "samsung|galaxy|z ?fold|z ?flip",
-  "Google Pixel": "pixel",
-  "Xiaomi": "xiaomi|mi mix",
-  "Oppo / Honor / Huawei": "oppo|honor|huawei|vivo"
- },
- "topic": "duo",
- "since": "2026-08-01T00:00:00Z",
  "keywords": [
   "iPhone Duo review",
   "iPhone Duo hands on",
@@ -24,6 +12,18 @@
  ],
  "top_videos": 50,
  "comments_per_video": 60,
+ "since": "2026-08-01T00:00:00Z",
+ "name": "iPhone Duo",
+ "brand": "Apple",
+ "launch": "2026-09-09",
+ "blurb": "the first foldable iPhone, launched 2026-09-09",
+ "competitors": {
+  "Samsung": "samsung|galaxy|z ?fold|z ?flip",
+  "Google Pixel": "pixel",
+  "Xiaomi": "xiaomi|mi mix",
+  "Oppo / Honor / Huawei": "oppo|honor|huawei|vivo"
+ },
+ "topic": "duo",
  "topic_regex": "iphone|\\bduo\\b|apple",
  "demo_video": "",
  "topics": {

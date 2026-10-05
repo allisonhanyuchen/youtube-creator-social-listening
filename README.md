@@ -71,9 +71,9 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 Bring your own API keys, point it at your product, and deploy. The full click-by-click guide for every key is in **[guides/SETUP.md](guides/SETUP.md)**.
 
 1. **Fork** the repo and add five keys as repository secrets: `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO`
-2. **Choose what to listen to** in `product.json`. These map to the inputs on the page:
+2. **Choose what to listen to** in `input.json`. These map to the inputs on the page:
 
-   | In `product.json` | On the page | Example |
+   | In `input.json` | On the page | Example |
    |---|---|---|
    | `keywords` | Keyword | `["Galaxy Z Fold 8 review", "Galaxy Z Fold 8 vs iPhone"]` |
    | `top_videos` | Top videos | `50` (per keyword) |
@@ -115,7 +115,7 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 ├── guides/              SETUP.md (keys, deploy) and METRICS.md (definitions, limits, privacy)
 ├── screenshots/         images used in this README
 ├── tests/               unit tests, standard library only
-├── product.json         the one config file
+├── input.json         your inputs: keywords, top videos, comments per video, and the product
 └── .github/workflows/   refresh.yml (daily run), tests.yml
 ```
 
@@ -131,4 +131,4 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 | Daily refresh (steady state) | a few hundred new comments, about 0.1 USD |
 | First full run | about 19,000 comments, a few dollars |
 
-Prices use `pricing` in `product.json` (default 3 and 15 USD per million input and output tokens, a Sonnet-class assumption: set your own). Accessories, other products that share the name, and unrelated videos are checked and left out of the numbers. Definitions of every metric, data limits and the privacy design are in **[guides/METRICS.md](guides/METRICS.md)**.
+Prices use `pricing` in `input.json` (default 3 and 15 USD per million input and output tokens, a Sonnet-class assumption: set your own). Accessories, other products that share the name, and unrelated videos are checked and left out of the numbers. Definitions of every metric, data limits and the privacy design are in **[guides/METRICS.md](guides/METRICS.md)**.
