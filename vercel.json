@@ -5,7 +5,7 @@
   "functions": {
     "api/chat.py": { "maxDuration": 60, "includeFiles": "{src/ask.py,src/common.py,api/public.db}" },
     "api/verify.py": { "maxDuration": 10, "includeFiles": "src/demo_gate.py" },
-    "api/step.py": { "maxDuration": 60, "includeFiles": "{src/demo_gate.py,src/explore.py,src/common.py,src/textcluster.py}" },
+    "api/step.py": { "maxDuration": 60, "includeFiles": "{src/demo_gate.py,src/explore.py,src/report.py,src/common.py,src/textcluster.py}" },
     "api/refresh.py": { "maxDuration": 30, "includeFiles": "src/demo_gate.py" }
   }
 }

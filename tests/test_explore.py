@@ -22,6 +22,12 @@ class ExploreHelpers(unittest.TestCase):
         for s in ("Mixed reception", "Wobble", "Desk review"):
             self.assertIn(s, text)
 
+    def test_email_is_styled_and_leads_with_the_score(self):
+        html = explore.email_html(self.rep())
+        for s in ("standing desk on YouTube", "Mixed reception", "Wobble", "Desk review", "sentiment score", "+30"):
+            self.assertIn(s, html)
+        self.assertIn("background:#2f8f5b", html)                       # the coloured sentiment bar, like the daily email
+
     def test_public_sample_drops_text_that_copies_a_comment_and_never_keeps_the_corpus(self):
         rep = self.rep()
         rep["topics"][0]["summary"] = "my desk has a terrible wobble at the full standing height every single day"
