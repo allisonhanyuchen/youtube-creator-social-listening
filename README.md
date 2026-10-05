@@ -33,6 +33,19 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 | 4 **Push** | The full report's key summary goes to email and Slack, with alerts when something shifts | Resend, Slack |
 | 5 **Refresh** | The whole run repeats every day; each run is logged with its tokens, quota units and cost | GitHub Actions |
 
+**APIs it calls**
+
+| API | What it does here |
+|------|---------|
+| YouTube Data API v3 | Videos, channel stats, comments, daily view snapshots |
+| Claude API (Sonnet) | Per-comment labels, topic names, the written summary, text-to-SQL for Ask-the-data |
+| Resend API | Sends the email report |
+| Slack Incoming Webhook API | Posts the digest and alerts to a channel |
+| Slack Events API (Socket Mode, optional) | The @-mentionable Q&A agent |
+| GitHub Actions workflow dispatch API | Starts a run from the page and follows its stages |
+
+It runs on Python (standard library) with SQLite, TF-IDF and k-means clustering for topics, GitHub Actions for the daily run, and Vercel for the page and its serverless functions.
+
 **What you get**
 
 - 🔍 A keyword box on the page: choose the keyword, how many top videos and how many comments per video, and see the estimated time, YouTube quota and Claude cost before you run it
@@ -44,15 +57,13 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 
 ## 🖥️ Demo
 
-**Four modules in a left sidebar; open one thing at a time:**
+**Input → output → push and update**
 
-![How it works](screenshots/1-how-it-works.png)
+**1. Input.** Type the keywords, how many top videos and how many comments per video. The page shows the estimated time, YouTube quota and Claude cost, then runs each step and names the API or NLP it calls:
 
-**Type a keyword and watch each step, with the API or NLP it calls and an estimate of time and cost:**
+![Input and run](screenshots/2-watch-the-steps.png)
 
-![Watch the steps](screenshots/2-watch-the-steps.png)
-
-**The full report:**
+**2. Output.** The report: Overview, Content performance, Audience insights.
 
 ![Overview](screenshots/3-overview.png)
 
@@ -60,7 +71,7 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 
 ![Audience insights](screenshots/5-audience-insights.png)
 
-**Run log, and the email and Slack push that every refresh sends:**
+**3. Push and update.** The same key summary goes to email and Slack, and the run log records every daily refresh with its cost:
 
 ![Email and Slack](screenshots/6-email-and-slack-push.png)
 
@@ -78,31 +89,6 @@ Bring your own API keys and deploy. You set what to listen to in the app itself,
 The deployed page is the clean app: input, run, report, push. The sidebar, recorded sample, Quick preview, example email and Slack previews and explanations on the public demo are extras for demonstration (they appear when `"demo": true` in `input.json`).
 
 Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
-
----
-
-## 🛠️ Tech Stack
-
-APIs it calls:
-
-| API | What it does here |
-|------|---------|
-| YouTube Data API v3 | Videos, channel stats, comments, daily view snapshots |
-| Claude API (Sonnet) | Per-comment labels, topic names, the written summary, text-to-SQL for Ask-the-data |
-| Resend API | Sends the email report |
-| Slack Incoming Webhook API | Posts the digest and alerts to a channel |
-| Slack Events API (Socket Mode, optional) | The @-mentionable Q&A agent |
-| GitHub Actions workflow dispatch API | Starts a refresh from the page and follows its stages |
-
-What it runs on: Python (standard library) with SQLite for lift, trends and TF-IDF + k-means clustering; GitHub Actions for the daily run; Vercel for the page and its serverless functions.
-
-------|---------|
-| YouTube Data API v3 | Videos, channel stats, comments, daily view snapshots |
-| Claude API (Sonnet) | Per-comment labels, topic names, narrative, text-to-SQL for Q&A |
-| Python (standard library) + SQLite | Lift, trends, TF-IDF and k-means clustering, storage |
-| GitHub Actions | Daily refresh in four stages, then commits the text-free state |
-| Resend and Slack | Email report, Slack digest and alerts, an @-mentionable agent |
-| Vercel | The page, live Q&A, and serverless functions behind a demo code |
 
 ---
 
