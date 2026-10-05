@@ -2557,6 +2557,21 @@
     "topics": 6,
     "new": []
    }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 490,
+    "assigned": 0.994,
+    "topics": 24,
+    "new": []
+   },
+   "creator": {
+    "rows": 190,
+    "assigned": 0.768,
+    "topics": 6,
+    "new": []
+   }
   }
  ]
 }
