@@ -2,82 +2,95 @@
  "topics": {
   "p01": {
    "positive": [
-    "Many Samsung Fold owners say they are happy with their current phones and see Apple's entry as validation of foldables, not a threat.",
-    "Several Samsung users admit being impressed by Apple's first foldable, especially its screen, fold transition and Apple Pencil support.",
-    "Some commenters criticise Samsung for dropping stylus support, water resistance and flex mode, and hope Apple's entry pushes Samsung to improve."
+    "Many Samsung Fold owners say they are happy with their phones, while also admitting Apple's foldable looks impressive and welcoming it to the category.",
+    "Several commenters say Samsung has offered foldables for years and see Apple's entry as validating the category and pushing Samsung to improve.",
+    "Apple Pencil support is seen as a point where Samsung falls short. Some want stylus support and water resistance back on Samsung's folds."
    ],
    "negative": [
-    "Many commenters say Apple is late to foldables and copying Samsung's years-old designs and features, so the product doesn't feel like a true first generation.",
-    "Several criticize Samsung's own foldables as having fragile screens, buggy software, slowdowns and held-back features, though some admit they are stuck with Samsung.",
-    "Others complain the Apple device is too expensive, too heavy or too small compared with the Samsung Fold, and mock its price."
+    "Many commenters say Apple's foldable copies ideas Samsung introduced years ago, and that Apple gets praise for features Samsung had long offered.",
+    "Some criticise Samsung's foldables for durability, with screens failing after about a year, plus buggy software and tradeoffs like weaker cooling to make devices thinner.",
+    "Others find the Apple device too small and heavy next to Samsung's, and joke that the price is out of reach."
    ]
   },
   "p02": {
    "positive": [
-    "Many viewers are impressed that the crease is barely visible or not noticeable at all, and see it as better than expected."
+    "Many commenters are impressed that the crease is barely visible or not noticeable at all, and treat it as a major improvement.",
+    "The matte inner display is widely praised, both for how it looks and because it likely helps hide the crease."
    ],
    "negative": [
-    "Many dislike the matte, anti-reflective inner screen, saying it looks washed out, grainy or inaccurate in colour compared with the glossy outer display.",
-    "Some see the matte finish as a way to hide the crease, and say Apple avoids drawing attention to the crease or hinge.",
-    "Commenters are split on the inner camera: some prefer an under-display camera despite worse quality, others say it looks poor and should be avoided."
+    "Many dislike the matte, textured inner display, saying it looks washed out, grainy or color-inaccurate compared with a glossy OLED, and suspect it mainly hides the crease.",
+    "Commenters are split on the inner camera: several prefer an under-display camera despite weaker quality, while others say it looked poor and was abandoned."
    ]
   },
   "p03": {
    "positive": [
-    "Many commenters say the open and close animation is smooth, clean and polished, and that the designers deserve recognition or a reward.",
-    "Several Samsung fans and Apple skeptics admit the animation is impressive, including the effect that makes the front panel look see-through.",
-    "Some see it as a signature Apple touch that could help sell the phone, and one notes it hints at angle-aware apps."
+    "Even Samsung fans and people uninterested in foldables admit the animation is impressive, and some call it a major selling point.",
+    "The effect that makes the front panel look see-through is singled out, and some note that it responds to the hinge angle, which could open possibilities for developers."
    ],
    "negative": [
-    "Many commenters say the price is far too high, especially with everyday living costs rising, and some refuse to buy it at that level.",
-    "Several note it costs much more in other countries, with multiple regions mentioned as being well above the US price.",
-    "Others mock the folding animation as a weak headline feature, calling it an underwhelming blur effect and a sign Apple lacks innovation, with durability and repair costs also questioned."
+    "Many commenters say the price is far too high, especially given everyday living costs, and some say it is more expensive still in their own countries.",
+    "Praising the folding animation as a headline feature comes across as underwhelming, and some see it as a simple visual effect with little substance.",
+    "Some worry about expensive repairs and a weaker dust and water resistance rating, and some say Samsung offers better value with discounts."
    ]
   },
   "p04": {
    "positive": [
-    "Many commenters on Pro or Pro Max phones say they plan to switch to the Duo, often trading in an older device.",
-    "Fans value a larger screen that folds small, since it could replace carrying a tablet or laptop on trips.",
-    "Supporters say the Duo isn't meant as a Pro, and casual users don't miss the cameras; a few hope for a Pro version."
+    "Many commenters plan to swap a current Pro model for the Duo, saying it feels new and more exciting than a routine Pro upgrade.",
+    "Larger screen in a pocketable form is the main draw, with several hoping it reduces how often they carry a tablet or laptop.",
+    "Some argue the Duo's camera trade-offs are acceptable for non-professional use, since it was never pitched as a Pro and its price reflects the foldable display."
    ],
    "negative": [
-    "Many commenters see the Duo's price as too high, especially in some regions, and say they would stay with their current phone or choose a Pro Max.",
-    "Several are wary of buying a first-generation foldable and plan to wait for a later Duo or Pro version, or say the inner display wouldn't suit how they use their phone."
+    "Many commenters see the Duo's price as too high, especially when it brings camera compromises compared with a Pro or Pro Max.",
+    "The weaker cameras and missing Face ID are the main dealbreakers, and several current Pro owners see the Duo as a downgrade.",
+    "Some are choosing the 18 Pro or Pro Max, or waiting for a later Duo, citing unknowns, limited need for the inner screen and an existing iPad."
    ]
   },
   "p05": {
    "positive": [
-    "Several left-handed viewers say they can adapt to the layout and still want the device, treating handedness as a minor issue.",
-    "Button and toolbar placement is praised as practical: top volume keys suit pocket access, one-handed screenshots and tablet-style use, and the side toolbar saves screen space.",
-    "Commenters like the size and form factor, saying it is neither too small folded nor too large open, and see uses in reading, navigation and gaming."
+    "Several left-handed commenters say they would adapt to the layout and still want the phone, with no real objection to using it.",
+    "Viewers like the button and toolbar placement, saying it suits pockets, one-handed screenshots and keeps screen space free when unfolded.",
+    "Many see the half-folded and unfolded sizes as practical for gaming, navigation and medical reading, and several say they plan to buy one."
    ],
    "negative": [
-    "Left-handed users feel the design disregards them, with some saying they would dislike the device or be expected to switch hands.",
-    "Several commenters say the phone is heavy and wide when folded, and a case adds more bulk, making one-handed use hard.",
-    "Some note that the layout puts content or the text field near the hinge, which makes everyday use awkward."
+    "Left-handed users feel the design disregards them and expect it to be awkward or frustrating for their hand.",
+    "The device's weight, width and added case thickness are seen as making one-handed use difficult.",
+    "Some say the folded form is awkward to hold and that interface elements near the hinge are poorly placed."
    ]
   },
   "p06": {
    "positive": [
-    "Many commenters say they are ready to buy, seeing the foldable as a way to replace both a phone and a small tablet.",
-    "Several accept trade-offs such as no telephoto camera or Touch ID, valuing the large screen, polished software and design more.",
-    "Some plan to add extra protection like AppleCare, and one comment says rival foldables offer better specs for less money."
+    "Many commenters say they intend to buy the foldable, citing long-held interest in a folding phone and excitement about Apple's take on it.",
+    "Some see it as a phone-plus-tablet replacement, appealing to people with older iPad minis or who want to carry fewer devices.",
+    "Several accept trade-offs like a weaker camera or Touch ID, valuing the software, screen size and design more; one cites a cheaper rival."
    ],
    "negative": [
-    "Several doubt the premium is justified, noting missing camera quality, modest storage for the cost, and features that seem basic or not new.",
-    "Some question demand and durability, citing concerns about the hinge and glass wearing out and whether people want a foldable at all."
+    "Many commenters say the price is far too high and out of reach for most people, with jokes about loans and financing.",
+    "Some question whether the cost is justified, noting weaker cameras than Pro models and limited storage for what is asked.",
+    "Others doubt the foldable design and features are new or useful enough, citing durability, comfort and bulk concerns."
    ]
   },
   "p07": {
    "positive": [
-    "Many commenters say they are excited and plan to buy or pre-order the Duo, often after waiting a long time for an Apple foldable.",
-    "Viewers praise the design, premium materials and polished open/close feel, and see it as a rare interesting, different iPhone.",
-    "Some value real multitasking and larger-screen features, including Apple Pencil support, while a few Android users express admiration despite debate over who copied whom."
+    "Many commenters express strong excitement and eagerness to buy or pre-order the foldable iPhone Duo, with some saying they have waited a long time for one.",
+    "Commenters praise the design and polish, including the premium materials, smooth open and close transition, and the practical benefit of multitasking on a phone.",
+    "Some Android users and former skeptics say the Duo won them over, while others note foldables are not new technology."
    ],
    "negative": [
-    "Many commenters are skeptical of the foldable's hype, saying Apple is late, short on ideas, and that fans are too easily impressed.",
-    "Commenters see the high price and heavy first-generation design as reasons to wait for a lighter, improved later model.",
-    "Several worry about the foldable screen's durability and see little need for a foldable, citing past Apple missteps and incomplete details like battery capacity."
+    "Many commenters see the foldable as overpriced and heavy, and say they would wait for a later generation once Apple has refined it.",
+    "Commenters doubt the first-generation foldable screen will hold up, and think it may break or be left out of the full picture until teardown tests.",
+    "Several say Apple lacks fresh ideas and holds back features to impress people later, so they are not excited and see no need to fold."
+   ]
+  },
+  "p08": {
+   "positive": [
+    "Many commenters say companies borrowing ideas from each other benefits consumers, and that Apple's polish and design set its version apart.",
+    "Commenters praise the build quality, software experience and looks, with some saying the design won over their initial skepticism.",
+    "Many loyal Apple users say they plan to buy it at launch, and a few Android users are considering switching."
+   ],
+   "negative": [
+    "Many commenters say Apple's foldable borrows features Android makers, especially Samsung, have offered for years, so it isn't innovative.",
+    "Some mock Apple users for celebrating long-standing Android perks as new, and say Apple has run out of its own ideas.",
+    "A few say copying is an industry-wide habit, not just Apple's, while others point to the high price and early-adopter risk."
    ]
   }
  }

@@ -242,7 +242,7 @@
     {
      "id": "p04",
      "name": "Duo versus iPhone 18 Pro",
-     "summary": "Viewers compare the foldable Duo with the iPhone 18 Pro and Pro Max, debating price, camera quality, size, and whether the new form factor justifies choosing it over a standard flagship.",
+     "summary": "Viewers compare the foldable Duo with the iPhone 18 Pro and Pro Max, debating price, design, cameras, and features, and whether the Duo is worth choosing over the Pro lineup.",
      "terms": [
       "pro",
       "max",
@@ -554,6 +554,85 @@
      },
      "origin": "initial",
      "first_seen": "2026-10-05"
+    },
+    {
+     "id": "p08",
+     "name": "Apple copying Android accusations",
+     "summary": "Commenters argue over whether Apple lacks original ideas and copies Android makers, versus Apple being so dominant that it only competes with itself.",
+     "terms": [
+      "apple",
+      "first",
+      "phones",
+      "waiting",
+      "product",
+      "down",
+      "face",
+      "time"
+     ],
+     "centroid": {
+      "apple": 0.7007,
+      "first": 0.2928,
+      "phones": 0.1922,
+      "waiting": 0.1838,
+      "product": 0.1586,
+      "down": 0.1475,
+      "face": 0.134,
+      "time": 0.134,
+      "android": 0.1334,
+      "store": 0.1324,
+      "products": 0.1147,
+      "users": 0.1144,
+      "telephoto": 0.1043,
+      "great": 0.1041,
+      "used": 0.1031,
+      "tech": 0.1019,
+      "wanted": 0.1008,
+      "apple users": 0.0995,
+      "care": 0.0989,
+      "zoom": 0.0945,
+      "point": 0.0934,
+      "feel": 0.0925,
+      "making": 0.0907,
+      "able": 0.0762,
+      "software": 0.0742,
+      "duo": 0.0741,
+      "watch": 0.0656,
+      "ready": 0.065,
+      "off": 0.0627,
+      "since": 0.0619,
+      "long": 0.0616,
+      "typing": 0.0613,
+      "already": 0.0603,
+      "both": 0.0575,
+      "last": 0.0572,
+      "foldable": 0.0548,
+      "other": 0.0544,
+      "around": 0.0533,
+      "line": 0.0524,
+      "ecosystem": 0.0523,
+      "years": 0.0522,
+      "lens": 0.0516,
+      "seems": 0.0485,
+      "don": 0.047,
+      "those": 0.0464,
+      "course": 0.0462,
+      "big": 0.0449,
+      "open": 0.0439,
+      "trying": 0.043,
+      "dont": 0.0415,
+      "less": 0.0407,
+      "gen": 0.0405,
+      "sense": 0.0395,
+      "ultra": 0.0384,
+      "new": 0.0373,
+      "money": 0.0371,
+      "issue": 0.0363,
+      "companies": 0.0361,
+      "now": 0.0361,
+      "price": 0.0356
+     },
+     "origin": "discovered",
+     "first_seen": "2026-10-05"
     }
    ],
    "tau": 0.1049
@@ -747,6 +826,23 @@
      "c01",
      "c02"
     ]
+   }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 1493,
+    "assigned": 0.794,
+    "topics": 8,
+    "new": [
+     "p08"
+    ]
+   },
+   "creator": {
+    "rows": 487,
+    "assigned": 0.752,
+    "topics": 2,
+    "new": []
    }
   }
  ]
