@@ -28,12 +28,12 @@ def h(t):
     return f'<tr><td style="padding:22px 28px 6px;font:600 12px Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:{MUTE}">{t}</td></tr>'
 
 
-def build(ins):
+def build(ins, example=False):
     m, n, al = ins["metrics"], ins["narrative"], ins["alerts"]
     tot, s = m["totals"], m["sentiment"]
     kp = lambda v, l: f'<td style="padding:10px 14px;border:1px solid {LINE};border-radius:8px"><div style="font:600 22px Arial,sans-serif;color:{INK}">{v}</div><div style="font:12px Arial,sans-serif;color:{MUTE}">{l}</div></td><td style="width:8px"></td>'
     kpis = kp(f"{tot['videos']}", "videos") + kp(f"{tot['views']/1e6:.0f}M", "views") + kp(f"{tot['comments_en']:,}", "English comments") + kp(pct(s["pos"]) + " / " + pct(s["neg"]), "positive / negative on the product")
-    alerts = "".join(f'<tr><td style="padding:10px 28px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fdf3e1;border-left:4px solid #d9822b;padding:9px 12px;font:13px Arial,sans-serif;color:#6b4710">{esc(a["text"])}</td></tr></table></td></tr>' for a in al)
+    alerts = "".join(f'<tr><td style="padding:10px 28px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fdf3e1;border-left:4px solid #d9822b;padding:9px 12px;font:13px Arial,sans-serif;color:#6b4710">{esc(a["text"])}</td></tr></table></td></tr>' for a in al[:3])
     rows = ""
     for g, lab in (("small (<250k)", "Small channels (under 250k)"), ("mid (250k-1M)", "Mid-size (250k to 1M)"), ("large (1M+)", "Large channels (1M+)")):
         a = m["by_channel_size"][g]
@@ -45,7 +45,7 @@ def build(ins):
     fnd = "".join(f'<tr><td style="padding:10px 28px 0"><div style="font:600 15px Arial,sans-serif;color:{INK}">{i+1}. {esc(f["title"])}</div><div style="font:14px/1.5 Arial,sans-serif;color:{INK};padding-top:2px">{esc(f["detail"])}</div><div style="font:13px/1.5 Arial,sans-serif;color:{ACC};padding-top:3px"><b>Do next:</b> {esc(f["action"])}</div></td></tr>' for i, f in enumerate(n["findings"]))
     frows = "".join(f'<tr><td style="padding:5px 0;font:13px Arial,sans-serif;width:150px">{FMT.get(f["format"], f["format"])} <span style="color:{MUTE};font-size:11px">n={f["videos"]}</span></td><td style="padding:5px 8px">{bar(f["outperformer_rate"], ACC, 160)}</td><td style="font:13px Arial,sans-serif">{pct(f["outperformer_rate"])}</td></tr>' for f in m["by_format"])
     tags = lambda t: (" · <b>new</b>" if t["discovered"] else "") + (" · gaining" if (t["trend"] or 0) >= 1.5 and t["recent"] >= 15 else "")
-    trows = "".join(f'<tr><td style="padding:6px 0;border-top:1px solid {LINE};font:13px Arial,sans-serif;width:210px"><b>{esc(t["name"])}</b><div style="color:{MUTE};font-size:11px">n={t["n"]:,} · {pct(t["share"])} of topic comments{tags(t)}</div></td><td style="padding:6px 8px;border-top:1px solid {LINE}">{sbar(t["pos"], 1 - t["pos"] - t["neg"], t["neg"])}</td><td style="border-top:1px solid {LINE};font:12px Arial,sans-serif;color:{MUTE}">{pct(t["pos"])} pos · {pct(t["neg"])} neg</td></tr>' for t in m["topics"][:10])
+    trows = "".join(f'<tr><td style="padding:6px 0;border-top:1px solid {LINE};font:13px Arial,sans-serif;width:210px"><b>{esc(t["name"])}</b><div style="color:{MUTE};font-size:11px">n={t["n"]:,} · {pct(t["share"])} of topic comments{tags(t)}</div></td><td style="padding:6px 8px;border-top:1px solid {LINE}">{sbar(t["pos"], 1 - t["pos"] - t["neg"], t["neg"])}</td><td style="border-top:1px solid {LINE};font:12px Arial,sans-serif;color:{MUTE}">{pct(t["pos"])} pos · {pct(t["neg"])} neg</td></tr>' for t in m["topics"][:5])
     cov = m["coverage"]
     coverage = f'{cov["videos"]} videos from {cov["creators"]} creators (small {cov["by_level"]["small (<250k)"]}, mid {cov["by_level"]["mid (250k-1M)"]}, large {cov["by_level"]["large (1M+)"]}). {cov["with_sentiment"]} have 10+ product comments, so sentiment is read for those; {cov["comments_en"]:,} English comments in total.'
     ch = m.get("changes")
@@ -53,25 +53,24 @@ def build(ins):
         bits = [f'{ch["new_videos"]} new videos and {ch["new_comments"]:,} new comments since {esc(ch["since"])}.']
         if ch["sentiment_delta"]: bits.append(f'Product sentiment: {ch["sentiment_delta"]["pos"]*100:+.1f} pts positive, {ch["sentiment_delta"]["neg"]*100:+.1f} pts negative.')
         bits += [f'New topic: <b>{esc(t["name"])}</b> ({t["n"]} comments).' for t in ch["new_topics"]]
-        bits += [f'{esc(t["name"])}: {t["d_n"]:+d} comments, negative share {t["d_neg"]*100:+.0f} pts.' for t in ch["moved"]]
         changes = "".join(f'<div style="padding:3px 0">{b}</div>' for b in bits)
     else:
         changes = "First refresh: nothing to compare with yet. Changes appear from the next run."
     watch = "".join(f'<div style="padding:3px 0"><b>{esc(w["name"])}</b>: {esc(w["why"])}</div>' for w in m.get("watchlist", [])) or "Nothing flagged by the numbers this week."
-    top = "".join(f'<tr><td style="padding:6px 0;border-top:1px solid {LINE};font:13px Arial,sans-serif"><a href="{c["url"]}" style="color:{ACC};text-decoration:none">{esc(c["title"][:80])}</a><br><span style="color:{MUTE};font-size:12px">{esc(c["creator"])} · {c["channel_size"]} · {FMT.get(c["format"], c["format"])} · {c["rel_lift"]}x lift · {c["views"]/1e3:.0f}k views · {(pct(c["pos"]) + " positive, " + pct(c["neg"]) + " negative") if c.get("pos") is not None and c["product_comments"] >= 10 else "too few comments for sentiment"}</span></td></tr>' for c in m["highest_lift"][:5])
+    top = "".join(f'<tr><td style="padding:6px 0;border-top:1px solid {LINE};font:13px Arial,sans-serif"><a href="{c["url"]}" style="color:{ACC};text-decoration:none">{esc(c["title"][:80])}</a><br><span style="color:{MUTE};font-size:12px">{esc(c["creator"])} · {c["channel_size"]} · {FMT.get(c["format"], c["format"])} · {c["rel_lift"]}x lift · {c["views"]/1e3:.0f}k views · {(pct(c["pos"]) + " positive, " + pct(c["neg"]) + " negative") if c.get("pos") is not None and c["product_comments"] >= 10 else "too few comments for sentiment"}</span></td></tr>' for c in m["highest_lift"][:3])
+    ex_tag = '<span style="background:#fdf3e1;color:#6b4710;border-radius:6px;padding:2px 8px;font-size:12px;margin-right:8px">EXAMPLE</span>' if example else ""
+    ex_note = '<tr><td style="padding:8px 28px 0;font:12px Arial,sans-serif;color:#6b4710">Example of the weekly email, to show the format. Figures are illustrative and not guaranteed to be accurate.</td></tr>' if example else ""
     return f'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YouTube Creator Social Listening</title></head><body style="margin:0;background:#f6f6f3"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f3"><tr><td align="center" style="padding:20px 10px">
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:100%;background:#ffffff;border:1px solid {LINE};border-radius:12px">
-<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{INK}">iPhone Duo on YouTube<span style="font:13px Arial,sans-serif;color:{MUTE};font-weight:400"> &nbsp;weekly readout · data through {ins["as_of"]}</span></td></tr>
+<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{INK}">{ex_tag}iPhone Duo on YouTube<span style="font:13px Arial,sans-serif;color:{MUTE};font-weight:400"> &nbsp;weekly readout · data through {ins["as_of"]}</span></td></tr>
+{ex_note}
 <tr><td style="padding:12px 28px 0;font:600 17px/1.4 Arial,sans-serif;color:{INK}">{esc(n["headline"])}</td></tr>
 <tr><td style="padding:8px 28px 0;font:14px/1.55 Arial,sans-serif;color:{INK}">{esc(n["summary"])}</td></tr>
 <tr><td style="padding:16px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0"><tr>{kpis}</tr></table></td></tr>
-{h("Coverage")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{coverage}</td></tr>
-{h("Performance: lift and sentiment side by side")}{size}
-<tr><td style="padding:14px 28px 0;font:600 13px Arial,sans-serif;color:{INK}">Content formats: share of videos that beat their baseline</td></tr><tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{frows}</table></td></tr>
-{h("Audience topics")}<tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{trows}</table><div style="font:12px Arial,sans-serif;color:{MUTE};padding-top:4px"><span style="color:{POS}">&#9632;</span> positive <span style="color:{NEU}">&#9632;</span> neutral <span style="color:{NEG}">&#9632;</span> negative. Topics come from local clustering of comments, named by AI; <b>new</b> means found after the first run.</div></td></tr>
-{h("Highlights")}{fnd}
-<tr><td style="padding:14px 28px 0;font:600 13px Arial,sans-serif;color:{INK}">Highest-lift videos</td></tr><tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{top}</table></td></tr>
-{h("Changes since last refresh")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{changes}</td></tr>
+{h("Overview")}{size}
+{h("Audience insights")}<tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{trows}</table><div style="font:12px Arial,sans-serif;color:{MUTE};padding-top:4px"><span style="color:{POS}">&#9632;</span> positive <span style="color:{NEU}">&#9632;</span> neutral <span style="color:{NEG}">&#9632;</span> negative. Topics come from local clustering of comments, named by AI; <b>new</b> means found after the first run.</div></td></tr>
+{h("Content performance: highest-lift videos")}<tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{top}</table></td></tr>
+{h("What changed since last refresh")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{changes}</td></tr>
 {alerts}
 {h("Watchlist")}<tr><td style="padding:0 28px;font:13px/1.5 Arial,sans-serif;color:{INK}">{watch}<div style="padding-top:6px;color:{MUTE}">{esc(n["watch"])}</div></td></tr>
 <tr><td style="padding:22px 28px 24px;font:12px/1.5 Arial,sans-serif;color:{MUTE};border-top:1px solid {LINE};margin-top:18px">Built from public YouTube data (official API) on English-language videos about the iPhone Duo. Comments are a sample of up to 60 per video, labelled by Claude. Differences between groups are associations, and small groups can swing. Open the attached dashboard.html to filter and drill down; reply in Slack to ask a follow-up.</td></tr>

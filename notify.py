@@ -7,7 +7,7 @@ import json, sys, urllib.request
 from common import load, secret
 
 
-def build(ins, alerts_only=False):
+def build(ins, alerts_only=False, example=False):
     n, m, al = ins["narrative"], ins["metrics"], ins["alerts"]
     if alerts_only:
         if not al: return None
@@ -15,22 +15,17 @@ def build(ins, alerts_only=False):
                 {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(f":rotating_light: {a['text']}" for a in al)}},
                 {"type": "context", "elements": [{"type": "mrkdwn", "text": f"Data through {ins['as_of']}. Mention me to dig in, for example: _why did negative sentiment rise this week?_"}]}]}
     t, s = m["totals"], m["sentiment"]
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": "iPhone Duo on YouTube: weekly readout"}},
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + "iPhone Duo on YouTube: weekly readout"}},
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*{n['headline']}*\n{n['summary']}"}},
               {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.0f}M views · {t['comments_en']:,} English comments · product sentiment {s['pos']*100:.0f}% positive, {s['neg']*100:.0f}% negative · data through {ins['as_of']}"}]}]
-    cov = m["coverage"]; bl = cov["by_level"]
-    blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": f"*Coverage*\n{cov['videos']} videos from {cov['creators']} creators (small {bl['small (<250k)']}, mid {bl['mid (250k-1M)']}, large {bl['large (1M+)']}). {cov['with_sentiment']} have 10+ product comments, so sentiment is read for those."}},
-               {"type": "section", "text": {"type": "mrkdwn", "text": "*Performance: lift and sentiment side by side*\n" + "\n".join(f"• *{k.split(' ')[0].capitalize()}* ({v['videos']} videos): {v['outperformer_rate']*100:.0f}% outperformers · {v['pos']*100:.0f}% positive / {v['neg']*100:.0f}% negative" for k, v in m["by_channel_size"].items() if v["outperformer_rate"] is not None)}}]
-    if m.get("topics"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Audience topics*\n" + "\n".join(f"• *{c['name']}* ({c['n']:,} comments, {c['pos']*100:.0f}% positive, {c['neg']*100:.0f}% negative" + (", new" if c["discovered"] else "") + (", gaining" if (c["trend"] or 0) >= 1.5 and c["recent"] >= 15 else "") + ")" for c in m["topics"][:5])}})
-    hl = "*Highlights*\n" + "\n".join(f"{i+1}. *{f['title']}*\n    _{f['action']}_" for i, f in enumerate(n["findings"]))
-    if m["highest_lift"]: hl += "\n\n*Highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift" + (f", {c['pos']*100:.0f}% positive / {c['neg']*100:.0f}% negative" if c["pos"] is not None else ", too few comments for sentiment") + ")" for c in m["highest_lift"][:3])
-    blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": hl}})
+    if m.get("highest_lift"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Content performance: highest-lift videos*\n" + "\n".join(f"• <{c['url']}|{c['title'][:70]}> ({c['creator']}, {c['rel_lift']}x lift" + (f", sentiment {(c['pos'] - c['neg'])*100:+.0f}" if c["pos"] is not None else ", too few comments for sentiment") + ")" for c in m["highest_lift"][:3])}})
+    if m.get("topics"): blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Audience insights: top topics*\n" + "\n".join(f"• *{c['name']}* ({c['n']:,} comments, sentiment {(c['pos'] - c['neg'])*100:+.0f}" + (", new" if c["discovered"] else "") + (", gaining" if (c["trend"] or 0) >= 1.5 and c["recent"] >= 15 else "") + ")" for c in m["topics"][:5])}})
     ch = m.get("changes")
     chg = "*Changes since last refresh*\n" + (f"{ch['new_videos']} new videos, {ch['new_comments']:,} new comments since {ch['since']}" + "".join(f"\n• new topic: *{t['name']}* ({t['n']})" for t in ch["new_topics"]) if ch else "First refresh: nothing to compare with yet.")
-    if al: chg += "\n" + "\n".join(f":rotating_light: {a['text']}" for a in al)
+    if al: chg += "\n" + "\n".join(f":rotating_light: {a['text']}" for a in al[:3])
     blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": chg}})
     blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Watchlist*\n" + ("\n".join(f"• *{w['name']}*: {w['why']}" for w in m["watchlist"]) if m.get("watchlist") else "Nothing flagged by the numbers this week.")}})
-    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "Ask a follow-up: mention *@Launch Pulse* or message me. The full report is in your inbox."}]})
+    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": ("Example of the Slack digest, to show the format. Figures are illustrative and not guaranteed to be accurate. " if example else "") + "Ask a follow-up: mention the app or message it. The full report is in your inbox."}]})
     return {"text": n["headline"], "blocks": blocks}
 
 

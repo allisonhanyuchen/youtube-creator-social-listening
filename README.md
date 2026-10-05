@@ -2,42 +2,45 @@
 
 [![Tests](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml/badge.svg)](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml)
 
-**Live demo: https://allisonhanyuchen.github.io/youtube-creator-social-listening/** (the dashboard on iPhone Duo data. The public page shows no comment text: topics are summarised in paraphrase and checked against the comments, and the chat shows recorded answers from the live agent. It refreshes every Monday).
+**Live demo: https://youtube-creator-social-listening.vercel.app/** (the dashboard on iPhone Duo data, with a live "Ask the data" chat). The same page is on GitHub Pages at https://allisonhanyuchen.github.io/youtube-creator-social-listening/, where the chat falls back to recorded answers. The public page shows no comment text: topics are summarised in paraphrase and checked against the comments. It refreshes every day (a light check) and does the full report on Mondays.
 
 An AI workflow that listens to YouTube around a product and answers three questions for a creator or brand marketing team:
 
 1. Which creators and content formats beat their own baseline, and at what channel size?
 2. How do lift and audience reaction line up for each video? They are shown side by side, not merged into a score, because they measure different things.
-3. What is the audience actually saying (topics, sentiment, competitors), which topics are new or growing, and what changed since the last refresh?
+3. What is the audience actually saying (topics, sentiment score, competitors), which topics are new or growing, and what changed since the last refresh?
 
-The demo case is the Apple iPhone Duo (the first foldable iPhone, launched 2026-09-09). iPhone 18 Pro videos are kept in the database as a comparison for the Q&A agent. The pipeline is pointed at another product by editing `product.json` (name, brand, launch date, competitors) and the search queries in `collect.py`; topics are discovered from the comments, not hand-written.
+The demo case is the Apple iPhone Duo (the first foldable iPhone, launched 2026-09-09). iPhone 18 Pro videos are kept in the database as a comparison for the Q&A agent. The pipeline is pointed at another product by editing `product.json` (name, brand, launch date, search queries, competitors); topics are discovered from the comments, not hand-written. See "Make it your own".
 
-Built with Python (standard library only), the YouTube Data API v3 (official API, no scraping), the Claude API, SQLite, Slack, and Resend for email.
+Built with Python (standard library only), the YouTube Data API v3 (official API, no scraping), the Claude API, SQLite, GitHub Actions, Slack, Resend for email and Vercel for hosting.
 
 ## What you get
 
 | Surface | Use | Entry point |
 |---|---|---|
-| Dashboard (live demo above, or run locally for quotes and chat) | Overview (creator type by level and region, content type table with sentiment bars), Content performance (one sortable list of videos with creator, region, level, content type, lift, views, engagement and a sentiment bar), Audience insights (topic map and competitors, how local statistics and AI combine, one table of topics with sentiment, trend, new tags and summaries). Click a chart to filter; every metric explains itself on hover. | `dashboard.html` |
-| Weekly email | Summary, coverage, performance (lift and sentiment side by side), audience topics with trend and new topics, highlights, changes since the last refresh, watchlist. | `report.py` |
-| Slack digest and alerts | The same readout in a channel, plus an alert when sentiment or a topic shifts. | `notify.py` |
-| Q&A agent | Ask in Slack or in the dashboard. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py` |
+| Dashboard (live demo above, or run locally for quotes and chat) | Four tabs and a chat. A short "who this is for / how this works / key metrics" header explains it; every metric also explains itself on hover, starting with the business question it answers. **Overview**: creator types by channel level and region (click a cell, total or header to filter). **Content performance**: a content-type overview that filters one sortable list of videos (creator, region, level, content type, lift, views gained 24h and 7d, engagement, sentiment score and bar); every header is a sort and filter menu. **Audience insights**: topic map (x sentiment score, y trend, size comments), expandable topics with what people say, collapsed competitors. **Reports & automation**: status strip, run log in four stages, an example weekly email and Slack digest. **Ask the data** (top left): plain-language questions answered with the SQL shown. | `dashboard.html`, `docs/index.html` |
+| Weekly email | Mirrors the dashboard: summary, overview, content performance (highest-lift videos), audience insights (top topics), what changed since the last refresh, watchlist. | `report.py` |
+| Slack digest and alerts | The same readout in a channel on Mondays, plus alerts on their own when something shifts. | `notify.py` |
+| Q&A agent | Ask in Slack, in the local dashboard, or live on the hosted page. It writes a read-only SQL query, runs it, answers from the rows, and shows the query. | `slack_bot.py`, `serve.py`, `ask.py`, `api/chat.py` |
 
 ## Pipeline
 
 ```
-collect.py      YouTube search + videos + channels          -> data/videos_raw.json
-classify.py     Claude labels content format and topic       -> data/videos.json
-performance.py  channel baselines, lift                      -> lift
-creators.py     creator type, size tier, region
-comments.py     pull comments, Claude labels each one        -> target, sentiment, intent
-db.py           builds data/pulse.db (SQLite base tables and views)
-insights.py     numbers computed in Python, narrative by Claude, week-over-week alerts
-report.py       HTML email           notify.py   Slack digest and alerts
-build_dashboard.py  dashboard.html   ask.py      Q&A core (Slack bot and dashboard)
+collect.py        YouTube search + videos + channels          -> data/videos_raw.json
+classify.py       Claude labels content format and topic       -> data/videos.json
+snapshots.py      daily view-count snapshot                    -> state/view_history.json (views gained 24h / 7d)
+performance.py    channel baselines, lift
+creators.py       creator type, size tier, region
+comments.py       pull comments, Claude labels each one        -> target, sentiment, intent
+db.py             builds data/pulse.db (SQLite base tables and views)
 textcluster.py / topics.py   local TF-IDF + k-means defines topics with stable IDs; Claude names them; every refresh assigns new comments and looks for new topics
+insights.py       numbers computed in Python, narrative by Claude, changes since last refresh, watchlist, alerts
 summaries.py / examples.py / public_safety.py   paraphrased notes and recorded Q&A for the public demo, checked so nothing reuses a comment's wording
-build_dashboard.py --public   docs/index.html (GitHub Pages)
+export_public_db.py  text-free copy of the database for the hosted chat -> api/public.db
+report.py (email) / notify.py (Slack digest and alerts)
+build_dashboard.py [--public]   dashboard.html / docs/index.html (+ docs/data.json)
+ask.py            Q&A core: Slack bot, local server and api/chat.py (Vercel function)
+run_weekly.py     the scheduled runner: daily light pass, Monday full pass, writes state/runs.json
 ```
 
 ## What runs locally and what uses AI
@@ -57,11 +60,18 @@ The split is deliberate: statistics where they are enough, Claude where reading 
 - **Lift**: a video's views divided by the median views of the same channel's comparable pre-launch videos (Shorts compared with Shorts, long with long), then divided by the typical value among videos of the same product and format. 1.0 is a typical video.
 - **Outperformer**: top quarter of lift within its format class. A fixed "2x baseline" bar was too loose in launch week, when most videos beat their baseline. **Underperformer**: bottom quarter.
 - **Audience reaction**: sentiment is labelled per comment toward what the comment is about. Headline numbers count only comments about the product, price, Apple, or competitors; comments about the video or creator are excluded. A video needs at least 10 such comments before its reaction is judged.
+- **Sentiment score**: positive share minus negative share of the product-side comments, from -100 to +100, shown next to every sentiment bar. The bar keeps the neutral share visible.
+- **Views gained (24h / 7d)**: views added since the latest daily snapshot that is at least a day (or a week) old. The API has no history, so this appears once snapshots have accumulated.
+- **Topic trend**: the share of a topic's comments posted in the last 7 days divided by its usual share. Above 1.5x with at least 15 recent comments is "gaining". New topics are marked "new this week".
 - **Channel size**: small (under 250k subscribers), mid (250k to 1M), large (1M and above).
 
 ## Scheduled run
 
-`.github/workflows/weekly.yml` runs `run_weekly.py` every Monday (and on demand from the Actions tab). It starts from `state/`, finds videos posted since the last run, refreshes stats for every known video, labels only comments it has not seen before, rebuilds the tables, writes the insights and week-over-week alerts, sends the email and the Slack digest, and commits the updated `state/` back. API keys come from repository secrets.
+`.github/workflows/weekly.yml` runs `run_weekly.py` every day at 15:00 UTC (and on demand from the Actions tab). It starts from `state/`, then works in four stages: refresh source data (new videos, stats for every known video, the daily view snapshot, baselines), analyse (label only comments it has not seen before, assign topics and discover new ones, compute insights and changes), update reports, push to email and Slack.
+
+- **Light pass** (Tuesday to Sunday): skips the slow Claude steps (topic notes, recorded Q&A, the hosted-chat database) and posts to Slack only if an alert fired.
+- **Full pass** (Monday): everything, plus the email and the Slack digest.
+- Each run appends to `state/runs.json`, which the dashboard shows as the status strip and run log, then commits the updated `state/`, `docs/` and `api/` back so the next run is incremental and the hosted page redeploys. API keys come from repository secrets.
 
 ## Run it
 
@@ -79,13 +89,14 @@ SLACK_APP_TOKEN=xapp-...
 
 ```bash
 python3 collect.py && python3 classify.py
-python3 performance.py && python3 creators.py
+python3 snapshots.py && python3 performance.py && python3 creators.py
 python3 comments.py
 python3 db.py && python3 topics.py && python3 insights.py && python3 summaries.py
 python3 build_dashboard.py          # dashboard.html
 python3 report.py --send            # email
 python3 notify.py                   # Slack digest (add --alerts for alert-only)
 python3 serve.py                    # dashboard with chat on http://127.0.0.1:8770
+python3 run_weekly.py --no-send     # the whole scheduled pipeline in one go (--daily or --weekly to force a mode)
 
 python3 -m venv .venv && .venv/bin/pip install slack_bolt
 .venv/bin/python slack_bot.py       # Slack Q&A agent
@@ -123,14 +134,14 @@ GitHub Pages can only serve static files, so the recorded Q&A is what it shows. 
 python3 -m unittest discover -s tests -t . -v      # standard library only, no keys, no network
 ```
 
-They cover the pieces that decide what the dashboard says: the compact label parser, the text clustering and nearest-topic assignment, change and watchlist detection, the no-signal comment filter, outperformer cut-offs, week-over-week alerts, the read-only SQL guard behind the Q&A agent, that `state/` and the public demo contain no comment text, and that the email report renders and escapes HTML. They run on every push (Python 3.9 and 3.12).
+They cover the pieces that decide what the dashboard says: the compact label parser, the text clustering and nearest-topic assignment, change and watchlist detection, the no-signal comment filter, outperformer cut-offs, week-over-week alerts, the read-only SQL guard behind the Q&A agent, the hosted chat limits, views-gained from snapshots, that `state/` and the public demo contain no comment text, and that the email report renders and escapes HTML. They run on every push (Python 3.9 and 3.12).
 
 ## Data and limits
 
 - English-language videos only, found through search. This is a sample of YouTube, not a census.
 - Comments are a sample of up to 60 per video (40 top, 20 newest), so top comments lean toward liked opinions. Videos with fewer than 10 comments are skipped. Labels come from Claude.
 - Comments were labelled in two modes on different videos: deeper reasoning first, then a faster mode. Small differences between videos can partly reflect the labelling mode.
-- Topics cover about 86% of product comments; the rest fit no topic and are shown as unassigned. In the scheduled run old comment text is not kept, so new topics are discovered only among that week's unassigned comments.
+- Topics cover about 85% of product comments; the rest fit no topic and are shown as unassigned. In the scheduled run old comment text is not kept, so new topics are discovered only among that week's unassigned comments.
 - Region is the channel-declared country. Audience geography is not public.
 - Lift compares a video with its own channel's usual videos, so small channels reach high multiples more easily. Differences between groups are associations, and small groups can swing.
 - Sponsorship and Apple seeding are deliberately not analysed. In an earlier version, none of the 58 sponsored videos was sponsored by Apple or a competitor (they were case makers, VPNs and similar), and seeding could only be inferred from posting time, which also drives views. Neither produced a reliable comparison.
