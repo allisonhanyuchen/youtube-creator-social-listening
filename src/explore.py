@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from common import HERE, USAGE, YT, claude, parse_json, secret, yt, pricing, usd
 import textcluster as tc
+import relevance
 
 DEFAULT_VIDEOS, DEFAULT_COMMENTS = 200, 20          # what the page offers
 CAP_VIDEOS, CAP_COMMENTS = 200, 100                # the most a single run may ask for
@@ -50,11 +51,11 @@ def estimate(n_videos, n_comments):
     pages = min(5, -(-n // 50) + (1 if n >= 100 else 0))
     units = 100 * pages + pages + 3 * n + n * (-(-m // 100))
     comments = round(n * m * 0.85)
-    tin, tout = 45 * comments + 2500, 8 * comments + 1500
+    tin, tout = 45 * comments + 2500 + 35 * n, 8 * comments + 1500 + 4 * n          # the last terms: checking each title is about the product
     batches = -(-comments // BATCH)
     secs = (0.8 * pages + (1 + 0.08 * n) + (0.5 + 0.03 * n)               # search pages, channel baselines, comment pulls
             + 4 * -(-batches // 4) + 1                                     # reading comments: 60 per call, four calls at once, about 4 s each
-            + 3.5 + 2.5 + 0.5)                                             # topics (clustering is instant, naming is one call), the summary, the push
+            + 3 * -(-n // 60) + 3.5 + 2.5 + 0.5)                                             # topics (clustering is instant, naming is one call), the summary, the push
     return dict(videos=n, comments_per_video=m, comments=comments, yt_units=units, tokens_in=tin, tokens_out=tout, usd=round(usd(tin, tout), 2), secs=round(secs))
 
 
@@ -152,9 +153,12 @@ SENT = {"positive": 0, "neutral": 1, "negative": 2}
 
 
 def do_search(state):
-    state["vids"] = search_videos(state["keyword"], state["n_videos"])
-    if not state["vids"]: raise SystemExit(f"No English videos with 1,000+ views found for '{state['keyword']}'. Try a broader keyword.")
-    return f"{len(state['vids'])} videos from {len({x['channel_id'] for x in state['vids']})} channels"
+    vids = search_videos(state["keyword"], state["n_videos"])
+    if not vids: raise SystemExit(f"No English videos with 1,000+ views found for '{state['keyword']}'. Try a broader keyword.")
+    off = relevance.not_about([{"id": v["id"], "title": v["title"], "channel": v["channel"]} for v in vids], state["keyword"])        # accessories, other products with a similar name, unrelated videos
+    state["vids"] = [v for v in vids if v["id"] not in off]
+    left = f", {len(off)} left out as accessories or not about it" if off else ""
+    return f"{len(state['vids'])} videos from {len({x['channel_id'] for x in state['vids']})} channels{left}"
 
 
 def do_baseline(state):

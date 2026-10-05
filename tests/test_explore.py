@@ -46,6 +46,25 @@ class ExploreHelpers(unittest.TestCase):
             self.assertTrue(finished); self.assertTrue(all(done))
         self.assertEqual(len(calls), 9)                                                  # nothing was labelled twice
 
+    def test_off_topic_videos_are_found_and_moved_out_of_the_products_topic(self):
+        import relevance
+        from unittest import mock
+        items = [dict(id="a", title="iPhone Duo review", channel="X"), dict(id="b", title="Best case for iPhone Duo", channel="Y"), dict(id="c", title="Another Duo mouse", channel="Z")]
+        reply = '{"results": [{"id": "a", "about": true}, {"id": "b", "about": false}, {"id": "c", "about": false}]}'
+        with mock.patch.object(relevance, "claude", lambda *a, **k: reply):
+            off = relevance.not_about(items, "Apple iPhone Duo")
+        self.assertEqual(off, {"b", "c"})
+        vids = [dict(id="a", topic="duo"), dict(id="b", topic="duo"), dict(id="c", topic="other")]
+        self.assertEqual(relevance.apply(vids, off, "duo"), 1)                     # only "b" was in the topic, so only it moves
+        self.assertEqual((vids[1]["topic"], vids[1]["topic_raw"], vids[1]["relevant"]), ("other", "duo", False))
+        self.assertTrue(vids[0]["relevant"])
+
+    def test_a_failed_check_keeps_the_videos(self):
+        import relevance
+        from unittest import mock
+        with mock.patch.object(relevance, "claude", lambda *a, **k: "not json"):
+            self.assertEqual(relevance.not_about([dict(id="a", title="t", channel="c")], "x"), set())
+
     def test_the_push_step_is_named_for_the_full_report(self):
         self.assertIn("full report", dict(explore.STEPS)["push"])
 

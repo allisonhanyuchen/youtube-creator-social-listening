@@ -45,6 +45,12 @@ def main():
                              "topic": lab.get("topic", "other") if lab.get("topic") in TOPICS else "other",
                              "framing": lab.get("framing", "neutral")}
         print(f"  classified {min(i + BATCH, len(todo))}/{len(todo)}")
+    import relevance                      # drop accessories, other products that share the name, and unrelated videos from the product's topic
+    check = [v for v in done.values() if v.get("topic") == P["topic"] and "relevant" not in v and v.get("format") != "official"]
+    if check:
+        off = relevance.not_about([{"id": v["id"], "title": v["title"], "channel": v["channel"]} for v in check], f"{P['brand']} {P['name']}".strip(), P["blurb"])
+        moved = relevance.apply(check, off, P["topic"])
+        print(f"  relevance: checked {len(check)} videos, {moved} are not about the product itself and were left out")
     vids = sorted(done.values(), key=lambda v: -v["views"])
     save("videos.json", vids)
     from collections import Counter
