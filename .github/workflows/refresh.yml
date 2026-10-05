@@ -58,4 +58,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state docs api
-          git diff --cached --quiet || (git commit -m "Scheduled state update" && git push)
+          git diff --cached --quiet && exit 0
+          git commit -m "Scheduled state update"
+          # main may have moved while the run was going (someone pushed): replay this commit on top of it, preferring this run's generated files
+          git pull --rebase -X theirs origin main
+          git push
