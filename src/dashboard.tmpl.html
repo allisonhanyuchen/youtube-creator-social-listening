@@ -40,9 +40,15 @@ tr.tot.click td{cursor:pointer}.heat td.tt[data-tot],.heat td.tt[data-totall]{cu
 .run td,.run th{font-size:12.5px}.steps{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}.steps span{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--mute)}
 .slk{background:#1a1d21;color:#d1d2d3;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.5}.slk h4{margin:0 0 6px;font-size:15px;color:#fff}.slk hr{border:0;border-top:1px solid #383b3f;margin:8px 0}.slk a{color:#1d9bd1}.slk .ctx{color:#9a9b9d;font-size:12px}.slk .app{font-weight:700;color:#fff}.slk .tag{background:#2c2d30;color:#9a9b9d;border:0;margin-left:6px}
 iframe.mail{width:100%;height:900px;border:1px solid var(--line);border-radius:10px;background:#fff}
-#secs{margin-top:12px}.sec{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:10px}.sec>summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;gap:10px;align-items:center}.sec>summary::-webkit-details-marker{display:none}
-.sec>summary i{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-style:normal;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none}.sec>summary span{font-weight:400;font-size:12.5px;color:var(--faint)}.sec>summary:after{content:"▸";margin-left:auto;color:var(--mute)}.sec[open]>summary:after{content:"▾"}
-.sec[open]>summary{border-bottom:1px solid var(--line)}.sb{padding:14px 16px}.blk+.blk{margin-top:22px;border-top:1px solid var(--line);padding-top:6px}.bh{font-weight:600;font-size:14.5px;margin:10px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bh b{width:22px;height:22px;border-radius:6px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12.5px}.bh span{font-weight:400;font-size:12px;color:var(--faint)}
+#layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px;margin-top:14px;align-items:start}#side{position:sticky;top:12px;display:flex;flex-direction:column;gap:6px}
+#side button{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);font:inherit}
+#side button i{width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--mute);font-style:normal;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+#side button b{display:block;font-size:14.5px}#side button small{display:block;color:var(--faint);font-size:12px;margin-top:1px}
+#side button.on{border-color:var(--accent);background:var(--accent-bg)}#side button.on i{background:var(--accent);color:#fff}#side button:hover:not(.on){border-color:var(--accent)}
+.pane{display:none;background:var(--card);border:1px solid var(--line);border-radius:12px;min-width:0}.pane.on{display:block}.ph{margin:0;padding:14px 18px;font-size:17px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ph i{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-style:normal;font-size:14px;display:flex;align-items:center;justify-content:center}.ph span{font-weight:400;font-size:12.5px;color:var(--faint)}
+.sb{padding:16px 18px}.blk+.blk{margin-top:22px;border-top:1px solid var(--line);padding-top:6px}.bh{font-weight:600;font-size:14.5px;margin:10px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bh b{width:22px;height:22px;border-radius:6px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12.5px}.bh span{font-weight:400;font-size:12px;color:var(--faint)}
+@media(max-width:860px){#layout{grid-template-columns:1fr}#side{position:static;flex-direction:row;overflow-x:auto}#side button{min-width:170px}}
 details.km{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}details.km>summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:13.5px}
 .kmg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px;margin-top:8px}.kmg div{background:var(--bg);border-radius:8px;padding:8px 12px}.kmg b{display:block;font-size:13px}.kmg .q{font-size:13px;margin-top:2px}.kmg small{display:block;color:var(--mute);font-size:12px;margin-top:3px}
 .fl5{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.fc{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}.fc .ic{font-size:22px}.fc b{font-size:14px}.fc small{color:var(--mute);font-size:12px}.fc small b{font-size:inherit;color:var(--ink)}.fc .n{position:absolute;right:10px;top:8px;font-size:11px;color:var(--faint)}.fc:not(:last-child):after{content:"→";position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--mute);background:var(--card);font-size:13px;line-height:1;z-index:1}
@@ -72,16 +78,18 @@ details.km{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}det
 @media(max-width:700px){.wrap{padding:0 12px}}
 </style></head><body>
 <div class="wrap"><header><div><div class="row" style="gap:14px;flex-wrap:wrap"><h1>YouTube Creator Social Listening</h1></div><p class="sub" id="sub"></p></div><div class="row"><button class="btn" data-act="about">How to read this</button></div></header><button id="chatbtn" data-act="chat">✦ Ask the data</button>
-<div id="secs">
-<details class="sec" id="s-who"><summary><i>1</i>Who this is for</summary><div class="sb" id="b-who"></div></details>
-<details class="sec" id="s-how"><summary><i>2</i>How this works<span>collect → analyse → report → push → refresh</span></summary><div class="sb" id="b-how"></div></details>
-<details class="sec" id="s-ex" open><summary><i>3</i>See it in action<span>type a keyword → report → refresh the full report → see the push</span></summary><div class="sb">
+<div id="layout">
+<aside id="side"></aside>
+<div id="panes">
+<section class="pane" id="s-who"><h2 class="ph"><i>1</i>Who this is for</h2><div class="sb" id="b-who"></div></section>
+<section class="pane" id="s-how"><h2 class="ph"><i>2</i>How this works<span>collect → analyse → report → push → refresh</span></h2><div class="sb" id="b-how"></div></section>
+<section class="pane" id="s-ex"><h2 class="ph"><i>3</i>See it in action<span>type a keyword → refresh the full report → see the push</span></h2><div class="sb">
 <div class="blk"><div class="bh"><b>A</b>Type a keyword and watch the steps<span>the report is pushed to email and Slack</span></div><div id="b-ex"></div></div>
 <div class="blk"><div class="bh"><b>B</b>The full report: refresh it now and see it pushed to email and Slack<span>Overview · Content performance · Audience insights · Reports &amp; automation</span></div><div id="status"></div><nav id="tabs"></nav><main id="view"></main>
 <details class="km" id="s-km"><summary>Key metrics, briefly</summary><div id="b-km"></div></details></div>
-</div></details>
-<details class="sec" id="s-mine"><summary><i>4</i>Make it yours<span>your product, your keys</span></summary><div class="sb" id="b-mine"></div></details>
-</div></div>
+</div></section>
+<section class="pane" id="s-mine"><h2 class="ph"><i>4</i>Make it yours<span>your product, your keys</span></h2><div class="sb" id="b-mine"></div></section>
+</div></div></div>
 <div id="chat"><div class="hd"><b>Ask the data</b><button class="btn" data-act="chatclose">Close</button></div><div class="ms" id="ms"></div><div class="in"><input id="askin" placeholder="Ask about this view…"><button class="btn" data-act="ask">Ask</button></div></div>
 <div id="modal"><div class="box" id="mbox"></div></div><div id="tt"></div>
 <script>
@@ -111,12 +119,12 @@ const GL={small:"Small channels: under 250k subscribers.",mid:"Mid-size channels
  competitors:"How do people talk about competitors? Comments that name a competitor brand; the sentiment is toward whatever each comment is about.",
 };GL.rivals=GL.competitors;
 const info=k=>`<i class="info" data-g="${k}">i</i>`;
-const defaults=()=>({tab:"overview",kol:Object.keys(LBL.kol),tier:TIERS.slice(),region:REGIONS.slice(),format:Object.keys(LBL.f),q:"",fexp:null,kexp:null,ts:{},etopic:null,more:{},open:null});
+const defaults=()=>({sec:"ex",tab:"overview",kol:Object.keys(LBL.kol),tier:TIERS.slice(),region:REGIONS.slice(),format:Object.keys(LBL.f),q:"",fexp:null,kexp:null,ts:{},etopic:null,more:{},open:null});
 let S=defaults(),CHAT=[];
-try{const h=decodeURIComponent(location.hash.slice(1));if(/^[a-z]+$/.test(h))S.tab=h;else if(h)S=Object.assign(defaults(),JSON.parse(h))}catch(e){}
+try{const h=decodeURIComponent(location.hash.slice(1));if(/^[a-z]+$/.test(h)){if(["who","how","ex","mine"].includes(h))S.sec=h;else S.tab=h}else if(h)S=Object.assign(defaults(),JSON.parse(h))}catch(e){}
 /* the address only carries what differs from the defaults: nothing for the first view, "#audience" for a plain tab, a short JSON when filters are set */
 const save=()=>{try{const d=defaults(),diff={};Object.keys(S).forEach(k=>{if(JSON.stringify(S[k])!==JSON.stringify(d[k]))diff[k]=S[k]});const ks=Object.keys(diff);
- const h=!ks.length?"":ks.length===1&&ks[0]==="tab"?diff.tab:encodeURIComponent(JSON.stringify(diff));history.replaceState(null,"",location.pathname+location.search+(h?"#"+h:""))}catch(e){}};
+ const h=!ks.length?"":ks.length===1&&(ks[0]==="tab"||ks[0]==="sec")?diff[ks[0]]:encodeURIComponent(JSON.stringify(diff));history.replaceState(null,"",location.pathname+location.search+(h?"#"+h:""))}catch(e){}};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0),med=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
@@ -319,7 +327,9 @@ function vAuto(){const runs=(D.runs||[]).slice().reverse();
  <div style="margin-top:12px"><div class="card"><h3>Example weekly email</h3><p class="small mute" style="margin:0 0 8px">Mirrors the dashboard: overview, content performance, audience insights, what changed, watchlist. To show the format; figures are illustrative.</p>${D.email?`<iframe class="mail" sandbox srcdoc="${esc(D.email)}"></iframe>`:`<p class="faint small">Not available.</p>`}</div><div class="card" style="margin-top:12px"><h3>Example Slack digest</h3><p class="small mute" style="margin:0 0 8px">Posted to a channel on the weekly run; alerts post on their own on other days. Mention the app to ask follow-ups.</p>${slackHtml(D.slack)}</div></div>`}
 const TABS=[["overview","Overview",vOverview],["scale","Content performance",vScale],["audience","Audience insights",vAudience],["auto","Reports & automation",vAuto]];
 /* ---------- shell ---------- */
-function render(){$("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="${S.tab===k?"on":""}" data-tab="${k}">${l}</button>`).join("");$("#status").innerHTML=statusBar();$("#view").innerHTML=(TABS.find(t=>t[0]===S.tab)||TABS[0])[2]();$("#b-ex").innerHTML=vTry();save();chatRender()}
+const SECS=[["who","Who this is for","creator managers, marketers, analysts"],["how","How this works","collect → analyse → report → push → refresh"],["ex","See it in action","keyword steps, full report, the push"],["mine","Make it yours","your product, your keys"]];
+function renderSide(){$("#side").innerHTML=SECS.map(([k,l,s],i)=>`<button class="${S.sec===k?"on":""}" data-sec="${k}"><i>${i+1}</i><span><b>${l}</b><small>${s}</small></span></button>`).join("");document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="s-"+S.sec))}
+function render(){renderSide();$("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="${S.tab===k?"on":""}" data-tab="${k}">${l}</button>`).join("");$("#status").innerHTML=statusBar();$("#view").innerHTML=(TABS.find(t=>t[0]===S.tab)||TABS[0])[2]();$("#b-ex").innerHTML=vTry();save();chatRender()}
 function ctxText(){const sl=SLICE.filter(([k])=>S[k].length!==allOf(k).length).map(([k,l])=>l+"="+S[k].join("/"));return`${TABS.find(t=>t[0]===S.tab)[1]} page${S.tab==="scale"?", sorted by "+(S.ts.t||DT).k:""}${sl.length?", slice: "+sl.join("; "):""}`}
 const SUG={overview:["Which creator types over-perform and at what channel size?","Which content types work best for mid-sized channels?"],scale:["Which videos have the highest lift and what is their audience reaction?","Do small channels get better sentiment than large ones?"],audience:["What are the main complaints and who makes them?","Which topics are gaining ground this week?"],try:["Which topics are gaining ground this week?","Which videos have the highest lift?"],auto:["What changed since the last refresh?","Which topics are gaining ground this week?"]};
 function chatRender(){const ms=$("#ms");if(!ms)return;ms.innerHTML=(CHAT.length?"":`<p class="small mute" style="margin-top:0">${PUB&&!LIVE?"Recorded answers from the live agent. Pick a question:":"I answer from the same data as this page and show the query. I can see which page and slice you are on."}</p>`)+CHAT.map(m=>`<div class="bub ${m.r==="u"?"u":""}">${esc(m.t)}${m.sql?`<details style="margin-top:6px"><summary class="small mute" style="cursor:pointer">Show the query</summary><pre class="small" style="white-space:pre-wrap;word-break:break-word">${esc(m.sql)}</pre></details>`:""}</div>`).join("")+(PUB&&!LIVE?`<div style="margin-top:8px">${D.examples.filter(e=>!CHAT.some(m=>m.r==="u"&&m.t===e.q)).map(e=>`<span class="sg" data-sug="${esc(e.q)}">${esc(e.q)}</span>`).join("")}</div>`:(CHAT.length?"":(SUG[S.tab]||SUG.overview).map(q=>`<span class="sg" data-sug="${esc(q)}">${esc(q)}</span>`).join("")));ms.scrollTop=ms.scrollHeight}
@@ -349,6 +359,7 @@ document.addEventListener("click",e=>{const t=e.target,c=s=>t.closest&&t.closest
  else if(h=c("[data-row]")){const[k,r]=h.dataset.row.split("|");S.kexp=S.kexp===r?null:r;render()}
  else if(h=c("[data-col]")){const[k,r]=h.dataset.col.split("|");S[k]=same(S[k],[r])?allOf(k):[r];render()}
  else if(h=c("[data-fsel]")){const f=h.dataset.fsel;S.format=f==="*"||same(S.format,[f])?allOf("format"):[f];render()}
+ else if(h=c("[data-sec]")){S.sec=h.dataset.sec;render();const r=$("#layout").getBoundingClientRect();if(r.top<0)window.scrollBy(0,r.top-12)}
  else if(h=c("[data-hm]")){HM=HM===h.dataset.hm?null:h.dataset.hm;render()}
  else if(h=c("[data-ts]")){e.preventDefault();const[id,k,d]=h.dataset.ts.split("|");if(d==="0")delete S.ts[id];else S.ts[id]={k,d:+d};HM=null;render()}
  else if(h=c("[data-totall]")){const[a,b]=h.dataset.totall.split("|");S[a]=allOf(a);S[b]=allOf(b);render()}

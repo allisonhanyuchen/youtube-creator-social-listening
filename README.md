@@ -9,7 +9,7 @@ The demo case is the Apple iPhone Duo launch (2026-09-09). The public page shows
 
 ## What the page shows
 
-One page of four expandable sections, plus an "Ask the data" chat.
+One page with a left sidebar of four modules (click one to show it, no scrolling), plus an "Ask the data" chat at the bottom right.
 
 | Section | What it is |
 |---|---|
