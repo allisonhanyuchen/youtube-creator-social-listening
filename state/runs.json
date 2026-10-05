@@ -682,5 +682,71 @@
     "secs": 0
    }
   ]
+ },
+ {
+  "started": "2026-10-05T19:09:45+00:00",
+  "finished": "2026-10-05T19:10:58+00:00",
+  "mode": "daily",
+  "ok": true,
+  "source": "github-actions",
+  "new_videos": 0,
+  "new_comments": 3,
+  "new_topics": [],
+  "alerts": 2,
+  "email": false,
+  "slack": false,
+  "slack_alerts": false,
+  "steps": [
+   {
+    "name": "collect new videos, refresh stats",
+    "status": "ok",
+    "secs": 8
+   },
+   {
+    "name": "classify new videos",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "daily view snapshot",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "channel baselines and lift",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "creator types",
+    "status": "ok",
+    "secs": 6
+   },
+   {
+    "name": "pull and label new comments",
+    "status": "ok",
+    "secs": 38
+   },
+   {
+    "name": "build tables",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "assign comments to topics, discover new ones",
+    "status": "ok",
+    "secs": 1
+   },
+   {
+    "name": "insights, changes and alerts",
+    "status": "ok",
+    "secs": 18
+   },
+   {
+    "name": "public demo page",
+    "status": "ok",
+    "secs": 1
+   }
+  ]
  }
 ]
