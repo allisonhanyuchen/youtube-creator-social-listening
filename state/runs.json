@@ -1070,5 +1070,102 @@
    "yt_units": 863,
    "usd": 0.482
   }
+ },
+ {
+  "started": "2026-10-05T22:51:33+00:00",
+  "finished": "2026-10-05T22:58:12+00:00",
+  "mode": "weekly",
+  "ok": true,
+  "source": "github-actions",
+  "new_videos": null,
+  "new_comments": null,
+  "new_topics": [],
+  "alerts": 0,
+  "email": true,
+  "slack": true,
+  "slack_alerts": false,
+  "steps": [
+   {
+    "name": "collect new videos, refresh stats",
+    "status": "ok",
+    "secs": 4
+   },
+   {
+    "name": "classify new videos",
+    "status": "ok",
+    "secs": 68
+   },
+   {
+    "name": "daily view snapshot",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "channel baselines and lift",
+    "status": "ok",
+    "secs": 122
+   },
+   {
+    "name": "creator types",
+    "status": "ok",
+    "secs": 34
+   },
+   {
+    "name": "pull and label new comments",
+    "status": "ok",
+    "secs": 34
+   },
+   {
+    "name": "build tables",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "assign comments to topics, discover new ones",
+    "status": "ok",
+    "secs": 9
+   },
+   {
+    "name": "insights, changes and alerts",
+    "status": "ok",
+    "secs": 15
+   },
+   {
+    "name": "text-free database for the hosted Q&A",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "paraphrased topic notes",
+    "status": "ok",
+    "secs": 31
+   },
+   {
+    "name": "recorded Q&A examples",
+    "status": "ok",
+    "secs": 81
+   },
+   {
+    "name": "public demo page",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "email report",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "Slack digest",
+    "status": "ok",
+    "secs": 0
+   }
+  ],
+  "usage": {
+   "claude_in": 220419,
+   "claude_out": 58506,
+   "yt_units": 1142,
+   "usd": 1.539
+  }
  }
 ]
