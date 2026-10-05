@@ -62,8 +62,8 @@ details.km{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}det
 .disc{background:var(--accent-bg);border-radius:8px;padding:8px 12px;font-size:13px;margin-top:10px}
 .quad text{fill:var(--mute);font-size:11px}.quad .ql{fill:var(--faint);font-size:12px;font-weight:600}
 .method{background:var(--accent-bg);border-radius:12px;padding:12px 16px;font-size:13px}.method ol{margin:6px 0 0;padding-left:20px}.method li{margin:3px 0}.method b.l{color:var(--accent)}
-#chatbtn{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:8px 18px;box-shadow:var(--shadow);font-weight:600;font-size:14px;cursor:pointer}#chatbtn:hover{filter:brightness(1.1)}
-#chat{position:fixed;left:22px;top:70px;z-index:45;width:390px;max-width:calc(100vw - 24px);height:min(580px,calc(100vh - 44px));background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:none;flex-direction:column}
+#chatbtn{position:fixed;right:22px;bottom:22px;z-index:40;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px 20px;box-shadow:var(--shadow);font-weight:600;font-size:14px;cursor:pointer}#chatbtn:hover{filter:brightness(1.1)}
+#chat{position:fixed;right:22px;bottom:22px;z-index:45;width:390px;max-width:calc(100vw - 24px);height:min(580px,calc(100vh - 44px));background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:none;flex-direction:column}
 #chat.open{display:flex}#chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}#chat .ms{flex:1;overflow:auto;padding:10px 14px}#chat .in{padding:10px;border-top:1px solid var(--line);display:flex;gap:8px}
 #chat input{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
 .bub{margin:8px 0;padding:8px 10px;border-radius:10px;background:var(--bg);white-space:pre-wrap;font-size:13px}.bub.u{background:var(--accent-bg);color:var(--accent)}
@@ -71,7 +71,8 @@ details.km{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}det
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:70;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}#modal.open{display:flex}#modal .box{background:var(--card);border-radius:14px;max-width:760px;padding:20px 24px}
 @media(max-width:700px){.wrap{padding:0 12px}}
 </style></head><body>
-<div class="wrap"><header><div><div class="row" style="gap:14px;flex-wrap:wrap"><h1>YouTube Creator Social Listening</h1><button id="chatbtn" data-act="chat">✦ Ask the data</button></div><p class="sub" id="sub"></p></div><div class="row"><button class="btn" data-act="about">How to read this</button></div></header><div id="secs">
+<div class="wrap"><header><div><div class="row" style="gap:14px;flex-wrap:wrap"><h1>YouTube Creator Social Listening</h1></div><p class="sub" id="sub"></p></div><div class="row"><button class="btn" data-act="about">How to read this</button></div></header><button id="chatbtn" data-act="chat">✦ Ask the data</button>
+<div id="secs">
 <details class="sec" id="s-who"><summary><i>1</i>Who this is for</summary><div class="sb" id="b-who"></div></details>
 <details class="sec" id="s-how"><summary><i>2</i>How this works<span>collect → analyse → report → push → refresh</span></summary><div class="sb" id="b-how"></div></details>
 <details class="sec" id="s-ex" open><summary><i>3</i>See it in action<span>type a keyword → report → refresh the full report → see the push</span></summary><div class="sb">
