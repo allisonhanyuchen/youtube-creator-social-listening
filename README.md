@@ -15,7 +15,7 @@ One page with a left sidebar of four modules (click one to show it, no scrolling
 |---|---|
 | 1 Who this is for | Creator managers, launch marketers, analysts |
 | 2 How this works | Collect (YouTube Data API: top videos under the keywords, top comments under each video) → Analyse (Claude API + local NLP: overview of creators and content, content performance, audience insights) → Report (dashboard, chat) → Push (Resend, Slack) → Refresh (GitHub Actions, daily) |
-| 3 See it in action | **A** type a keyword and watch each step with the tech it calls; the last step pushes the full report's key summary to email and Slack. **B** the full report: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
+| 3 See it in action | **A** type a keyword and watch each step with the tech it calls; the last step pushes the full report's key summary to email and Slack. **B** the full report and auto-refresh: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
 | 4 Make it yours | Bring your own keys, edit one config file, deploy |
 
 Every metric explains itself on hover, starting with the business question it answers. Sentiment is shown as a **net sentiment score** (positive % minus negative %, -100 to +100) next to a bar that keeps the neutral share visible.
