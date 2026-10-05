@@ -9,15 +9,14 @@ The demo case is the Apple iPhone Duo launch (2026-09-09). The public page shows
 
 ## What the page shows
 
-One page of five expandable sections, plus an "Ask the data" chat.
+One page of four expandable sections, plus an "Ask the data" chat.
 
 | Section | What it is |
 |---|---|
 | 1 Who this is for | Creator managers, launch marketers, analysts |
 | 2 How this works | Collect (YouTube Data API: top videos under the keywords, top comments under each video) → Analyse (Claude API + local NLP: overview of creators and content, content performance, audience insights) → Report (dashboard, chat) → Push (Resend, Slack) → Refresh (GitHub Actions, daily) |
-| 3 See an example | Type a keyword and watch each step with the tech it calls, then get a small report; the last step pushes it to email and Slack. The public page replays a recorded run |
-| 4 The full report | Overview (creator types by level and region) · Content performance (a content-type overview that filters a sortable list: lift, views gained, sentiment score) · Audience insights (topic map, expandable topics, competitors) · Reports & automation (run log, example email and Slack digest, Refresh now) |
-| 5 Make it yours | Bring your own keys, edit one config file, deploy |
+| 3 See it in action | **A** type a keyword and watch each step with the tech it calls, then get a small report whose last step pushes it to email and Slack. **B** the full report: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
+| 4 Make it yours | Bring your own keys, edit one config file, deploy |
 
 Every metric explains itself on hover, starting with the business question it answers. Sentiment is shown as a **net sentiment score** (positive % minus negative %, -100 to +100) next to a bar that keeps the neutral share visible.
 
