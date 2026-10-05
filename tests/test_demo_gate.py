@@ -56,6 +56,32 @@ class StageMap(unittest.TestCase):
         self.assertEqual([n for n, _ in rw.stage_steps("push", "daily", False)], [])          # --no-send
 
 
+class SavedInput(unittest.TestCase):
+    CUR = {"name": "iPhone Duo", "brand": "Apple", "keywords": ["iPhone Duo review"], "top_videos": 50, "comments_per_video": 60, "competitors": {"Samsung": "samsung"}, "pricing": {"input_per_m": 3, "output_per_m": 15}, "demo": True}
+
+    def test_same_product_keeps_everything_else_and_only_changes_the_sizes(self):
+        import inputs
+        new, fresh = inputs.merge_input(self.CUR, "iPhone Duo hands on, iPhone Duo worth it", 200, 20)
+        self.assertFalse(fresh)
+        self.assertEqual((new["brand"], new["competitors"], new["top_videos"], new["comments_per_video"]), ("Apple", {"Samsung": "samsung"}, 200, 20))
+        self.assertEqual(new["keywords"], ["iPhone Duo hands on", "iPhone Duo worth it"])
+
+    def test_new_product_starts_fresh_and_keeps_only_deployment_settings(self):
+        import inputs
+        from datetime import date
+        new, fresh = inputs.merge_input(self.CUR, "Galaxy Z Fold 8 review\nGalaxy Z Fold 8 vs Pixel Fold", 999, 0, today=date(2026, 10, 5))
+        self.assertTrue(fresh)
+        self.assertEqual((new["name"], new["brand"], new["competitors"], new["topic"]), ("Galaxy Z Fold 8", "", {}, "main"))
+        self.assertEqual((new["top_videos"], new["comments_per_video"]), (200, 1))                    # capped and floored
+        self.assertEqual((new["pricing"], new["demo"]), (self.CUR["pricing"], True))
+        self.assertIn("galaxy", new["topic_regex"]); self.assertNotIn("review", new["topic_regex"])
+        self.assertEqual(new["launch"], "2026-09-05")
+
+    def test_empty_keywords_are_rejected(self):
+        import inputs
+        with self.assertRaises(ValueError): inputs.merge_input(self.CUR, " , ", 50, 20)
+
+
 class RunUsage(unittest.TestCase):
     def test_usage_is_summed_across_steps_and_priced(self):
         import json, tempfile

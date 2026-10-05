@@ -29,7 +29,7 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 |---|---|---|
 | 1 **Collect** | The top videos under your keywords and the top comments under each video | YouTube Data API v3 |
 | 2 **Analyse** | Python computes every number locally so it can be checked: lift against each channel's own baseline, views gained, trends. Claude reads each comment (who it is about, sentiment, intent) and names the topics that local clustering finds | Claude API, Python, SQLite |
-| 3 **Report** | A dashboard with Overview, Content performance and Audience insights, plus an Ask-the-data chat that answers with read-only SQL | Static HTML, Vercel |
+| 3 **Report** | An interactive dashboard with Overview, Content performance and Audience insights, plus an Ask-the-data chat that answers with read-only SQL | Interactive HTML page, Vercel |
 | 4 **Push** | The full report's key summary goes to email and Slack, with alerts when something shifts | Resend, Slack |
 | 5 **Refresh** | The whole run repeats every day; each run is logged with its tokens, quota units and cost | GitHub Actions |
 

@@ -56,6 +56,17 @@ def record(md, started, rows, failed, send):
     json.dump((old + [run])[-30:], open(RUNS, "w"), indent=1)
 
 
+def fresh_start():
+    """New product: forget the old one's videos, comments, labels, topics and notes (the run log stays) so this run builds everything from the new input."""
+    import glob
+    keep = {"runs.json"}
+    for f in glob.glob(os.path.join(HERE, "state", "*.json")):
+        if os.path.basename(f) not in keep: os.remove(f)
+    for f in glob.glob(os.path.join(HERE, "data", "*.json")) + glob.glob(os.path.join(HERE, "data", "*.db")) + glob.glob(os.path.join(HERE, "data", "*.jsonl")):
+        os.remove(f)
+    print("fresh start: the saved data of the previous product was cleared", flush=True)
+
+
 def run_one(name, cmd, rows):
     t0 = time.time()
     print(f"[start] {name}", flush=True)
@@ -99,6 +110,7 @@ def main():
     stage = sys.argv[sys.argv.index("--stage") + 1] if "--stage" in sys.argv else None
     print(f"mode: {md}" + (f" · stage: {stage}" if stage else ""), flush=True)
     if stage in (None, "refresh"):
+        if "--fresh" in sys.argv: fresh_start()
         state_io.restore()
         for f in (ROWS, USAGE_LOG):
             if os.path.exists(f): os.remove(f)

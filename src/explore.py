@@ -59,6 +59,20 @@ def estimate(n_videos, n_comments):
     return dict(videos=n, comments_per_video=m, comments=comments, yt_units=units, tokens_in=tin, tokens_out=tout, usd=round(usd(tin, tout), 2), secs=round(secs))
 
 
+def estimate_run(keywords, top_videos, comments_per_video):
+    """What a full pipeline run (the page's Run button: collect, analyse, report, push) costs. Videos: about top_videos per keyword, overlapping keywords share some. YouTube units: search pages,
+    about 6 calls per video (details, channel baseline, two comment calls). Claude: per comment 45 in / 8 out, 80 in / 20 out per video for its labels and relevance, and about 100k in / 20k out
+    for topic notes, recorded Q&A, topic names and the narrative. Time: a fixed 150 s (GitHub start-up, summaries, report, push) plus about 0.9 s per video and 0.05 s per comment."""
+    k, n, m = max(1, int(keywords)), clamp(top_videos, 50, CAP_VIDEOS), clamp(comments_per_video, 60, 150)
+    videos = round(n * (1 + 0.6 * (k - 1)))                    # keywords on one product overlap heavily
+    pages = k * (-(-n // 50))
+    units = 100 * pages + 6 * videos
+    comments = round(videos * m * 0.85)
+    tin, tout = 45 * comments + 80 * videos + 100_000, 8 * comments + 20 * videos + 20_000
+    secs = 150 + 0.9 * videos + 0.05 * comments
+    return dict(keywords=k, videos=videos, comments=comments, yt_units=units, tokens_in=tin, tokens_out=tout, usd=round(usd(tin, tout), 2), secs=round(secs))
+
+
 def search_videos(keyword, n=DEFAULT_VIDEOS):
     """Top videos for the keyword by relevance, English, last 12 months, at least 1,000 views. The API returns 50 results a page, so a large n takes several pages."""
     after = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -9,6 +9,10 @@ on:
         description: "Send the email and Slack update"
         type: boolean
         default: true
+      fresh:
+        description: "Start from scratch (a new product): clears the saved data first"
+        type: boolean
+        default: false
       mode:
         description: "auto = full on Mondays, light otherwise"
         type: choice
@@ -29,7 +33,7 @@ env:
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
   REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
   # flags every stage shares: --no-send when "send" is off, --daily or --weekly when a mode was picked
-  RUN_FLAGS: ${{ github.event.inputs.send == 'false' && '--no-send' || '' }} ${{ github.event.inputs.mode == 'daily' && '--daily' || '' }} ${{ github.event.inputs.mode == 'weekly' && '--weekly' || '' }}
+  RUN_FLAGS: ${{ github.event.inputs.send == 'false' && '--no-send' || '' }} ${{ github.event.inputs.mode == 'daily' && '--daily' || '' }} ${{ github.event.inputs.mode == 'weekly' && '--weekly' || '' }} ${{ github.event.inputs.fresh == 'true' && '--fresh' || '' }}
 
 jobs:
   run:

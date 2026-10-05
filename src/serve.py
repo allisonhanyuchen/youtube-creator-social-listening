@@ -7,6 +7,7 @@
   POST /api/refresh      run the scheduled pipeline now (daily pass, with the email and Slack push); streams the steps
 Bound to localhost; your API keys never reach the browser. The public page has none of these: its input and Refresh button are disabled."""
 import json, os, subprocess, sys, threading
+import inputs
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from common import HERE, SRC
 from ask import ask
@@ -49,6 +50,7 @@ class H(BaseHTTPRequestHandler):
                 if not LAST.get("report"): return self._send(400, json.dumps({"error": "run a keyword first"}))
                 return self._send(200, json.dumps({"sent": explore.deliver(LAST["report"])}))
             if self.path == "/api/refresh": return self._refresh()
+            if self.path == "/api/run": return self._run(d)
             self._send(404, "{}")
         except (BrokenPipeError, ConnectionResetError):
             pass
@@ -70,11 +72,21 @@ class H(BaseHTTPRequestHandler):
         finally:
             BUSY.release()
 
-    def _refresh(self):
+    def _run(self, d):
+        """The page's Run button on your own computer: save the input to input.json, then run the real pipeline (new keywords for another product start from scratch)."""
+        path = os.path.join(HERE, "input.json")
+        try:
+            new, fresh = inputs.merge_input(json.load(open(path)), d.get("keywords"), d.get("top_videos"), d.get("comments_per_video"))
+        except ValueError as e:
+            return self._send(400, json.dumps({"error": str(e)}))
+        json.dump(new, open(path, "w"), indent=1, ensure_ascii=False)
+        return self._refresh(["--weekly"] + (["--fresh"] if fresh else []))
+
+    def _refresh(self, flags=("--daily",)):
         if not BUSY.acquire(blocking=False): return self._send(409, json.dumps({"error": "another run is in progress"}))
         try:
             self._stream_start()
-            p = subprocess.Popen([sys.executable, "-u", os.path.join(SRC, "run_weekly.py"), "--daily"], cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            p = subprocess.Popen([sys.executable, "-u", os.path.join(SRC, "run_weekly.py")] + list(flags), cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             for line in p.stdout:
                 line = line.strip()
                 if line.startswith("[start] "): self._event(dict(step=line[8:], status="start"))
