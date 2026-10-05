@@ -91,7 +91,11 @@ def cold_start(rows, pool, as_of):
     return topics, tau
 
 
-def refresh(rows, vecs, pool, state, assigned, as_of):
+def as_of_pool(rows):
+    return max(r["published"] for r in rows)
+
+
+def refresh(rows, vecs, pool, state, assigned, as_of, origin="discovered"):
     """Assign new comments to existing topics, then look for new topics among those that fit none."""
     cfg, topics, tau = POOLS[pool], state["topics"], state["tau"]
     guess = assign_all(vecs, topics, tau)
@@ -102,7 +106,7 @@ def refresh(rows, vecs, pool, state, assigned, as_of):
     new_ids = []
     if len(residual) >= DISCOVER_MIN:
         texts = [rows[i]["text"] for i in residual]
-        rvecs, cl = tc.clusters(texts, k=max(2, min(8, len(texts) // 70)), min_size=30)
+        rvecs, cl = tc.clusters(texts, k=max(2, min(12, len(texts) // 50)), min_size=25)
         cl = [c for c in cl if c["coherence"] >= 0.15]
         if cl:
             out = ask_names(cl, texts, topics, pool)
@@ -115,7 +119,7 @@ def refresh(rows, vecs, pool, state, assigned, as_of):
                     tid = r["same_as"]
                 else:
                     tid = f"{cfg['prefix']}{nxt:02d}"; nxt += 1
-                    topics.append(new_topic(tid, r.get("name", "New topic"), r.get("summary", ""), c["center"], as_of, "discovered")); new_ids.append(tid)
+                    topics.append(new_topic(tid, r.get("name", "New topic"), r.get("summary", ""), c["center"], as_of, origin)); new_ids.append(tid)
                 for m in c["members"]: assigned[rows[residual[m]]["id"]] = tid
     return new_ids
 
@@ -151,6 +155,7 @@ def main():
             guess = assign_all(vecs, topics, tau)
             for r, g in zip(rows, guess): ct[r["id"]] = g
             new_ids = [t["id"] for t in topics]
+            new_ids += refresh(rows, vecs, pool, state, ct, as_of_pool(rows), "initial")     # the first pass leaves a pool of comments that fit no topic; text is not kept between cloud runs, so look for more topics in it right now
         else:
             new_ids = refresh(rows, vecs, pool, state, ct, max(r["published"] for r in rows))
         n_assigned = sum(1 for r in rows if ct.get(r["id"]))
