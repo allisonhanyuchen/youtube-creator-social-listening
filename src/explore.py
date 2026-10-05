@@ -45,13 +45,17 @@ def clamp(v, default, cap):
 
 def estimate(n_videos, n_comments):
     """What a run will cost, before running it. YouTube units: search pages (100 each), their video details, about 3 calls per video for the channel baseline, and one comment call per video.
-    Claude: about 45 input and 8 output tokens per comment read, plus a fixed 2.5k in / 1.5k out for naming topics and writing the summary (from measured runs). Dollars use pricing()."""
+    Time: measured per stage (see the formula). Claude: about 45 input and 8 output tokens per comment read, plus a fixed 2.5k in / 1.5k out for naming topics and writing the summary (from measured runs). Dollars use pricing()."""
     n, m = clamp(n_videos, DEFAULT_VIDEOS, CAP_VIDEOS), clamp(n_comments, DEFAULT_COMMENTS, CAP_COMMENTS)
     pages = min(5, -(-n // 50) + (1 if n >= 100 else 0))
     units = 100 * pages + pages + 3 * n + n * (-(-m // 100))
     comments = round(n * m * 0.85)
     tin, tout = 45 * comments + 2500, 8 * comments + 1500
-    return dict(videos=n, comments_per_video=m, comments=comments, yt_units=units, tokens_in=tin, tokens_out=tout, usd=round(usd(tin, tout), 2))
+    batches = -(-comments // BATCH)
+    secs = (0.8 * pages + (1 + 0.08 * n) + (0.5 + 0.03 * n)               # search pages, channel baselines, comment pulls
+            + 4 * -(-batches // 4) + 1                                     # reading comments: 60 per call, four calls at once, about 4 s each
+            + 3.5 + 2.5 + 0.5)                                             # topics (clustering is instant, naming is one call), the summary, the push
+    return dict(videos=n, comments_per_video=m, comments=comments, yt_units=units, tokens_in=tin, tokens_out=tout, usd=round(usd(tin, tout), 2), secs=round(secs))
 
 
 def search_videos(keyword, n=DEFAULT_VIDEOS):
