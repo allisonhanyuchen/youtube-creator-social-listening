@@ -14,7 +14,7 @@ One page of five expandable sections, plus an "Ask the data" chat.
 | Section | What it is |
 |---|---|
 | 1 Who this is for | Creator managers, launch marketers, analysts |
-| 2 How this works | Collect (YouTube Data API) → Analyse (Claude API + local NLP) → Report (dashboard, chat) → Refresh (GitHub Actions) → Push (Resend, Slack) |
+| 2 How this works | Collect (YouTube Data API: top videos under the keywords, top comments under each video) → Analyse (Claude API + local NLP: overview of creators and content, content performance, audience insights) → Report (dashboard, chat) → Push (Resend, Slack) → Refresh (GitHub Actions, daily) |
 | 3 See an example | Type a keyword and watch each step with the tech it calls, then get a small report; the last step pushes it to email and Slack. The public page replays a recorded run |
 | 4 The full report | Overview (creator types by level and region) · Content performance (a content-type overview that filters a sortable list: lift, views gained, sentiment score) · Audience insights (topic map, expandable topics, competitors) · Reports & automation (run log, example email and Slack digest, Refresh now) |
 | 5 Make it yours | Bring your own keys, edit one config file, deploy |
