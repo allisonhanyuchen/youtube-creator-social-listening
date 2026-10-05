@@ -1743,7 +1743,7 @@
     {
      "id": "p23",
      "name": "No Face ID",
-     "summary": "Viewers debate the lack of Face ID on the foldable iPhone, discussing reliance on Touch ID fingerprint unlocking, whether it's acceptable, and waiting for better biometric options.",
+     "summary": "Viewers debate the lack of Face ID on a foldable iPhone, discussing fingerprint Touch ID as the alternative and whether they'd wait for better unlocking.",
      "terms": [
       "face",
       "touch",
@@ -2584,6 +2584,21 @@
    "creator": {
     "rows": 675,
     "assigned": 0.764,
+    "topics": 6,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-05",
+   "product": {
+    "rows": 1992,
+    "assigned": 0.986,
+    "topics": 24,
+    "new": []
+   },
+   "creator": {
+    "rows": 653,
+    "assigned": 0.77,
     "topics": 6,
     "new": []
    }
