@@ -5,7 +5,7 @@ Embedded: per-video rows + per-video comment aggregates (sentiment, topics, comp
 import json, os, re, sqlite3, sys
 from collections import defaultdict
 from datetime import date, timedelta
-from common import DATA, HERE, SRC, product, scope_sql
+from common import DATA, HERE, SRC, product, scope_sql, title
 
 PRODUCT_SIDE = {"product", "price_value", "apple_brand", "competitor"}
 SENT = {"positive": 0, "neutral": 1, "negative": 2}
@@ -130,7 +130,13 @@ def main():
     out = os.path.join(HERE, "docs", "index.html") if public else os.path.join(HERE, "dashboard.html")
     os.makedirs(os.path.dirname(out), exist_ok=True); open(out, "w", encoding="utf-8").write(html)
     if public:                                           # the same text-free data as plain JSON, handy for rebuilding the UI in another tool
-        json.dump(data, open(os.path.join(HERE, "docs", "data.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+        try:                                               # what a push sends (the full report's key summary), kept out of the page itself
+            import report, notify
+            ins = json.load(open(os.path.join(DATA, "insights.json")))
+            push = dict(subject=f"{title()} (daily): {ins['narrative']['headline'][:80]}", email=report.build(ins, period="daily"), slack=notify.build(ins, period="daily"))
+        except Exception:
+            push = None
+        json.dump(dict(data, push=push), open(os.path.join(HERE, "docs", "data.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"{os.path.relpath(out, HERE)} {os.path.getsize(out)/1e6:.2f} MB | {len(rows)} videos, {len(topics)} topics, {len(quotes)} quotes")
 
 

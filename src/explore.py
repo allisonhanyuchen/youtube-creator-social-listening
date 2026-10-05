@@ -2,7 +2,7 @@
 """Keyword explorer: type a product or topic, get a small report in about a minute.
 YouTube search -> channel baselines (lift) -> top comments -> Claude labels each comment -> local clustering finds topics, Claude names them -> summary.
 Capped on purpose (20 videos, 20 comments each) so one run stays cheap: roughly 150 YouTube quota units and a few cents to a few tens of cents of Claude.
-Run from the terminal:  python3 explore.py "iPhone Duo"      (add --sample to save the text-free sample shown on the public page, --push to also send it to your Slack and inbox)
+Run from the terminal:  python3 explore.py "iPhone Duo"      (add --sample to save the text-free sample shown on the public page, --push to also push the full report's key summary to your Slack and inbox)
 The local server (serve.py) calls run() and streams the progress events to the dashboard."""
 import json, os, statistics, sys, time
 from concurrent.futures import ThreadPoolExecutor
@@ -13,7 +13,7 @@ import textcluster as tc
 MAX_VIDEOS, MAX_COMMENTS = 20, 20
 PRODUCT_SIDE = {"product", "price_value", "competitor"}
 STEPS = [("search", "Retrieving videos from the YouTube API"), ("baseline", "Checking each channel's usual views"), ("comments", "Pulling the top comments"),
-         ("label", "Reading every comment with Claude"), ("topics", "Finding and naming topics"), ("report", "Writing the report"), ("push", "Pushing the report to email and Slack")]
+         ("label", "Reading every comment with Claude"), ("topics", "Finding and naming topics"), ("report", "Writing the report"), ("push", "Pushing the full report's key summary to email and Slack")]
 
 
 T_CODE = {"P": "product", "V": "price_value", "C": "video_or_creator", "R": "competitor", "O": "other"}
@@ -166,8 +166,7 @@ def do_report(state):
 
 
 def do_push(state):
-    rep = assemble(state); rep["summary"] = state["summary"]
-    sent = deliver(rep)
+    sent = deliver()
     return ("Sent to " + " and ".join(sent)) if sent else "no Slack or email keys are set"
 
 
@@ -217,57 +216,28 @@ def sanitise_for_public(rep):
     return clean(rep)
 
 
-def slack_payload(rep):
-    t, s = rep["totals"], rep["summary"]
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": f"{rep['keyword']} on YouTube: keyword report"}},
-              {"type": "section", "text": {"type": "mrkdwn", "text": f"*{s['headline']}*\n" + "\n".join(f"• {b}" for b in s["bullets"])}},
-              {"type": "context", "elements": [{"type": "mrkdwn", "text": f"{t['videos']} videos · {t['views']/1e6:.1f}M views · {t['comments']:,} comments read · sentiment score {t['score'] if t['score'] is not None else '–'}"}]}]
-    if rep["topics"]: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Topics*\n" + "\n".join(f"• *{x['name']}* ({x['n']} comments, sentiment {x['score']:+d})" for x in rep["topics"][:5] if x["score"] is not None)}})
-    top = [v for v in sorted(rep["videos"], key=lambda v: -(v["lift"] or 0)) if v["lift"]][:3]
-    if top: blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Highest-lift videos*\n" + "\n".join(f"• <{v['url']}|{v['title'][:70]}> ({v['channel']}, {v['lift']}x)" for v in top)}})
-    return {"text": s["headline"], "blocks": blocks}
+def push_bundle():
+    """What gets pushed: the FULL report's key summary (the same email and Slack digest the daily run sends), not a report of the keyword.
+    Built from the latest insights when they exist (local), otherwise read from docs/data.json, which every run rewrites (hosted)."""
+    ins_path = os.path.join(HERE, "data", "insights.json")
+    if os.path.exists(ins_path):
+        import report, notify
+        from common import title
+        ins = json.load(open(ins_path))
+        return dict(subject=f"{title()} (daily): {ins['narrative']['headline'][:80]}", email=report.build(ins, period="daily"), slack=notify.build(ins, period="daily"))
+    return json.load(open(os.path.join(HERE, "docs", "data.json")))["push"]
 
 
-def email_html(rep):
-    """The keyword report as an email in the same look as the daily email (report.py): headline, score tiles, topics and videos with the sentiment score first."""
-    import report as R
-    esc, t, sm = R.esc, rep["totals"], rep["summary"]
-    caps = rep.get("caps") or dict(videos=MAX_VIDEOS, comments=MAX_COMMENTS)
-    sc = lambda ps: (f"{net(ps):+d}" if net(ps) is not None else "–")
-    kp = lambda v, l: (f'<td style="padding:10px 14px;border:1px solid {R.LINE};border-radius:8px"><div style="font:600 22px Arial,sans-serif;color:{R.INK}">{v}</div>'
-                       f'<div style="font:12px Arial,sans-serif;color:{R.MUTE}">{l}</div></td><td style="width:8px"></td>')
-    kpis = kp(t["videos"], "videos") + kp(f"{t['views']/1e6:.1f}M", "views") + kp(f"{t['comments']:,}", "comments read") + kp(sc(t["ps"]), "sentiment score (positive minus negative, -100 to +100)")
-    bullets = "".join(f'<div style="padding:3px 0">&bull; {esc(b)}</div>' for b in sm["bullets"])
-    topics = "".join(f'<tr><td style="padding:6px 0;border-top:1px solid {R.LINE};font:13px Arial,sans-serif;width:300px"><b>{esc(x["name"])}</b><div style="color:{R.MUTE};font-size:12px">{esc(x["summary"])}</div>'
-                     f'<div style="color:{R.MUTE};font-size:11px">{x["n"]} comments</div></td><td style="padding:6px 8px;border-top:1px solid {R.LINE};font:13px Arial,sans-serif"><b>{sc(x["ps"])}</b><br>{R.sbar(*x["ps"], w=150)}</td></tr>'
-                     for x in rep["topics"][:5])
-    top = [v for v in sorted(rep["videos"], key=lambda v: -(v["lift"] or 0)) if v["lift"]][:5]
-    vids = "".join(f'<tr><td style="padding:6px 0;border-top:1px solid {R.LINE};font:13px Arial,sans-serif"><a href="{esc(v["url"])}" style="color:{R.ACC};text-decoration:none">{esc(v["title"][:80])}</a><br>'
-                   f'<span style="color:{R.MUTE};font-size:12px">{esc(v["channel"])} &middot; {v["lift"]}x lift &middot; {v["views"]/1e3:.0f}k views &middot; '
-                   f'{("sentiment " + sc(v["ps"])) if sum(v["ps"]) >= 10 else "too few comments for sentiment"}</span></td></tr>' for v in top)
-    return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(rep['keyword'])} keyword report</title></head><body style="margin:0;background:#f6f6f3"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f3"><tr><td align="center" style="padding:20px 10px">
-<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:640px;max-width:100%;background:#ffffff;border:1px solid {R.LINE};border-radius:12px">
-<tr><td style="padding:24px 28px 0;font:600 20px Arial,sans-serif;color:{R.INK}">{esc(rep['keyword'])} on YouTube<span style="font:13px Arial,sans-serif;color:{R.MUTE};font-weight:400"> &nbsp;keyword report &middot; {caps['videos']} videos x {caps['comments']} comments</span></td></tr>
-<tr><td style="padding:12px 28px 0;font:600 17px/1.4 Arial,sans-serif;color:{R.INK}">{esc(sm['headline'])}</td></tr>
-<tr><td style="padding:8px 28px 0;font:14px/1.55 Arial,sans-serif;color:{R.INK}">{bullets}</td></tr>
-<tr><td style="padding:16px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0"><tr>{kpis}</tr></table></td></tr>
-{R.h("Topics people talk about")}<tr><td style="padding:0 28px"><table role="presentation" cellpadding="0" cellspacing="0">{topics}</table></td></tr>
-{R.h("Highest-lift videos")}<tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{vids}</table></td></tr>
-<tr><td style="padding:22px 28px 24px;font:12px/1.5 Arial,sans-serif;color:{R.MUTE};border-top:1px solid {R.LINE}">A small sample: the top videos and comments for this keyword, read by Claude. Treat the numbers as directional.</td></tr>
-</table></td></tr></table></body></html>"""
-
-
-def deliver(rep):
-    """Send the report to the owner's Slack channel and inbox (their own keys). Returns what was sent."""
+def deliver(rep=None):
+    """Push the full report's key summary to the owner's Slack channel and inbox (their own keys). Returns what was sent."""
     import urllib.request
-    sent = []
+    b, sent = push_bundle(), []
     hook = secret("SLACK_WEBHOOK_URL", False)
     if hook:
-        urllib.request.urlopen(urllib.request.Request(hook, data=json.dumps(slack_payload(rep)).encode(), headers={"content-type": "application/json"}), timeout=30); sent.append("Slack")
+        urllib.request.urlopen(urllib.request.Request(hook, data=json.dumps(b["slack"]).encode(), headers={"content-type": "application/json"}), timeout=30); sent.append("Slack")
     key, to = secret("RESEND_API_KEY", False), secret("REPORT_EMAIL_TO", False)
     if key and to:
-        html = email_html(rep)
-        body = {"from": "YouTube Creator Social Listening <onboarding@resend.dev>", "to": [to], "subject": f"{rep['keyword']} on YouTube: keyword report", "html": html}
+        body = {"from": "YouTube Creator Social Listening <onboarding@resend.dev>", "to": [to], "subject": b["subject"], "html": b["email"]}
         urllib.request.urlopen(urllib.request.Request("https://api.resend.com/emails", data=json.dumps(body).encode(), method="POST",
                                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "launch-pulse/1.0"}), timeout=30); sent.append("email")
     return sent

@@ -2,8 +2,8 @@
 """Local server for the dashboard with everything live: python3 serve.py  ->  http://127.0.0.1:8770
   /                      dashboard.html
   POST /api/ask          Q&A (same core as the Slack agent)
-  POST /api/explore      keyword report; streams progress events (server-sent events), ends with the report
-  POST /api/explore/send send the last keyword report to your Slack channel and inbox
+  POST /api/explore      a keyword run; streams the steps (server-sent events), the last one pushes the full report's key summary
+  POST /api/explore/send push the full report's key summary to your Slack channel and inbox
   POST /api/refresh      run the scheduled pipeline now (daily pass, with the email and Slack push); streams the steps
 Bound to localhost; your API keys never reach the browser. The public page has none of these: its input and Refresh button are disabled."""
 import json, os, subprocess, sys, threading

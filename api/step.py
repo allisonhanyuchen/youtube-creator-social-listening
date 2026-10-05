@@ -1,4 +1,4 @@
-"""POST /api/step {code, step, state} -> {state, detail, secs}: runs ONE stage of the keyword report (search, baseline, comments, label, topics, report, push).
+"""POST /api/step {code, step, state} -> {state, detail, secs}: runs ONE stage of a keyword run (search, baseline, comments, label, topics, report, push).
 Each stage fits in a serverless request, the browser carries the state between them, and so it can show the steps live. Needs the demo code."""
 import json, os, sys, time
 from http.server import BaseHTTPRequestHandler

@@ -15,7 +15,7 @@ One page with a left sidebar of four modules (click one to show it, no scrolling
 |---|---|
 | 1 Who this is for | Creator managers, launch marketers, analysts |
 | 2 How this works | Collect (YouTube Data API: top videos under the keywords, top comments under each video) → Analyse (Claude API + local NLP: overview of creators and content, content performance, audience insights) → Report (dashboard, chat) → Push (Resend, Slack) → Refresh (GitHub Actions, daily) |
-| 3 See it in action | **A** type a keyword and watch each step with the tech it calls; the last step pushes the report to email and Slack. **B** the full report: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
+| 3 See it in action | **A** type a keyword and watch each step with the tech it calls; the last step pushes the full report's key summary to email and Slack. **B** the full report: Overview · Content performance · Audience insights · Reports & automation (run log, the email and Slack digest that get pushed), with **Refresh now** to run the real daily refresh and see it pushed. The public page replays a recorded keyword run |
 | 4 Make it yours | Bring your own keys, edit one config file, deploy |
 
 Every metric explains itself on hover, starting with the business question it answers. Sentiment is shown as a **net sentiment score** (positive % minus negative %, -100 to +100) next to a bar that keeps the neutral share visible.
@@ -75,7 +75,7 @@ SLACK_APP_TOKEN=xapp-...
 ```bash
 python3 src/run_weekly.py --no-send      # the whole pipeline once (add --daily or --weekly to force a mode)
 python3 src/serve.py                     # http://127.0.0.1:8770 with everything live: keyword input, Refresh now, chat
-python3 src/explore.py "standing desk"   # a keyword report in the terminal (--push sends it, --sample saves the public sample)
+python3 src/explore.py "standing desk"   # a keyword run in the terminal (--push also pushes the full report's key summary, --sample saves the public sample)
 python3 src/build_dashboard.py           # dashboard.html (local, with a few hundred quoted comments)
 
 python3 -m venv .venv && .venv/bin/pip install slack_bolt
