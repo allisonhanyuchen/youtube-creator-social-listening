@@ -1827,6 +1827,21 @@
     "topics": 4,
     "new": []
    }
+  },
+  {
+   "as_of": "2026-10-06",
+   "product": {
+    "rows": 1515,
+    "assigned": 0.859,
+    "topics": 18,
+    "new": []
+   },
+   "creator": {
+    "rows": 465,
+    "assigned": 0.746,
+    "topics": 4,
+    "new": []
+   }
   }
  ]
 }
