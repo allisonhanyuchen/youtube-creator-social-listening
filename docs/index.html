@@ -322,7 +322,7 @@ async function runRefreshHosted(){const code=await askCode();if(!code)return;
  show(link+"<p class='small'>Still running. Open GitHub to follow it.</p>")}
 async function replaySample(){if(TRY.replay)return;const rec=recStages();if(!rec.length)return;TRY.replay=true;TRY.pipe=true;TRY.stages=rec.map(s=>Object.assign({},s,{status:"pending",detail:"",secs:""}));render();
  for(let i=0;i<rec.length;i++){TRY.stages[i].status="run";render();await new Promise(r=>setTimeout(r,Math.min(2200,Math.max(700,rec[i].secs*14))));Object.assign(TRY.stages[i],{status:"done",detail:rec[i].detail,secs:rec[i].secs,subs:rec[i].subs});render()}
- TRY.replay=false;TRY.pipe=false;TRY.stages=null;render()}
+ TRY.replay=false;render()}         /* leave the finished steps on screen */
 /* Refresh now: runs the scheduled pipeline, shows the four stages */
 /* The Run button: save what you typed as the app's input and run the real pipeline (collect, analyse, report, push), following its four stages */
 const stageRows=()=>PGROUPS.map(([n,l,sub,re,tech])=>({n,label:`${n}. ${l}`,tech,re,status:"pending",detail:"",secs:""}));
