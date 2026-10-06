@@ -1939,5 +1939,89 @@
    "yt_units": 399,
    "usd": 0.409
   }
+ },
+ {
+  "started": "2026-10-06T19:59:11+00:00",
+  "finished": "2026-10-06T20:00:21+00:00",
+  "mode": "daily",
+  "ok": true,
+  "source": "github-actions",
+  "new_videos": 9,
+  "new_comments": 470,
+  "new_topics": [
+   "Apple execution praise"
+  ],
+  "alerts": 3,
+  "email": true,
+  "slack": true,
+  "slack_alerts": false,
+  "steps": [
+   {
+    "name": "collect new videos, refresh stats",
+    "status": "ok",
+    "secs": 3
+   },
+   {
+    "name": "classify new videos",
+    "status": "ok",
+    "secs": 10
+   },
+   {
+    "name": "daily view snapshot",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "channel baselines and lift",
+    "status": "ok",
+    "secs": 15
+   },
+   {
+    "name": "creator types",
+    "status": "ok",
+    "secs": 4
+   },
+   {
+    "name": "pull and label new comments",
+    "status": "ok",
+    "secs": 19
+   },
+   {
+    "name": "build tables",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "assign comments to topics, discover new ones",
+    "status": "ok",
+    "secs": 2
+   },
+   {
+    "name": "insights, changes and alerts",
+    "status": "ok",
+    "secs": 17
+   },
+   {
+    "name": "public demo page",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "email report",
+    "status": "ok",
+    "secs": 0
+   },
+   {
+    "name": "Slack digest",
+    "status": "ok",
+    "secs": 0
+   }
+  ],
+  "usage": {
+   "claude_in": 40509,
+   "claude_out": 9752,
+   "yt_units": 454,
+   "usd": 0.268
+  }
  }
 ]

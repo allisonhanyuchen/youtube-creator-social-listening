@@ -1420,6 +1420,78 @@
      },
      "origin": "discovered",
      "first_seen": "2026-10-06"
+    },
+    {
+     "id": "p19",
+     "name": "Apple execution praise",
+     "summary": "Commenters say Apple does foldables better than rivals, with admiring remarks on polish and reliability, plus side remarks on AppleCare coverage and the missing headphone jack.",
+     "terms": [
+      "apple",
+      "well",
+      "phone",
+      "great",
+      "glad",
+      "don",
+      "actually",
+      "telephoto"
+     ],
+     "centroid": {
+      "apple": 0.5973,
+      "well": 0.4271,
+      "phone": 0.3355,
+      "great": 0.2286,
+      "glad": 0.2112,
+      "don": 0.1952,
+      "actually": 0.1812,
+      "telephoto": 0.1634,
+      "new": 0.1382,
+      "phones": 0.1289,
+      "another": 0.1039,
+      "that's": 0.1003,
+      "folding": 0.094,
+      "crease": 0.0875,
+      "work": 0.0804,
+      "wait": 0.0722,
+      "open": 0.0677,
+      "text": 0.0602,
+      "now": 0.0601,
+      "foldables": 0.0594,
+      "time": 0.0568,
+      "folds": 0.0562,
+      "finally": 0.0552,
+      "big": 0.0551,
+      "both": 0.0532,
+      "long": 0.0509,
+      "hinge": 0.0497,
+      "bad": 0.0479,
+      "though": 0.0474,
+      "imagine": 0.0469,
+      "hands": 0.0454,
+      "before": 0.0447,
+      "deal": 0.0443,
+      "mention": 0.0437,
+      "perfect": 0.0393,
+      "better": 0.0393,
+      "cool": 0.0382,
+      "pay": 0.0348,
+      "keep": 0.0348,
+      "folding phones": 0.0343,
+      "version": 0.0331,
+      "last": 0.0319,
+      "change": 0.0308,
+      "feature": 0.0298,
+      "since": 0.0296,
+      "samsung": 0.0291,
+      "day": 0.0288,
+      "duo": 0.0281,
+      "foldable": 0.027,
+      "fold": 0.0256,
+      "iphone": 0.0247,
+      "size": 0.0247,
+      "miss": 0.0238
+     },
+     "origin": "discovered",
+     "first_seen": "2026-10-06"
     }
    ],
    "tau": 0.1622
@@ -1839,6 +1911,23 @@
    "creator": {
     "rows": 465,
     "assigned": 0.746,
+    "topics": 4,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-06",
+   "product": {
+    "rows": 1558,
+    "assigned": 0.855,
+    "topics": 19,
+    "new": [
+     "p19"
+    ]
+   },
+   "creator": {
+    "rows": 472,
+    "assigned": 0.718,
     "topics": 4,
     "new": []
    }
