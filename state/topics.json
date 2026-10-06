@@ -1812,6 +1812,21 @@
     "topics": 4,
     "new": []
    }
+  },
+  {
+   "as_of": "2026-10-06",
+   "product": {
+    "rows": 1511,
+    "assigned": 0.86,
+    "topics": 18,
+    "new": []
+   },
+   "creator": {
+    "rows": 466,
+    "assigned": 0.747,
+    "topics": 4,
+    "new": []
+   }
   }
  ]
 }
