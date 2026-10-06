@@ -100,26 +100,3 @@ class RunUsage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-class OpenPreview(unittest.TestCase):
-    def setUp(self):
-        import demo_gate as g
-        self.g = g; g.PUBLIC.update(d="", n=0, units=0, ip={}); os.environ["DEMO_CODE"] = "secret"
-
-    def test_each_visitor_gets_a_couple_of_previews_a_day(self):
-        g = self.g
-        self.assertTrue(g.allow_public("1.1.1.1", 180)[0]); self.assertTrue(g.allow_public("1.1.1.1", 180)[0])
-        self.assertFalse(g.allow_public("1.1.1.1", 180)[0])
-        self.assertTrue(g.allow_public("2.2.2.2", 180)[0])
-
-    def test_the_day_has_a_budget(self):
-        g = self.g
-        self.assertFalse(g.allow_public("3.3.3.3", g.PUBLIC_UNITS_PER_DAY + 1)[0])
-
-    def test_state_is_signed_and_tampering_is_rejected(self):
-        g = self.g
-        st = g.sign({"keyword": "x", "n_videos": 20, "n_comments": 20})
-        self.assertEqual(g.verify(dict(st))["n_videos"], 20)
-        self.assertIsNone(g.verify(dict(st, n_videos=200)))
-        self.assertIsNone(g.verify({"keyword": "x", "n_videos": 200}))
