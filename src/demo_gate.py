@@ -1,4 +1,4 @@
-"""The demo code that protects the live parts of the hosted page (a keyword run and Refresh now).
+"""The demo code that protects the live parts of the hosted page (Run and Refresh now).
 Only whoever knows DEMO_CODE (a Vercel environment variable, never in the page or the repo) can start them; everyone else sees the recorded sample.
 Limits are best effort per serverless instance; the hard stop is the spend limit on the API keys."""
 import hmac, os, time

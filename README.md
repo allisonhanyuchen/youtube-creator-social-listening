@@ -86,7 +86,7 @@ Bring your own API keys and deploy. You set what to listen to in the app itself,
 3. **Open your page and type your input**: the keywords, how many top videos per keyword, how many comments per video. Press **Run**: it saves them as the app's input, runs the pipeline on GitHub Actions (collect, analyse, report, push), shows the report and pushes the key summary to your email and Slack
 4. **That is all**: the saved input is repeated every day at 15:00 UTC; change it in the page any time (new keywords for another product start from scratch)
 
-The deployed page is the clean app: input, run, report, push. The sidebar, recorded sample, Quick preview, example email and Slack previews and explanations on the public demo are extras for demonstration (they appear when `"demo": true` in `input.json`).
+The deployed page is the clean app: input, run, report, push. The sidebar, the replay of a recorded run, example email and Slack previews and explanations on the public demo are extras for demonstration (they appear when `"demo": true` in `input.json`).
 
 Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 
@@ -101,7 +101,7 @@ All the code is in `src/` (run any script as `python3 src/<name>.py`), grouped h
 | **Collect** | `collect.py` `classify.py` `relevance.py` `comments.py` `snapshots.py` `performance.py` `creators.py` | Videos, channel stats and comments from the YouTube Data API; Claude labels each comment (`comments.py`) and checks a video is about the product (`relevance.py`); daily view snapshots and lift against each channel's baseline |
 | **Analyse** | `db.py` `topics.py` `textcluster.py` `insights.py` `summaries.py` `examples.py` | SQLite tables, local TF-IDF and k-means topics (Claude only names them), metrics, alerts and changes, paraphrased topic notes, recorded Q&A examples |
 | **Report and push** | `report.py` `notify.py` `build_dashboard.py` `dashboard.tmpl.html` `export_public_db.py` `public_safety.py` | Email (Resend) and Slack digests, the interactive page, the text-free public database and the check that no comment wording is published |
-| **Run and refresh** | `run_weekly.py` `explore.py` `inputs.py` `state_io.py` `demo_gate.py` | The four-stage runner used by GitHub Actions, the keyword runs, saving the page's input, the text-free state between runs, the demo-code gate |
+| **Run and refresh** | `run_weekly.py` `inputs.py` `state_io.py` `demo_gate.py` | The four-stage runner used by GitHub Actions, saving the page's input, the text-free state between runs, the demo-code gate |
 | **Ask and serve** | `ask.py` `slack_bot.py` `serve.py` | Q&A over read-only SQL, the Slack agent, the local server; `common.py` holds the shared helpers |
 
 Everything else:

@@ -1,6 +1,6 @@
 """Is a video really about the product? Search results also bring accessories (cases, chargers, mice, stands), other products or brands that share a name
 (another company's "Duo"), and unrelated videos. This asks Claude once per 60 titles and returns the ids that are NOT about the product itself,
-so classify.py and the keyword explorer can leave them out of the numbers."""
+so classify.py can leave them out of the numbers."""
 import json
 from common import claude, parse_json
 

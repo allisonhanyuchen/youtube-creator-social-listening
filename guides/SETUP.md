@@ -91,10 +91,10 @@ Pick one:
 
 | Variable | For |
 |---|---|
-| `ANTHROPIC_API_KEY` | live chat and keyword runs. Use a dedicated key with a spend limit set in the Anthropic console: that limit is the hard cap |
-| `DEMO_CODE` | the code that unlocks keyword runs and Refresh now. Without it they stay off and the page shows the recorded sample |
-| `YOUTUBE_API_KEY` | keyword runs |
-| `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` | where a keyword run pushes its report |
+| `ANTHROPIC_API_KEY` | live chat and runs. Use a dedicated key with a spend limit set in the Anthropic console: that limit is the hard cap |
+| `DEMO_CODE` | the code that unlocks Run and Refresh now. Without it they stay off and the page shows the recorded sample |
+| `YOUTUBE_API_KEY` | collecting videos and comments |
+| `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO` | where a run pushes its report |
 | `GITHUB_TOKEN` | Run and Refresh now: a fine-grained token on this repo only with **Actions** and **Contents** both set to read and write (Run saves the input to `input.json` and starts the workflow) |
 | optional | `GITHUB_REPO`, `CHAT_PER_HOUR` (8), `CHAT_PER_DAY` (300), `CHAT_DISABLED`, `DEMO_RUNS_PER_DAY` (25), `DEMO_UNITS_PER_DAY` (3,000), `DEMO_REFRESH_COOLDOWN` (300 s) |
 
@@ -132,7 +132,6 @@ SLACK_APP_TOKEN=xapp-...
 ```bash
 python3 src/run_weekly.py --no-send      # the whole pipeline once (add --daily or --weekly to force a mode)
 python3 src/serve.py                     # http://127.0.0.1:8770 with everything live: keyword input, Refresh now, chat
-python3 src/explore.py "standing desk"   # a keyword run in the terminal (--videos 200 --comments 20 set the size and print the estimate; --push also pushes the full report's key summary; --sample saves the public sample)
 python3 src/build_dashboard.py           # dashboard.html (local, with a few hundred quoted comments)
 
 python3 -m venv .venv && .venv/bin/pip install slack_bolt

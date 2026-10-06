@@ -2,8 +2,6 @@
 """Local server for the dashboard with everything live: python3 serve.py  ->  http://127.0.0.1:8770
   /                      dashboard.html
   POST /api/ask          Q&A (same core as the Slack agent)
-  POST /api/explore      a keyword run; streams the steps (server-sent events), the last one pushes the full report's key summary
-  POST /api/explore/send push the full report's key summary to your Slack channel and inbox
   POST /api/refresh      run the scheduled pipeline now (daily pass, with the email and Slack push); streams the steps
 Bound to localhost; your API keys never reach the browser. The public page has none of these: its input and Refresh button are disabled."""
 import json, os, subprocess, sys, threading
@@ -11,9 +9,8 @@ import inputs
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from common import HERE, SRC
 from ask import ask
-import explore
 
-LOCK, BUSY, LAST = threading.Lock(), threading.Lock(), {}
+LOCK, BUSY = threading.Lock(), threading.Lock()
 
 
 class H(BaseHTTPRequestHandler):
@@ -45,10 +42,6 @@ class H(BaseHTTPRequestHandler):
                 with LOCK:
                     r = ask(q, d.get("history", [])[-3:], str(d.get("context", ""))[:400])
                 return self._send(200, json.dumps(dict(answer=r["answer"], sql=r["sql"], cols=r["cols"], rows=r["rows"][:15]), default=str))
-            if self.path == "/api/explore": return self._explore(str(d.get("keyword", "")).strip()[:80], bool(d.get("push")), d.get("n_videos"), d.get("n_comments"))
-            if self.path == "/api/explore/send":
-                if not LAST.get("report"): return self._send(400, json.dumps({"error": "run a keyword first"}))
-                return self._send(200, json.dumps({"sent": explore.deliver(LAST["report"])}))
             if self.path == "/api/refresh": return self._refresh()
             if self.path == "/api/run": return self._run(d)
             self._send(404, "{}")
@@ -57,20 +50,6 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:
             try: self._send(500, json.dumps({"error": str(e)[:200]}))
             except Exception: pass
-
-    def _explore(self, kw, push=False, n_videos=explore.DEFAULT_VIDEOS, n_comments=explore.DEFAULT_COMMENTS):
-        if len(kw) < 2: return self._send(400, json.dumps({"error": "type a keyword"}))
-        if not BUSY.acquire(blocking=False): return self._send(409, json.dumps({"error": "another run is in progress"}))
-        try:
-            self._stream_start()
-            try:
-                rep = explore.build(kw, self._event, push, n_videos, n_comments)
-                LAST["report"] = explore.clean(rep)
-                self._event(dict(done=True, report=LAST["report"]))
-            except SystemExit as e:
-                self._event(dict(error=str(e)))
-        finally:
-            BUSY.release()
 
     def _run(self, d):
         """The page's Run button on your own computer: save the input to input.json, then run the real pipeline (new keywords for another product start from scratch)."""
