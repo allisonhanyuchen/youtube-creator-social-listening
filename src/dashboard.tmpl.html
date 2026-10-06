@@ -301,7 +301,7 @@ function vTry(){const on=LOCAL||HOSTED,demo=!!D.demo,gh="https://github.com/alli
  <p class="small mute" style="margin:6px 0 0">Saved as the app's input: the daily refresh repeats it. New keywords for another product start from scratch.</p>
  <div id="est">${estHtml(estRun(nk,TRY.nv,TRY.nc),TRY.usage,TRY.secsAct)}</div>
  ${TRY.err?`<div class="disc" style="background:#fdf0ee;color:var(--neg)">${esc(TRY.err)}</div>`:""}${TRY.msg?`<p class="small" style="margin:8px 0 0"><b>${esc(TRY.msg)}</b>${TRY.runUrl?` <a href="${esc(TRY.runUrl)}" target="_blank" rel="noopener">Watch this run on GitHub →</a>`:""}</p>`:""}
- ${stages?`<div style="margin-top:10px"><b class="small">${TRY.run||TRY.replay?"What it is doing":on?"What it did":"What it did (recorded, the latest full run)"}</b>${progHtml((TRY.stages&&(TRY.run||TRY.pipe||TRY.replay)?TRY.stages:rec).map(g=>({label:g.label,tech:g.tech,status:g.status,detail:g.detail,secs:g.secs,subs:g.subs})))}</div>`
+ ${stages?`<div style="margin-top:10px"><b class="small">${TRY.run||TRY.replay?"What it is doing":TRY.pinned?"Your last run, pinned":on?"What it did":"What it did (recorded, the latest full run)"}</b>${TRY.pinned&&!TRY.run?` <span class="small faint">· finished ${new Date(TRY.pinned).toLocaleString()}</span> <button class="btn" data-act="clearrun" style="margin-left:8px">Clear</button>`:""}${progHtml((TRY.stages&&(TRY.run||TRY.pipe||TRY.replay)?TRY.stages:rec).map(g=>({label:g.label,tech:g.tech,status:g.status,detail:g.detail,secs:g.secs,subs:g.subs})))}</div>`
   :demo?`<div style="margin-top:10px"><b class="small">${TRY.run?"What it is doing":TRY.report?"What the quick preview did":"The seven steps of a quick preview"}</b>${progHtml(TRY.rows)}</div>`:""}
  ${demo&&TRY.report&&LOCAL&&!TRY.pushed?`<p style="margin:10px 0 0"><button class="btn pri" data-act="exsend">Push the full report's key summary to my Slack and email</button> <span class="small faint">${esc(TRY.msg)}</span></p>`:""}`}
 /* ---------- demo code (hosted page): unlocks the live runs for the owner ---------- */
@@ -357,7 +357,7 @@ function applyJob(G,jb){jb.steps.forEach(s=>{const m=/^(\d) /.exec(s.name);if(!m
  if(s.started_at&&s.conclusion!=="skipped"){g.t0=Date.parse(s.started_at);g.t1=s.completed_at?Date.parse(s.completed_at):null;g.secs=Math.max(0,Math.round(((g.t1||Date.now())-g.t0)/1000))}})}
 const tickSecs=G=>{G.forEach(g=>{if(g.status==="run"&&g.t0)g.secs=Math.max(0,Math.round((Date.now()-g.t0)/1000))})};
 const recStages=()=>{const runs=(D.runs||[]).filter(r=>r.ok),r=runs.filter(x=>x.email).pop()||runs.filter(x=>x.mode==="weekly").pop()||runs.pop();return r?stepGroups(r.steps).map(g=>{const pg=PGROUPS.find(x=>x[0]===g.n);return{label:`${g.n}. ${g.l}`,tech:pg?pg[4]:[],status:"done",detail:"",secs:g.secs,subs:g.xs.map(x=>({name:x.name,secs:x.secs}))}}):[]};
-async function runInput(){const kw=($("#kw")&&$("#kw").value||"").trim();if(!KW(kw).length){TRY.err="Type at least one keyword.";render();return}
+async function runInput(){const t0=Date.now(),kw=($("#kw")&&$("#kw").value||"").trim();if(!KW(kw).length){TRY.err="Type at least one keyword.";render();return}
  TRY.kw=kw;TRY.nv=clp($("#nv")&&$("#nv").value,50,200);TRY.nc=clp($("#nc")&&$("#nc").value,60,150);TRY.err="";TRY.msg="";TRY.usage=null;TRY.report=null;TRY.replay=false;
  const body={keywords:TRY.kw,top_videos:TRY.nv,comments_per_video:TRY.nc};let code=null;
  if(!LOCAL){code=await askCode();if(!code)return}
@@ -369,7 +369,7 @@ async function runInput(){const kw=($("#kw")&&$("#kw").value||"").trim();if(!KW(
    if(!run.run_id)throw new Error("The run was started; open the Actions tab on GitHub to follow it.");
    const tick=setInterval(()=>{if(!TRY.run){clearInterval(tick);return}tickSecs(G);render()},1000);for(let n=0;n<160&&!ok;n++){await new Promise(r=>setTimeout(r,6000));let jb;try{jb=(await (await fetch(`https://api.github.com/repos/${GHREPO}/actions/runs/${run.run_id}/jobs`)).json()).jobs[0]}catch(e){continue}if(!jb)continue;
     applyJob(G,jb);render();if(jb.status==="completed"){clearInterval(tick);TRY.secsAct=G.reduce((a,g)=>a+(+g.secs||0),0);if(jb.conclusion!=="success")throw new Error("The run did not finish cleanly. Open it on GitHub for the log.");ok=true}}clearInterval(tick)}
-  if(ok){TRY.msg=LOCAL?"Done. Loading the new report…":"Done. The page redeploys with the new report in about a minute, then reloads.";S.tab="overview";save();render();setTimeout(()=>location.reload(),LOCAL?1500:75000)}
+  if(ok){pinRun(G,t0);TRY.msg=LOCAL?"Done. Loading the new report…":"Done. The page redeploys with the new report in about a minute, then reloads.";S.tab="overview";save();render();setTimeout(()=>location.reload(),LOCAL?1500:75000)}
  }catch(e){TRY.err=e.message}
  TRY.run=false;render()}
 async function runRefresh(){const G=PGROUPS.map(([n,l,sub,re,tech])=>({n,label:`${n}. ${l}`,tech,re,status:"pending",detail:"",secs:0}));let cur=-1;
@@ -427,7 +427,7 @@ document.addEventListener("click",e=>{const t=e.target,c=s=>t.closest&&t.closest
  else if(h=c("[data-sug]")){doAsk(h.dataset.sug)}
  else if(h=c("[data-act]")){const[a,v]=h.dataset.act.split(":");
   if(a==="reset"){e.preventDefault();const t0=S.tab;S=defaults();S.tab=t0;POP=null;render()}
-  else if(a==="more"){S.more[v]=!S.more[v];render()}else if(a==="about"){$("#mbox").innerHTML=ABOUT;$("#modal").classList.add("open")}else if(a==="aboutclose"){$("#modal").classList.remove("open")}else if(a==="run"){runInput()}else if(a==="explore"){runExplore()}else if(a==="replay"){replaySample()}else if(a==="refresh"){LOCAL?runRefresh():runRefreshHosted()}else if(a==="exsend"){fetch("/api/explore/send",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(r=>r.json()).then(j=>{TRY.msg=j.sent&&j.sent.length?"Sent to "+j.sent.join(" and ")+".":(j.error||"Nothing to send to: add Slack or email keys.");render()}).catch(()=>{TRY.msg="Could not send.";render()})}
+  else if(a==="more"){S.more[v]=!S.more[v];render()}else if(a==="about"){$("#mbox").innerHTML=ABOUT;$("#modal").classList.add("open")}else if(a==="aboutclose"){$("#modal").classList.remove("open")}else if(a==="run"){runInput()}else if(a==="explore"){runExplore()}else if(a==="replay"){replaySample()}else if(a==="clearrun"){clearPin()}else if(a==="refresh"){LOCAL?runRefresh():runRefreshHosted()}else if(a==="exsend"){fetch("/api/explore/send",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(r=>r.json()).then(j=>{TRY.msg=j.sent&&j.sent.length?"Sent to "+j.sent.join(" and ")+".":(j.error||"Nothing to send to: add Slack or email keys.");render()}).catch(()=>{TRY.msg="Could not send.";render()})}
   else if(a==="chat"){$("#chat").classList.add("open");$("#chatbtn").style.display="none";chatRender();$("#askin").focus()}else if(a==="chatclose"){$("#chat").classList.remove("open");$("#chatbtn").style.display="block"}else if(a==="ask"){doAsk()}
   else if(a==="csv"){const vs=sorted(base());csv("content_list.csv",[["video","url","creator","region","level","content type","lift","views","views gained 24h","views gained 7d","engagement rate","positive","negative","product comments"]].concat(vs.map(x=>[x.t,x.url,x.cr_.name,regionOf(x),x.cr_.tier,LBL.f[x.f],x.rl==null?"":x.rl.toFixed(2),x.vw,x.d1??"",x.d7??"",x.er.toFixed(4),nps(x)?posOf(x).toFixed(2):"",nps(x)?negOf(x).toFixed(2):"",nps(x)])))}}});
 document.addEventListener("change",e=>{const k=e.target.dataset&&e.target.dataset.chk;if(k){const[g,v]=k.split(/:(.*)/s),a=S[g],i=a.indexOf(v);i>=0?a.splice(i,1):a.push(v);render()}});
@@ -435,7 +435,15 @@ document.addEventListener("input",e=>{if(e.target.id==="nv"||e.target.id==="nc"|
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="kw")runInput();if(e.key==="Enter"&&e.target.id==="askin")doAsk();if(e.key==="Escape")$("#modal").classList.remove("open")});
 $("#modal").addEventListener("click",e=>{if(e.target.id==="modal")e.target.classList.remove("open")});
 if(!D.demo){document.body.classList.add("clean");S.sec="ex";["xb-a","xb-b"].forEach(i=>{const e=$("#"+i);e.removeAttribute("name");e.open=true})}
-notes();render();if(S.tab!=="overview")$("#xb-b").open=true;
+const PIN="pulse_lastrun";
+function pinRun(G,t0){try{localStorage.setItem(PIN,JSON.stringify({t0,at:Date.now(),kw:TRY.kw,nv:TRY.nv,nc:TRY.nc,runUrl:TRY.runUrl||"",usage:TRY.usage||null,secsAct:TRY.secsAct||null,stages:G.map(g=>({label:g.label,tech:g.tech,status:g.status,detail:g.detail,secs:g.secs,subs:g.subs}))}))}catch(e){}}
+function restorePin(){let sn=null;try{sn=JSON.parse(localStorage.getItem(PIN)||"null")}catch(e){}if(!sn||!sn.stages)return;
+ const r=(D.runs||[]).filter(x=>x.ok&&Date.parse(x.started)>=sn.t0-90000).sort((a,b)=>Date.parse(a.started)-Date.parse(b.started))[0];       /* the run this page started: its timings and usage are now in the page */
+ let st=sn.stages,us=sn.usage,sa=sn.secsAct;
+ if(r){st=stepGroups(r.steps).map(g=>{const pg=PGROUPS.find(x=>x[0]===g.n);return{label:`${g.n}. ${g.l}`,tech:pg?pg[4]:[],status:g.bad?"failed":"done",detail:"",secs:g.secs,subs:g.xs.map(x=>({name:x.name,secs:x.secs}))}});us=r.usage||us;sa=st.reduce((a,g)=>a+(+g.secs||0),0)}
+ Object.assign(TRY,{kw:sn.kw,nv:sn.nv,nc:sn.nc,stages:st,pipe:true,usage:us,secsAct:sa,runUrl:sn.runUrl,pinned:sn.at,msg:"Your last run is pinned here until you clear it."})}
+function clearPin(){try{localStorage.removeItem(PIN)}catch(e){}Object.assign(TRY,{stages:null,pipe:false,usage:null,secsAct:null,runUrl:"",pinned:null,msg:"",err:""});render()}
+restorePin();notes();render();if(S.tab!=="overview")$("#xb-b").open=true;
 fetch("/api/ping").then(r=>r.ok?r.json():null).then(j=>{if(j&&j.local){LOCAL=true;render()}}).catch(()=>{});
 fetch("/api/verify").then(r=>r.ok?r.json():null).then(j=>{if(j&&j.gate&&!LOCAL){HOSTED=true;render()}}).catch(()=>{});
 </script></body></html>
