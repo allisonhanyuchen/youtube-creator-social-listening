@@ -74,7 +74,7 @@ def assign_all(vecs, topics, tau):
 def cold_start(rows, pool, as_of):
     cfg = POOLS[pool]
     texts = [r["text"] for r in rows]
-    vecs, cl = tc.clusters(texts, min_size=cfg["min_size"])
+    vecs, cl = tc.clusters(texts, k=max(6, min(30, len(texts) // 65)), min_size=cfg["min_size"])      # fine clusters first; naming then merges those about the same subject
     cl = [c for c in cl if c["coherence"] >= 0.13]
     out = ask_names(cl, texts, [], pool)
     by = {c["id"]: c for c in cl}
