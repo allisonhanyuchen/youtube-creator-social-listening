@@ -17,7 +17,7 @@
  },
  "topic": "duo",
  "topic_regex": "iphone|\\bduo\\b|apple",
- "demo_video": "",
+ "demo_video": "https://www.loom.com/share/a2d8c23894f04420aa146b177a87b48a",
  "topics": {
   "duo": "iPhone Duo (the new foldable)",
   "iphone_18_pro": "iPhone 18 Pro / Pro Max",
