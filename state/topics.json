@@ -1704,6 +1704,21 @@
      "c04"
     ]
    }
+  },
+  {
+   "as_of": "2026-10-06",
+   "product": {
+    "rows": 1512,
+    "assigned": 0.813,
+    "topics": 17,
+    "new": []
+   },
+   "creator": {
+    "rows": 465,
+    "assigned": 0.748,
+    "topics": 4,
+    "new": []
+   }
   }
  ]
 }
