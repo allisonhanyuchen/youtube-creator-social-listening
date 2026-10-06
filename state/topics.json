@@ -1344,6 +1344,82 @@
      },
      "origin": "initial",
      "first_seen": "2026-10-06"
+    },
+    {
+     "id": "p18",
+     "name": "First-generation claims",
+     "summary": "Commenters debate whether Apple is truly first, noting earlier foldables like Motorola's, while others praise the polish of a first-gen device or mention return windows.",
+     "terms": [
+      "first",
+      "time",
+      "back",
+      "iphone",
+      "since",
+      "these",
+      "guess",
+      "definitely"
+     ],
+     "centroid": {
+      "first": 0.6576,
+      "time": 0.3482,
+      "back": 0.2561,
+      "iphone": 0.2496,
+      "since": 0.1827,
+      "these": 0.1817,
+      "guess": 0.1714,
+      "definitely": 0.1689,
+      "used": 0.1405,
+      "making": 0.1337,
+      "already": 0.1256,
+      "waiting": 0.1149,
+      "phone": 0.1089,
+      "samsung": 0.0893,
+      "last": 0.0889,
+      "crease": 0.0851,
+      "foldable": 0.0839,
+      "feature": 0.0825,
+      "day": 0.0797,
+      "wanted": 0.0777,
+      "great": 0.0739,
+      "don": 0.072,
+      "innovative": 0.0688,
+      "before": 0.0665,
+      "actually": 0.0638,
+      "cool": 0.0618,
+      "open": 0.0584,
+      "becomes": 0.0562,
+      "each": 0.0541,
+      "now": 0.0506,
+      "product": 0.0476,
+      "bad": 0.0451,
+      "having": 0.0394,
+      "other": 0.0364,
+      "using": 0.0358,
+      "miss": 0.0344,
+      "times": 0.0339,
+      "game": 0.0334,
+      "telephoto": 0.0327,
+      "those": 0.0321,
+      "less": 0.0319,
+      "both": 0.0319,
+      "love": 0.0307,
+      "hinge": 0.0302,
+      "watching": 0.0302,
+      "that's": 0.0291,
+      "dollars": 0.0291,
+      "fold": 0.0289,
+      "after": 0.0287,
+      "nice": 0.0285,
+      "another": 0.0266,
+      "apple": 0.0253,
+      "doesn": 0.0249,
+      "everyone": 0.0234,
+      "phones": 0.0223,
+      "good": 0.0185,
+      "new": 0.0173
+     },
+     "origin": "discovered",
+     "first_seen": "2026-10-06"
     }
    ],
    "tau": 0.1622
@@ -1716,6 +1792,23 @@
    "creator": {
     "rows": 465,
     "assigned": 0.748,
+    "topics": 4,
+    "new": []
+   }
+  },
+  {
+   "as_of": "2026-10-06",
+   "product": {
+    "rows": 1512,
+    "assigned": 0.841,
+    "topics": 18,
+    "new": [
+     "p18"
+    ]
+   },
+   "creator": {
+    "rows": 466,
+    "assigned": 0.747,
     "topics": 4,
     "new": []
    }
