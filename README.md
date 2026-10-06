@@ -94,20 +94,26 @@ Run it on your computer: `python3 src/serve.py` and open http://127.0.0.1:8770.
 
 ## 📁 Project Structure
 
+All the code is in `src/` (run any script as `python3 src/<name>.py`), grouped here by the step of the workflow it belongs to:
+
+| Step | Files in `src/` | What they do |
+|---|---|---|
+| **Collect** | `collect.py` `classify.py` `relevance.py` `comments.py` `snapshots.py` `performance.py` `creators.py` | Videos, channel stats and comments from the YouTube Data API; Claude labels each comment (`comments.py`) and checks a video is about the product (`relevance.py`); daily view snapshots and lift against each channel's baseline |
+| **Analyse** | `db.py` `topics.py` `textcluster.py` `insights.py` `summaries.py` `examples.py` | SQLite tables, local TF-IDF and k-means topics (Claude only names them), metrics, alerts and changes, paraphrased topic notes, recorded Q&A examples |
+| **Report and push** | `report.py` `notify.py` `build_dashboard.py` `dashboard.tmpl.html` `export_public_db.py` `public_safety.py` | Email (Resend) and Slack digests, the interactive page, the text-free public database and the check that no comment wording is published |
+| **Run and refresh** | `run_weekly.py` `explore.py` `inputs.py` `state_io.py` `demo_gate.py` | The four-stage runner used by GitHub Actions, the keyword runs, saving the page's input, the text-free state between runs, the demo-code gate |
+| **Ask and serve** | `ask.py` `slack_bot.py` `serve.py` | Q&A over read-only SQL, the Slack agent, the local server; `common.py` holds the shared helpers |
+
+Everything else:
+
 ```
-├── src/                 all the code (run any script as python3 src/<name>.py)
-│   ├── collect.py classify.py relevance.py comments.py snapshots.py performance.py   collect and label
-│   ├── db.py topics.py textcluster.py insights.py                                    analyse
-│   ├── report.py notify.py build_dashboard.py                                        email, Slack, the page
-│   ├── run_weekly.py explore.py ask.py serve.py slack_bot.py                         the runner, keyword runs, Q&A
-│   └── dashboard.tmpl.html                                                           the page template
 ├── api/                 Vercel functions: live chat, demo-code gated runs and refresh
 ├── state/               committed, text-free data so every run is incremental
 ├── docs/                the public page (rebuilt by every run)
 ├── guides/              SETUP.md (keys, deploy) and METRICS.md (definitions, limits, privacy)
 ├── screenshots/         images used in this README
 ├── tests/               unit tests, standard library only
-├── input.json         your inputs: keywords, top videos, comments per video, and the product
+├── input.json           your inputs: keywords, top videos, comments per video, and the product
 └── .github/workflows/   refresh.yml (daily run), tests.yml
 ```
 
