@@ -1946,6 +1946,21 @@
     "topics": 4,
     "new": []
    }
+  },
+  {
+   "as_of": "2026-10-08",
+   "product": {
+    "rows": 1602,
+    "assigned": 0.846,
+    "topics": 19,
+    "new": []
+   },
+   "creator": {
+    "rows": 525,
+    "assigned": 0.733,
+    "topics": 4,
+    "new": []
+   }
   }
  ]
 }
