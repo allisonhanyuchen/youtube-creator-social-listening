@@ -22,10 +22,10 @@ STAGES = {"refresh": ["collect new videos, refresh stats", "classify new videos"
 
 
 def mode():
-    """daily = light pass (new data, topics, alerts) that still sends a short update; weekly = full pass with topic notes and the full email and digest. Auto: weekly on Mondays (UTC)."""
+    """daily = light pass (new data, topics, alerts) that still sends a short update; weekly = full pass with topic notes and the full email and digest. Auto: weekly (the full pass), because the schedule is monthly."""
     if "--daily" in sys.argv: return "daily"
     if "--weekly" in sys.argv: return "weekly"
-    return "weekly" if datetime.now(timezone.utc).weekday() == 0 else "daily"
+    return "weekly"
 
 
 def run_usage():

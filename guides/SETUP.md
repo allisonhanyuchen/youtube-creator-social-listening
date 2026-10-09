@@ -5,7 +5,7 @@ Everything you need to run this for your own product, from the first account to 
 
 A step-by-step guide, no coding needed except editing one small file. You will create accounts for five services, copy a key from each, and paste the keys into GitHub and Vercel. Plan on about an hour, plus 10 to 25 minutes for the first run.
 
-**What it costs** (estimates from this demo): YouTube Data API is free (10,000 quota units a day; one search is 100). Claude is pay-as-you-go: the first full run reads about 7,000 comments and cost a few dollars; each daily run after that is cents. Resend, Slack, GitHub, GitHub Actions and Vercel have free tiers that are enough.
+**What it costs** (estimates from this demo): YouTube Data API is free (10,000 quota units a day; one search is 100). Claude is pay-as-you-go: the first full run reads about 7,000 comments and cost a few dollars; each refresh after that costs far less, because it only labels the new comments. Resend, Slack, GitHub, GitHub Actions and Vercel have free tiers that are enough.
 
 ### Step 0 · Accounts you need
 A [GitHub](https://github.com/signup) account, plus the services below as you reach them. Keep a text file open to hold the keys while you set up. Never post a key in a chat, an issue or a commit.
@@ -106,12 +106,12 @@ Pick one:
 - Where the functions are missing (GitHub Pages), the page falls back to the recorded sample and recorded answers by itself.
 
 
-## The daily run
+## The scheduled run
 
-`refresh.yml` runs every day at 15:00 UTC and on demand, in four stages that appear as four workflow steps: **1 Refresh source data** (new videos, stats, daily view snapshot, baselines) → **2 Analyse** (label new comments, assign topics and discover new ones, insights and changes) → **3 Update reports** (topic notes, recorded Q&A, the text-free database, the page) → **4 Push to email and Slack**. Then it records the run in `state/runs.json` and commits `state/`, `docs/` and `api/` back, so the next run is incremental and the hosted page redeploys.
+`refresh.yml` runs on the 1st of every month at 15:00 UTC and on demand, in four stages that appear as four workflow steps: **1 Refresh source data** (new videos, stats, daily view snapshot, baselines) → **2 Analyse** (label new comments, assign topics and discover new ones, insights and changes) → **3 Update reports** (topic notes, recorded Q&A, the text-free database, the page) → **4 Push to email and Slack**. Then it records the run in `state/runs.json` and commits `state/`, `docs/` and `api/` back, so the next run is incremental and the hosted page redeploys.
 
-- **Light pass** (Tuesday to Sunday): skips the slow Claude steps but still sends a short "daily" email and Slack digest.
-- **Full pass** (Monday): everything, plus the full "weekly" email and digest.
+- **Scheduled run**: always the full pass (everything, plus the full email and Slack digest).
+- **Light pass**: only when you pick `daily` by hand or press **Refresh now**; it skips the slow Claude steps and sends a short update.
 - Inputs when started by hand: `send` (off = no email or Slack) and `mode` (auto, daily, weekly).
 
 
@@ -138,4 +138,4 @@ python3 -m venv .venv && .venv/bin/pip install slack_bolt
 .venv/bin/python src/slack_bot.py        # Slack agent: mention it to ask a question
 ```
 
-On the local server the keyword input and **Refresh now** run for real (Refresh now runs the daily pass and pushes to email and Slack with your keys). Tests: `python3 -m unittest discover -s tests -t .` (no keys, no network).
+On the local server the keyword input and **Refresh now** run for real (Refresh now runs the light pass and pushes to email and Slack with your keys). Tests: `python3 -m unittest discover -s tests -t .` (no keys, no network).

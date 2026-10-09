@@ -11,6 +11,9 @@ def slack_text(t):
     return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("|", "/")
 
 
+LABEL = {"weekly": "monthly", "daily": "quick"}
+
+
 def build(ins, alerts_only=False, example=False, period="weekly"):
     n, m, al = ins["narrative"], ins["metrics"], ins["alerts"]
     if alerts_only:
@@ -25,7 +28,7 @@ def build(ins, alerts_only=False, example=False, period="weekly"):
              "durability_test": "Durability test", "explainer_tips": "Explainer / tips", "rumor_leak": "Rumor / leak", "meme_short": "Meme / reaction", "other": "Other"}
     cl = lambda items, key, f: ", ".join(f"{names.get(c['format'], c['format'])} {f(c[key])}" for c in items) or "not enough data"
     tl = lambda items, f: ", ".join(f"{x['name']} {f(x)}" for x in items) or "none right now"
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + f"{title()}: {period} readout"}},
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": ("EXAMPLE · " if example else "") + f"{title()}: {LABEL.get(period, period)} readout"}},
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*Summary*\n*{n['headline']}*\n{n['summary']}"}},
               {"type": "section", "text": {"type": "mrkdwn", "text": f"*Overview*\n{o['creators']} creators · {o['videos']} content · {num(o['views'])} views · {num(o['engagements'])} engagements · {o['engagement_rate']*100:.2f}% engagement rate · "
                                                                   f"{o['outperformer_rate']*100:.0f}% outperformers ({o['underperformer_rate']*100:.0f}% under)"}},

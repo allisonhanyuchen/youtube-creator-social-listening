@@ -2,7 +2,7 @@ name: Refresh and push
 
 on:
   schedule:
-    - cron: "0 15 * * *"        # every day 15:00 UTC: a light pass, and the full pass on Mondays
+    - cron: "0 15 1 * *"        # the 1st of every month, 15:00 UTC: the full pass
   workflow_dispatch:
     inputs:
       send:
@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       mode:
-        description: "auto = full on Mondays, light otherwise"
+        description: "auto = the full pass; daily = a light pass without the slow Claude steps"
         type: choice
         options: [auto, daily, weekly]
         default: auto
@@ -33,7 +33,7 @@ env:
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
   REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
   # flags every stage shares: --no-send when "send" is off, --daily or --weekly when a mode was picked
-  RUN_FLAGS: ${{ github.event.inputs.send == 'false' && '--no-send' || '' }} ${{ github.event.inputs.mode == 'daily' && '--daily' || '' }} ${{ github.event.inputs.mode == 'weekly' && '--weekly' || '' }} ${{ github.event.inputs.fresh == 'true' && '--fresh' || '' }}
+  RUN_FLAGS: ${{ github.event_name == 'schedule' && '--weekly' || '' }} ${{ github.event.inputs.send == 'false' && '--no-send' || '' }} ${{ github.event.inputs.mode == 'daily' && '--daily' || '' }} ${{ github.event.inputs.mode == 'weekly' && '--weekly' || '' }} ${{ github.event.inputs.fresh == 'true' && '--fresh' || '' }}
 
 jobs:
   run:

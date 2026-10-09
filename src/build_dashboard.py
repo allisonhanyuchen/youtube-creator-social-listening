@@ -141,7 +141,7 @@ def main():
         try:                                               # what a push sends (the full report's key summary), kept out of the page itself
             import report, notify
             ins = json.load(open(os.path.join(DATA, "insights.json")))
-            push = dict(subject=f"{title()} (daily): {ins['narrative']['headline'][:80]}", email=report.build(ins, period="daily"), slack=notify.build(ins, period="daily"))
+            push = dict(subject=f"{title()} (quick): {ins['narrative']['headline'][:80]}", email=report.build(ins, period="daily"), slack=notify.build(ins, period="daily"))
         except Exception:
             push = None
         json.dump(dict(data, push=push), open(os.path.join(HERE, "docs", "data.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

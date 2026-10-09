@@ -1,11 +1,11 @@
 # 📡 YouTube Creator Social Listening
 
-An AI workflow that listens to YouTube around a product launch and tells a marketing team which creators and content beat their own baseline, what the audience is saying, and what changed since yesterday. It refreshes itself every day and pushes the key summary to email and Slack, so nobody builds the report by hand.
+An AI workflow that listens to YouTube around a product launch and tells a marketing team which creators and content beat their own baseline, what the audience is saying, and what changed since the last refresh. It refreshes itself every month and pushes the key summary to email and Slack, so nobody builds the report by hand.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue)
 ![YouTube API](https://img.shields.io/badge/YouTube_Data_API-v3-red)
 ![Claude](https://img.shields.io/badge/Claude_API-Sonnet-orange)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-daily-black)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-monthly-black)
 ![Vercel](https://img.shields.io/badge/Vercel-live_demo-lightgrey)
 [![Tests](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml/badge.svg)](https://github.com/allisonhanyuchen/youtube-creator-social-listening/actions/workflows/tests.yml)
 
@@ -31,7 +31,7 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 | 2 **Analyse** | Python computes every number locally so it can be checked: lift against each channel's own baseline, views gained, trends. Claude reads each comment (who it is about, sentiment, intent) and names the topics that local clustering finds | Claude API, Python, SQLite |
 | 3 **Report** | An interactive dashboard with Overview, Content performance and Audience insights, plus an Ask-the-data chat that answers with read-only SQL | Interactive HTML page, Vercel |
 | 4 **Push** | The full report's key summary goes to email and Slack, with alerts when something shifts | Resend, Slack |
-| 5 **Refresh** | The whole run repeats every day; each run is logged with its tokens, quota units and cost | GitHub Actions |
+| 5 **Refresh** | The whole run repeats every month; each run is logged with its tokens, quota units and cost | GitHub Actions |
 
 **APIs it calls**
 
@@ -44,7 +44,7 @@ An AI workflow that listens to YouTube around a product launch and tells a marke
 | Slack Events API (Socket Mode, optional) | The @-mentionable Q&A agent |
 | GitHub Actions workflow dispatch API | Starts a run from the page and follows its stages |
 
-It runs on Python (standard library) with SQLite, TF-IDF and k-means clustering for topics, GitHub Actions for the daily run, and Vercel for the page and its serverless functions.
+It runs on Python (standard library) with SQLite, TF-IDF and k-means clustering for topics, GitHub Actions for the scheduled run, and Vercel for the page and its serverless functions.
 
 **What you get**
 
@@ -71,7 +71,7 @@ It runs on Python (standard library) with SQLite, TF-IDF and k-means clustering 
 
 ![Audience insights](screenshots/5-audience-insights.png)
 
-**3. Push and update.** The same key summary goes to email and Slack, and the run log records every daily refresh with its cost:
+**3. Push and update.** The same key summary goes to email and Slack, and the run log records every refresh with its cost:
 
 ![Email and Slack](screenshots/6-email-and-slack-push.png)
 
@@ -84,7 +84,7 @@ Bring your own API keys and deploy. You set what to listen to in the app itself,
 1. **Fork** the repo and add five keys as repository secrets: `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `RESEND_API_KEY`, `REPORT_EMAIL_TO`
 2. **Publish the page** on Vercel and add the same keys, an access code of your choice (`DEMO_CODE`) and a `GITHUB_TOKEN` (Actions and Contents, read and write, this repo only)
 3. **Open your page and type your input**: the keywords, how many top videos per keyword, how many comments per video. Press **Run**: it saves them as the app's input, runs the pipeline on GitHub Actions (collect, analyse, report, push), shows the report and pushes the key summary to your email and Slack
-4. **That is all**: the saved input is repeated every day at 15:00 UTC; change it in the page any time (new keywords for another product start from scratch)
+4. **That is all**: the saved input is repeated on the 1st of every month at 15:00 UTC (you can also start it any time from the page); change it in the page any time (new keywords for another product start from scratch)
 
 The deployed page is the clean app: input, run, report, push. The sidebar, the replay of a recorded run, example email and Slack previews and explanations on the public demo are extras for demonstration (they appear when `"demo": true` in `input.json`).
 
@@ -114,7 +114,7 @@ Everything else:
 ├── screenshots/         images used in this README
 ├── tests/               unit tests, standard library only
 ├── input.json           your inputs: keywords, top videos, comments per video, and the product
-└── .github/workflows/   refresh.yml (daily run), tests.yml
+└── .github/workflows/   refresh.yml (monthly run), tests.yml
 ```
 
 ---
@@ -126,6 +126,6 @@ Everything else:
 | YouTube free quota | 10,000 units a day; a search costs 100 |
 | Keyword run, 20 videos x 20 comments | about 180 units, 17k input and 4k output Claude tokens, roughly 0.1 USD, about 20 seconds (measured) |
 | First full run from scratch, 200 videos x 20 comments, one keyword | 1,142 units, 220k input and 59k output tokens, about 1.5 USD, 6 min 40 s (measured) |
-| Daily refresh (steady state) | a few hundred new comments, well under 0.5 USD |
+| Scheduled refresh (full pass on existing data) | about 0.5 USD plus the cost of labelling the new comments (measured: 0.45 USD with 87 new comments) |
 
 Prices use `pricing` in `input.json` (default 3 and 15 USD per million input and output tokens, a Sonnet-class assumption: set your own). Accessories, other products that share the name, and unrelated videos are checked and left out of the numbers. Definitions of every metric, data limits and the privacy design are in **[guides/METRICS.md](guides/METRICS.md)**.
